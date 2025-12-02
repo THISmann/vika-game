@@ -13,6 +13,7 @@ Pour que ce workflow fonctionne, vous devez configurer les secrets suivants dans
 
    - **DOCKER_USERNAME** : `thismann17` (votre nom d'utilisateur DockerHub)
    - **DOCKER_PASSWORD** : Votre mot de passe DockerHub ou un Personal Access Token (recommandé)
+   - **TELEGRAM_BOT_TOKEN** : Le token de votre bot Telegram (pour le service telegram-bot)
 
 ### Utilisation d'un Personal Access Token (recommandé)
 
@@ -34,12 +35,22 @@ Le workflow se déclenche automatiquement sur :
 
 ### Images créées
 
-Le workflow crée et pousse 4 images Docker :
+Le workflow crée et pousse 5 images Docker :
 
 1. `thismann17/gamev2-auth-service`
 2. `thismann17/gamev2-quiz-service`
 3. `thismann17/gamev2-game-service`
-4. `thismann17/gamev2-frontend`
+4. `thismann17/gamev2-telegram-bot`
+5. `thismann17/gamev2-frontend`
+
+### Secret TELEGRAM_BOT_TOKEN
+
+Le secret `TELEGRAM_BOT_TOKEN` est disponible dans les workflows GitHub Actions. Il peut être utilisé pour :
+- Déployer le container telegram-bot avec le token
+- Configurer des secrets Kubernetes
+- Automatiser les déploiements
+
+**Note** : Le token n'est pas nécessaire pendant le build Docker, mais doit être fourni comme variable d'environnement au runtime.
 
 ### Tags
 

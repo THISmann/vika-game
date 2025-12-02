@@ -34,6 +34,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Note: TELEGRAM_BOT_TOKEN is available as a secret for deployment
+      # The token is not needed during build, but should be passed as environment variable at runtime
+
       - name: Extract metadata for auth-service
         id: meta-auth
         uses: docker/metadata-action@v5
@@ -106,6 +109,30 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Extract metadata for telegram-bot
+        id: meta-telegram
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/gamev2-telegram-bot
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push telegram-bot
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/telegram-bot
+          file: ./node/telegram-bot/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-telegram.outputs.tags }}
+          labels: ${{ steps.meta-telegram.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Extract metadata for frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
@@ -139,6 +166,7 @@ jobs:
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-auth-service\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-quiz-service\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-game-service\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-telegram-bot\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-frontend\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View on DockerHub: https://hub.docker.com/u/${{ env.DOCKER_USERNAME }}" >> $GITHUB_STEP_SUMMARY
