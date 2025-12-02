@@ -145,6 +145,7 @@
 
 <script>
 import axios from 'axios'
+import { API_URLS } from '@/config/api'
 
 export default {
   data() {
@@ -165,7 +166,7 @@ export default {
     async loadQuestions() {
       try {
         this.loading = true
-        const res = await axios.get('http://localhost:3002/quiz/all')
+        const res = await axios.get(API_URLS.quiz.all)
         this.questions = res.data
       } catch (err) {
         this.error = 'Erreur lors du chargement des questions'
@@ -194,7 +195,7 @@ export default {
       }
 
       try {
-        await axios.post('http://localhost:3002/quiz/create', {
+        await axios.post(API_URLS.quiz.create, {
           question: this.question,
           choices,
           answer: this.answer,
@@ -224,7 +225,7 @@ export default {
       }
 
       try {
-        await axios.delete(`http://localhost:3002/quiz/${id}`)
+        await axios.delete(API_URLS.quiz.delete(id))
         this.questions = this.questions.filter((q) => q.id !== id)
       } catch (err) {
         this.error = 'Erreur lors de la suppression'

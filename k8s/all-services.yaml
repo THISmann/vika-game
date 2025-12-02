@@ -350,11 +350,11 @@ spec:
         - containerPort: 5173
         env:
         - name: VITE_AUTH_SERVICE_URL
-          value: "http://auth-service:3001"
+          value: "/api/auth"
         - name: VITE_QUIZ_SERVICE_URL
-          value: "http://quiz-service:3002"
+          value: "/api/quiz"
         - name: VITE_GAME_SERVICE_URL
-          value: "http://game-service:3003"
+          value: "/api/game"
 ---
 apiVersion: v1
 kind: Service
@@ -364,11 +364,10 @@ metadata:
   labels:
     app: frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: 80
     targetPort: 5173
-    nodePort: 30080
     protocol: TCP
   selector:
     app: frontend

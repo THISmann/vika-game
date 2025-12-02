@@ -95,6 +95,7 @@
 
 <script>
 import axios from 'axios'
+import { API_URLS } from '@/config/api'
 
 export default {
   data() {
@@ -117,7 +118,7 @@ export default {
       this.success = ''
 
       try {
-        const res = await axios.post('http://localhost:3001/auth/players/register', {
+        const res = await axios.post(API_URLS.auth.register, {
           name: this.name,
         })
 

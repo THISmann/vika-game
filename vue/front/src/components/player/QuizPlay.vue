@@ -203,6 +203,7 @@
 <script>
 import axios from 'axios'
 import { io } from 'socket.io-client'
+import { API_URLS, API_CONFIG } from '@/config/api'
 
 export default {
   data() {
@@ -240,7 +241,7 @@ export default {
     }
 
     // Connecter au WebSocket
-    this.socket = io('http://localhost:3003')
+    this.socket = io(API_CONFIG.GAME_SERVICE)
     
     // Enregistrer le joueur
     this.socket.emit('register', this.playerId)
@@ -287,7 +288,7 @@ export default {
   methods: {
     async loadGameState() {
       try {
-        const res = await axios.get('http://localhost:3003/game/state')
+        const res = await axios.get(API_URLS.game.state)
         const state = res.data
         
         this.gameStarted = state.isStarted
@@ -297,7 +298,7 @@ export default {
 
         if (state.isStarted && state.currentQuestionId) {
           // Charger la question actuelle
-          const questionsRes = await axios.get('http://localhost:3002/quiz/all')
+          const questionsRes = await axios.get(API_URLS.quiz.all)
           const question = questionsRes.data.find(q => q.id === state.currentQuestionId)
           if (question) {
             this.current = {
@@ -345,7 +346,7 @@ export default {
       this.selectedAnswer = choice
 
       try {
-        const res = await axios.post('http://localhost:3003/game/answer', {
+        const res = await axios.post(API_URLS.game.answer, {
           playerId: this.playerId,
           questionId: this.current.id,
           answer: choice,
@@ -369,11 +370,11 @@ export default {
     },
     async loadResults() {
       try {
-        const resultsRes = await axios.get('http://localhost:3003/game/results')
+        const resultsRes = await axios.get(API_URLS.game.results)
         const allResults = resultsRes.data
 
         // Charger les questions pour obtenir les bonnes réponses
-        const questionsRes = await axios.get('http://localhost:3002/quiz/full')
+        const questionsRes = await axios.get(API_URLS.quiz.full)
         const questions = questionsRes.data
 
         // Construire les résultats pour ce joueur

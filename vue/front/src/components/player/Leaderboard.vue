@@ -147,6 +147,7 @@
 <script>
 import { io } from 'socket.io-client'
 import axios from 'axios'
+import { API_URLS, API_CONFIG } from '@/config/api'
 
 export default {
   data() {
@@ -159,7 +160,7 @@ export default {
   async mounted() {
     // --- 1. Load initial leaderboard from API
     try {
-      const res = await axios.get('http://localhost:3003/game/leaderboard')
+      const res = await axios.get(API_URLS.game.leaderboard)
       this.leaderboard = res.data
     } catch (err) {
       console.error('Erreur chargement leaderboard:', err)
@@ -168,7 +169,7 @@ export default {
     }
 
     // --- 2. Connect to Socket.IO
-    this.socket = io('http://localhost:3003')
+    this.socket = io(API_CONFIG.GAME_SERVICE)
 
     // Optional: register player socket
     const playerId = localStorage.getItem('playerId')

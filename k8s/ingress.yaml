@@ -1,0 +1,46 @@
+# Ingress pour exposer l'application avec reverse proxy
+# Usage: kubectl apply -f k8s/ingress.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: intelectgame-ingress
+  namespace: intelectgame
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/websocket-services: game-service
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: intelectgame.local  # Changez par votre domaine ou IP
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3001
+      - path: /api/quiz
+        pathType: Prefix
+        backend:
+          service:
+            name: quiz-service
+            port:
+              number: 3002
+      - path: /api/game
+        pathType: Prefix
+        backend:
+          service:
+            name: game-service
+            port:
+              number: 3003
+

@@ -136,6 +136,7 @@
 <script>
 import axios from 'axios'
 import { io } from 'socket.io-client'
+import { API_URLS, API_CONFIG } from '@/config/api'
 
 export default {
   data() {
@@ -157,7 +158,7 @@ export default {
     await this.loadQuestionsCount()
     
     // Connecter au WebSocket
-    this.socket = io('http://localhost:3003')
+    this.socket = io(API_CONFIG.GAME_SERVICE)
     
     this.socket.on('players:count', (data) => {
       this.gameState.connectedPlayersCount = data.count
@@ -191,7 +192,7 @@ export default {
   methods: {
     async loadGameState() {
       try {
-        const res = await axios.get('http://localhost:3003/game/state')
+        const res = await axios.get(API_URLS.game.state)
         this.gameState = res.data
       } catch (err) {
         console.error('Error loading game state:', err)
@@ -199,7 +200,7 @@ export default {
     },
     async loadQuestionsCount() {
       try {
-        const res = await axios.get('http://localhost:3002/quiz/all')
+        const res = await axios.get(API_URLS.quiz.all)
         this.totalQuestions = res.data.length
       } catch (err) {
         console.error('Error loading questions count:', err)
@@ -207,7 +208,7 @@ export default {
     },
     async loadConnectedPlayersCount() {
       try {
-        const res = await axios.get('http://localhost:3003/game/players/count')
+        const res = await axios.get(API_URLS.game.playersCount)
         this.gameState.connectedPlayersCount = res.data.count
       } catch (err) {
         console.error('Error loading players count:', err)
@@ -219,7 +220,7 @@ export default {
       this.message = ''
       
       try {
-        await axios.post('http://localhost:3003/game/start')
+        await axios.post(API_URLS.game.start)
         this.message = 'Jeu démarré avec succès !'
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
@@ -235,7 +236,7 @@ export default {
       this.message = ''
       
       try {
-        const res = await axios.post('http://localhost:3003/game/next')
+        const res = await axios.post(API_URLS.game.next)
         if (res.data.finished) {
           this.message = 'Le jeu est terminé !'
         } else {
@@ -259,7 +260,7 @@ export default {
       this.message = ''
       
       try {
-        await axios.post('http://localhost:3003/game/end')
+        await axios.post(API_URLS.game.end)
         this.message = 'Jeu terminé avec succès !'
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
@@ -279,7 +280,7 @@ export default {
       this.message = ''
       
       try {
-        await axios.delete('http://localhost:3003/game/delete')
+        await axios.delete(API_URLS.game.delete)
         this.message = 'Partie supprimée avec succès !'
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)

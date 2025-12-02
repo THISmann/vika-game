@@ -104,6 +104,10 @@ fi
 echo "📝 Préparation de la configuration Kubernetes..."
 cat k8s/all-services.yaml | sed 's/imagePullPolicy: Always/imagePullPolicy: Never/g' > /tmp/all-services-vm.yaml
 
+# Déployer le proxy Nginx
+echo "🌐 Déploiement du proxy Nginx..."
+kubectl apply -f k8s/nginx-proxy-config.yaml
+
 # Déployer tous les services
 echo "📦 Déploiement des services..."
 kubectl apply -f /tmp/all-services-vm.yaml
