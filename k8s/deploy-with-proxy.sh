@@ -50,7 +50,8 @@ cat k8s/all-services.yaml | sed 's/imagePullPolicy: Always/imagePullPolicy: Neve
 
 # Déployer le proxy Nginx
 echo "🌐 Déploiement du proxy Nginx..."
-kubectl apply -f k8s/nginx-proxy-config.yaml
+# Utiliser la version simplifiée avec initContainer
+kubectl apply -f k8s/nginx-proxy-simple.yaml
 
 # Déployer tous les services
 echo "📦 Déploiement des services..."

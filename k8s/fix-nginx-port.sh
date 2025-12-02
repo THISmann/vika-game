@@ -23,7 +23,8 @@ fi
 
 # Redéployer le proxy Nginx avec le nouveau port
 echo "🌐 Redéploiement du proxy Nginx..."
-kubectl apply -f k8s/nginx-proxy-config.yaml
+# Utiliser la version simplifiée avec initContainer
+kubectl apply -f k8s/nginx-proxy-simple.yaml
 
 # Attendre que le service soit créé
 sleep 2

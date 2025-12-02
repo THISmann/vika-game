@@ -1,5 +1,5 @@
-# Configuration Nginx pour proxy vers les services Kubernetes
-# Cette ConfigMap sera utilisée par un pod Nginx
+# Configuration Nginx simplifiée sans résolution DNS dynamique
+# Utilise directement les noms de service (plus simple)
 
 apiVersion: v1
 kind: ConfigMap
@@ -13,17 +13,13 @@ data:
     }
     
     http {
-        # Résolveur DNS pour la résolution dynamique des services Kubernetes
-        resolver kube-dns.kube-system.svc.cluster.local valid=10s;
-        
         server {
             listen 80;
             server_name _;
             
             # Frontend
             location / {
-                set $frontend "frontend.intelectgame.svc.cluster.local:80";
-                proxy_pass http://$frontend;
+                proxy_pass http://frontend.intelectgame.svc.cluster.local:80;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -32,9 +28,8 @@ data:
             
             # Auth Service
             location /api/auth {
-                set $auth "auth-service.intelectgame.svc.cluster.local:3001";
                 rewrite ^/api/auth/(.*)$ /auth/$1 break;
-                proxy_pass http://$auth;
+                proxy_pass http://auth-service.intelectgame.svc.cluster.local:3001;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -43,9 +38,8 @@ data:
             
             # Quiz Service
             location /api/quiz {
-                set $quiz "quiz-service.intelectgame.svc.cluster.local:3002";
                 rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
-                proxy_pass http://$quiz;
+                proxy_pass http://quiz-service.intelectgame.svc.cluster.local:3002;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -54,9 +48,8 @@ data:
             
             # Game Service (HTTP)
             location /api/game {
-                set $game "game-service.intelectgame.svc.cluster.local:3003";
                 rewrite ^/api/game/(.*)$ /game/$1 break;
-                proxy_pass http://$game;
+                proxy_pass http://game-service.intelectgame.svc.cluster.local:3003;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -70,22 +63,7 @@ data:
             
             # Game Service WebSocket (Socket.IO)
             location /socket.io {
-                set $game "game-service.intelectgame.svc.cluster.local:3003";
-                proxy_pass http://$game;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_read_timeout 86400;
-            }
-            
-            # Game Service WebSocket (via /api/game)
-            location ~ ^/api/game/socket\.io {
-                set $game "game-service.intelectgame.svc.cluster.local:3003";
-                rewrite ^/api/game/(.*)$ /$1 break;
-                proxy_pass http://$game;
+                proxy_pass http://game-service.intelectgame.svc.cluster.local:3003;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
@@ -113,6 +91,30 @@ spec:
       labels:
         app: nginx-proxy
     spec:
+      # Init container pour attendre que les services soient disponibles
+      initContainers:
+      - name: wait-for-services
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          until nslookup frontend.intelectgame.svc.cluster.local; do
+            echo "Waiting for frontend service...";
+            sleep 2;
+          done;
+          until nslookup auth-service.intelectgame.svc.cluster.local; do
+            echo "Waiting for auth-service...";
+            sleep 2;
+          done;
+          until nslookup quiz-service.intelectgame.svc.cluster.local; do
+            echo "Waiting for quiz-service...";
+            sleep 2;
+          done;
+          until nslookup game-service.intelectgame.svc.cluster.local; do
+            echo "Waiting for game-service...";
+            sleep 2;
+          done;
+          echo "All services are available!";
       containers:
       - name: nginx
         image: nginx:alpine
@@ -138,7 +140,7 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-    nodePort: 30081  # Port différent pour éviter le conflit
+    nodePort: 30081
   selector:
     app: nginx-proxy
 
