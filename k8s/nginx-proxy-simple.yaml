@@ -17,9 +17,9 @@ data:
             listen 80;
             server_name _;
             
-            # Frontend
+            # Frontend (utilise le port du service, pas du container)
             location / {
-                proxy_pass http://frontend.intelectgame.svc.cluster.local:80;
+                proxy_pass http://frontend:80;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -29,7 +29,7 @@ data:
             # Auth Service
             location /api/auth {
                 rewrite ^/api/auth/(.*)$ /auth/$1 break;
-                proxy_pass http://auth-service.intelectgame.svc.cluster.local:3001;
+                proxy_pass http://auth-service:3001;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -39,7 +39,7 @@ data:
             # Quiz Service
             location /api/quiz {
                 rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
-                proxy_pass http://quiz-service.intelectgame.svc.cluster.local:3002;
+                proxy_pass http://quiz-service:3002;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -49,7 +49,7 @@ data:
             # Game Service (HTTP)
             location /api/game {
                 rewrite ^/api/game/(.*)$ /game/$1 break;
-                proxy_pass http://game-service.intelectgame.svc.cluster.local:3003;
+                proxy_pass http://game-service:3003;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -63,7 +63,7 @@ data:
             
             # Game Service WebSocket (Socket.IO)
             location /socket.io {
-                proxy_pass http://game-service.intelectgame.svc.cluster.local:3003;
+                proxy_pass http://game-service:3003;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
@@ -91,30 +91,7 @@ spec:
       labels:
         app: nginx-proxy
     spec:
-      # Init container pour attendre que les services soient disponibles
-      initContainers:
-      - name: wait-for-services
-        image: busybox:1.35
-        command: ['sh', '-c']
-        args:
-        - |
-          until nslookup frontend.intelectgame.svc.cluster.local; do
-            echo "Waiting for frontend service...";
-            sleep 2;
-          done;
-          until nslookup auth-service.intelectgame.svc.cluster.local; do
-            echo "Waiting for auth-service...";
-            sleep 2;
-          done;
-          until nslookup quiz-service.intelectgame.svc.cluster.local; do
-            echo "Waiting for quiz-service...";
-            sleep 2;
-          done;
-          until nslookup game-service.intelectgame.svc.cluster.local; do
-            echo "Waiting for game-service...";
-            sleep 2;
-          done;
-          echo "All services are available!";
+      # Utiliser les noms de service courts (plus simple et plus fiable)
       containers:
       - name: nginx
         image: nginx:alpine
