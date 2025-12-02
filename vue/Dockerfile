@@ -1,7 +1,8 @@
 FROM node:18-alpine as build
 WORKDIR /app
 COPY front/package*.json ./
-RUN npm ci
+# Use npm ci if package-lock.json exists, otherwise use npm install
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY front/ .
 RUN npm run build
 
