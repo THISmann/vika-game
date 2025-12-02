@@ -29,6 +29,31 @@ sleep 3
 echo "🌐 Déploiement de la nouvelle configuration..."
 kubectl apply -f k8s/nginx-proxy-simple.yaml
 
+# Détecter l'adresse IP du service DNS de Kubernetes et mettre à jour le ConfigMap si nécessaire
+echo "🔍 Détection de l'adresse IP du service DNS..."
+DNS_IP=$(kubectl get svc -n kube-system -o jsonpath='{.items[?(@.metadata.name=="kube-dns")].spec.clusterIP}' 2>/dev/null || \
+         kubectl get svc -n kube-system -o jsonpath='{.items[?(@.metadata.name=="coredns")].spec.clusterIP}' 2>/dev/null || \
+         echo "")
+
+if [ -z "$DNS_IP" ]; then
+    # Essayer de trouver n'importe quel service DNS
+    DNS_IP=$(kubectl get svc -n kube-system | grep -E 'kube-dns|coredns' | awk '{print $3}' | head -1)
+fi
+
+if [ -n "$DNS_IP" ] && [ "$DNS_IP" != "10.96.0.10" ]; then
+    echo "📝 Mise à jour du ConfigMap avec l'adresse IP détectée: $DNS_IP"
+    # Mettre à jour le ConfigMap avec la bonne adresse IP
+    kubectl get configmap nginx-proxy-config -n intelectgame -o yaml | \
+        sed "s/resolver [0-9.]*;/resolver $DNS_IP;/" | \
+        kubectl apply -f -
+    echo "✅ ConfigMap mis à jour, redémarrage du pod..."
+    kubectl rollout restart deployment/nginx-proxy -n intelectgame
+else
+    echo "ℹ️  Utilisation de l'adresse IP par défaut: 10.96.0.10"
+    echo "   Si Nginx ne démarre pas, vérifiez l'adresse IP du service DNS avec:"
+    echo "   kubectl get svc -n kube-system | grep -E 'kube-dns|coredns'"
+fi
+
 # Attendre que le pod démarre
 echo "⏳ Attente du démarrage du pod..."
 sleep 5
