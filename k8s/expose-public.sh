@@ -23,8 +23,10 @@ fi
 # Obtenir l'IP de Minikube
 MINIKUBE_IP=$(minikube ip)
 
-# Obtenir le NodePort
-NODEPORT=$(kubectl get service frontend -n intelectgame -o jsonpath='{.spec.ports[0].nodePort}')
+# Obtenir le NodePort (depuis nginx-proxy ou frontend)
+NODEPORT=$(kubectl get service nginx-proxy -n intelectgame -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || \
+           kubectl get service frontend -n intelectgame -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || \
+           echo "30081")
 
 echo ""
 echo "📊 Informations de connexion:"

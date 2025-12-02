@@ -71,9 +71,15 @@ echo ""
 echo "🌐 Services:"
 kubectl get services -n intelectgame
 
+# Supprimer l'ancien service frontend NodePort s'il existe
+if kubectl get service frontend -n intelectgame &> /dev/null; then
+    echo "🗑️  Suppression de l'ancien service frontend NodePort..."
+    kubectl delete service frontend -n intelectgame || true
+fi
+
 # Obtenir l'IP et le port
 MINIKUBE_IP=$(minikube ip)
-NODEPORT=$(kubectl get service nginx-proxy -n intelectgame -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30080")
+NODEPORT=$(kubectl get service nginx-proxy -n intelectgame -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30081")
 VM_IP=$(hostname -I | awk '{print $1}')
 
 echo ""
