@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: game-service
-        image: game-service:latest
-        imagePullPolicy: Never
+        image: thismann17/gamev2-game-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3003
         env:

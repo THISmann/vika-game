@@ -1,11 +1,22 @@
 # Fichier pour déployer tous les services d'un coup
 # Usage: kubectl apply -f k8s/all-services.yaml
+# Prérequis: minikube start
 
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: intelectgame
+---
+# Secret pour le token Telegram Bot
+apiVersion: v1
+kind: Secret
+metadata:
+  name: telegram-bot-secret
+  namespace: intelectgame
+type: Opaque
+stringData:
+  TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN_HERE"  # Remplacez par votre token réel
 ---
 # MongoDB
 apiVersion: apps/v1
@@ -89,8 +100,8 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: auth-service:latest
-        imagePullPolicy: Never
+        image: thismann17/gamev2-auth-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3001
         env:
@@ -149,8 +160,8 @@ spec:
     spec:
       containers:
       - name: quiz-service
-        image: quiz-service:latest
-        imagePullPolicy: Never
+        image: thismann17/gamev2-quiz-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3002
         env:
@@ -209,8 +220,8 @@ spec:
     spec:
       containers:
       - name: game-service
-        image: game-service:latest
-        imagePullPolicy: Never
+        image: thismann17/gamev2-game-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3003
         env:
@@ -253,6 +264,66 @@ spec:
   selector:
     app: game-service
 ---
+# Telegram Bot Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+  namespace: intelectgame
+  labels:
+    app: telegram-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+    spec:
+      containers:
+      - name: telegram-bot
+        image: thismann17/gamev2-telegram-bot:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3004
+        env:
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secret
+              key: TELEGRAM_BOT_TOKEN
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        - name: QUIZ_SERVICE_URL
+          value: "http://quiz-service:3002"
+        - name: GAME_SERVICE_URL
+          value: "http://game-service:3003"
+        - name: GAME_WS_URL
+          value: "http://game-service:3003"
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegram-bot
+  namespace: intelectgame
+  labels:
+    app: telegram-bot
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3004
+    targetPort: 3004
+    protocol: TCP
+  selector:
+    app: telegram-bot
+---
 # Frontend
 apiVersion: apps/v1
 kind: Deployment
@@ -273,8 +344,8 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: frontend:latest
-        imagePullPolicy: Never
+        image: thismann17/gamev2-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5173
         env:
@@ -301,4 +372,3 @@ spec:
     protocol: TCP
   selector:
     app: frontend
-

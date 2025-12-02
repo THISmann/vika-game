@@ -30,6 +30,11 @@ function readGameState() {
 
 function writeGameState(state) {
   try {
+    // Ensure directory exists
+    const dir = path.dirname(gameStatePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(gameStatePath, JSON.stringify(state, null, 2));
   } catch (err) {
     console.error("Error writing game state:", err);
