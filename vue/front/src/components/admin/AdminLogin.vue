@@ -1,0 +1,90 @@
+<template>
+  <div class="min-h-[60vh] flex items-center justify-center">
+    <div
+      class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200"
+    >
+      <div class="text-center">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Connexion Admin</h2>
+        <p class="text-sm text-gray-600">Accédez au panneau d'administration</p>
+      </div>
+
+      <form @submit.prevent="login" class="mt-8 space-y-6">
+        <div class="space-y-4">
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+              Nom d'utilisateur
+            </label>
+            <input
+              id="username"
+              v-model="username"
+              type="text"
+              required
+              class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              placeholder="Entrez votre nom d'utilisateur"
+            />
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+              Mot de passe
+            </label>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              placeholder="Entrez votre mot de passe"
+            />
+          </div>
+        </div>
+
+        <div
+          v-if="error"
+          class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+        >
+          {{ error }}
+        </div>
+
+        <button
+          type="submit"
+          class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+            <svg class="h-5 w-5 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </span>
+          Se connecter
+        </button>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      username: '',
+      password: '',
+      error: '',
+    }
+  },
+  methods: {
+    login() {
+      this.error = ''
+      if (this.username === 'admin' && this.password === 'admin') {
+        localStorage.setItem('admin', '1')
+        this.$router.push('/admin/dashboard')
+      } else {
+        this.error = 'Identifiants invalides'
+      }
+    },
+  },
+}
+</script>

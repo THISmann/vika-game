@@ -1,0 +1,207 @@
+<template>
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
+      <div class="text-center">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-4"
+        >
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">🏆 Classement</h1>
+        <p class="text-gray-600">Les meilleurs joueurs en temps réel</p>
+      </div>
+    </div>
+
+    <!-- Leaderboard List -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+      <!-- Loading State -->
+      <div v-if="loading" class="p-12 text-center">
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"
+        ></div>
+        <p class="text-gray-600">Chargement du classement...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="leaderboard.length === 0" class="p-12 text-center">
+        <svg
+          class="mx-auto h-12 w-12 text-gray-400 mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+          />
+        </svg>
+        <p class="text-gray-600">Aucun joueur pour le moment</p>
+      </div>
+
+      <!-- Leaderboard Items -->
+      <div v-else class="divide-y divide-gray-200">
+        <div
+          v-for="(player, index) in leaderboard"
+          :key="player.playerId"
+          class="p-6 hover:bg-gray-50 transition-colors"
+          :class="{
+            'bg-gradient-to-r from-yellow-50 to-orange-50': index === 0,
+            'bg-gradient-to-r from-gray-50 to-slate-50': index === 1,
+            'bg-gradient-to-r from-amber-50 to-yellow-50': index === 2,
+          }"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4 flex-1">
+              <!-- Rank -->
+              <div
+                class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
+                :class="{
+                  'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': index === 0,
+                  'bg-gradient-to-br from-gray-300 to-gray-400 text-white': index === 1,
+                  'bg-gradient-to-br from-amber-400 to-yellow-500 text-white': index === 2,
+                  'bg-gray-200 text-gray-700': index > 2,
+                }"
+              >
+                <span v-if="index === 0">🥇</span>
+                <span v-else-if="index === 1">🥈</span>
+                <span v-else-if="index === 2">🥉</span>
+                <span v-else>{{ index + 1 }}</span>
+              </div>
+
+              <!-- Player Info -->
+              <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
+                    :class="{
+                      'bg-gradient-to-br from-yellow-400 to-orange-500': index === 0,
+                      'bg-gradient-to-br from-gray-400 to-gray-500': index === 1,
+                      'bg-gradient-to-br from-amber-400 to-yellow-500': index === 2,
+                      'bg-gradient-to-br from-blue-500 to-purple-600': index > 2,
+                    }"
+                  >
+                    {{ player.playerName ? player.playerName.charAt(0).toUpperCase() : '?' }}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-lg">
+                      {{ player.playerName || 'Joueur anonyme' }}
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      {{ player.playerId }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Score -->
+              <div class="text-right">
+                <div class="flex items-center space-x-2">
+                  <span
+                    class="text-2xl font-bold"
+                    :class="{
+                      'text-yellow-600': index === 0,
+                      'text-gray-600': index === 1,
+                      'text-amber-600': index === 2,
+                      'text-blue-600': index > 2,
+                    }"
+                  >
+                    {{ player.score }}
+                  </span>
+                  <span class="text-gray-500 text-sm">pts</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="mt-6 flex justify-center space-x-4">
+      <router-link
+        to="/player/quiz"
+        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+      >
+        Rejouer
+      </router-link>
+      <router-link
+        to="/player/register"
+        class="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all"
+      >
+        Nouveau joueur
+      </router-link>
+    </div>
+  </div>
+</template>
+
+<script>
+import { io } from 'socket.io-client'
+import axios from 'axios'
+
+export default {
+  data() {
+    return {
+      leaderboard: [],
+      socket: null,
+      loading: true,
+    }
+  },
+  async mounted() {
+    // --- 1. Load initial leaderboard from API
+    try {
+      const res = await axios.get('http://localhost:3003/game/leaderboard')
+      this.leaderboard = res.data
+    } catch (err) {
+      console.error('Erreur chargement leaderboard:', err)
+    } finally {
+      this.loading = false
+    }
+
+    // --- 2. Connect to Socket.IO
+    this.socket = io('http://localhost:3003')
+
+    // Optional: register player socket
+    const playerId = localStorage.getItem('playerId')
+    if (playerId) {
+      this.socket.emit('register', playerId)
+    }
+
+    // --- 3. Listen for score updates
+    this.socket.on('score:update', (data) => {
+      const entry = this.leaderboard.find((p) => p.playerId === data.playerId)
+      if (entry) {
+        entry.score = data.score
+      } else {
+        this.leaderboard.push({
+          playerId: data.playerId,
+          playerName: data.playerName || 'Joueur',
+          score: data.score,
+        })
+      }
+
+      // Sort descending
+      this.leaderboard.sort((a, b) => b.score - a.score)
+    })
+
+    // Optional: listen to leaderboard broadcast
+    this.socket.on('leaderboard:update', (scores) => {
+      this.leaderboard = scores.sort((a, b) => b.score - a.score)
+    })
+  },
+  beforeUnmount() {
+    if (this.socket) {
+      this.socket.disconnect()
+    }
+  },
+}
+</script>

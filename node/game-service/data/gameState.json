@@ -1,0 +1,14 @@
+{
+  "isStarted": false,
+  "currentQuestionIndex": -1,
+  "currentQuestionId": null,
+  "questionStartTime": null,
+  "questionDuration": 30000,
+  "connectedPlayers": [],
+  "gameSessionId": null,
+  "answers": {},
+  "results": {}
+}
+
+
+
