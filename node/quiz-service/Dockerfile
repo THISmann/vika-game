@@ -1,8 +1,8 @@
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
-# Use npm ci if package-lock.json exists, otherwise use npm install
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --production; fi
+# Use npm install for production dependencies (more flexible than npm ci)
+RUN npm install --production --omit=dev
 COPY . .
 EXPOSE 3002
 CMD ["node","server.js"]
