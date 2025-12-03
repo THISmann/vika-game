@@ -1,10 +1,10 @@
 <template>
-  <div class="max-w-6xl mx-auto space-y-6">
+  <div class="min-h-screen max-w-6xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
     <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-      <div class="text-center mb-6">
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">🎯 Dashboard Administrateur</h1>
-        <p class="text-gray-600">Gérez votre jeu de questions-réponses</p>
+    <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-4 sm:p-5 md:p-6">
+      <div class="text-center mb-4 sm:mb-5 md:mb-6">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">🎯 Dashboard Administrateur</h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">Gérez votre jeu de questions-réponses</p>
       </div>
 
       <!-- Game Code -->

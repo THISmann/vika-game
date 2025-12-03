@@ -53,18 +53,19 @@
         <div
           v-for="(player, index) in leaderboard"
           :key="player.playerId || index"
-          class="p-3 sm:p-4 md:p-6 hover:bg-gray-50 transition-colors"
+          class="p-4 sm:p-5 md:p-6 lg:p-7 hover:bg-gray-50 transition-colors active:bg-gray-100"
+          style="touch-action: manipulation;"
           :class="{
             'bg-gradient-to-r from-yellow-50 to-orange-50': index === 0,
             'bg-gradient-to-r from-gray-50 to-slate-50': index === 1,
             'bg-gradient-to-r from-amber-50 to-yellow-50': index === 2,
           }"
         >
-          <div class="flex items-center justify-between gap-2 sm:gap-4">
+          <div class="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
             <div class="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
               <!-- Rank -->
               <div
-                class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg"
+                class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-base sm:text-lg md:text-xl shadow-md"
                 :class="{
                   'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': index === 0,
                   'bg-gradient-to-br from-gray-300 to-gray-400 text-white': index === 1,
@@ -80,9 +81,9 @@
 
               <!-- Player Info -->
               <div class="flex-1 min-w-0">
-                <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
                   <div
-                    class="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-white text-xs sm:text-sm md:text-base"
+                    class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base md:text-lg shadow-md"
                     :class="{
                       'bg-gradient-to-br from-yellow-400 to-orange-500': index === 0,
                       'bg-gradient-to-br from-gray-400 to-gray-500': index === 1,
@@ -93,7 +94,7 @@
                     {{ player.playerName ? player.playerName.charAt(0).toUpperCase() : '?' }}
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="font-semibold text-gray-900 text-sm sm:text-base md:text-lg truncate">
+                    <p class="font-bold text-gray-900 text-base sm:text-lg md:text-xl truncate">
                       {{ player.playerName || 'Joueur anonyme' }}
                     </p>
                     <p class="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
@@ -105,9 +106,9 @@
 
               <!-- Score -->
               <div class="text-right flex-shrink-0">
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1 sm:space-x-2">
                   <span
-                    class="text-lg sm:text-xl md:text-2xl font-bold"
+                    class="text-xl sm:text-2xl md:text-3xl font-bold"
                     :class="{
                       'text-yellow-600': index === 0,
                       'text-gray-600': index === 1,
@@ -127,16 +128,18 @@
     </div>
 
     <!-- Actions -->
-    <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+    <div class="mt-5 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
       <router-link
         to="/player/quiz"
-        class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 text-center"
+        class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 active:scale-95 text-center shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
+        style="touch-action: manipulation;"
       >
         Rejouer
       </router-link>
       <router-link
         to="/player/register"
-        class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all text-center"
+        class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-white border-3 sm:border-[3px] border-gray-300 text-gray-700 font-semibold rounded-xl sm:rounded-2xl hover:bg-gray-50 transition-all text-center shadow-md hover:shadow-lg active:scale-95 min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
+        style="touch-action: manipulation;"
       >
         Nouveau joueur
       </router-link>

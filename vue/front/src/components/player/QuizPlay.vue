@@ -1,15 +1,15 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+  <div class="min-h-screen max-w-4xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
     <!-- Waiting for game to start -->
     <div
       v-if="!gameStarted && !gameEnded"
-      class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 md:p-12 text-center"
+      class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-5 sm:p-6 md:p-8 lg:p-12 text-center min-h-[60vh] flex flex-col items-center justify-center"
     >
       <div
-        class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"
+        class="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-3 sm:border-4 border-blue-600 mb-4 sm:mb-6"
       ></div>
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">⏳ En attente du début du jeu</h2>
-      <p class="text-gray-600 text-lg">
+      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-4 px-2">⏳ En attente du début du jeu</h2>
+      <p class="text-sm sm:text-base md:text-lg text-gray-600 px-4">
         L'administrateur va bientôt démarrer le jeu...
       </p>
     </div>
@@ -17,25 +17,25 @@
     <!-- Loading State -->
     <div
       v-else-if="loading && !current"
-      class="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center"
+      class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-8 sm:p-10 md:p-12 text-center min-h-[60vh] flex flex-col items-center justify-center"
     >
       <div
-        class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"
+        class="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-3 sm:border-4 border-blue-600 mb-4 sm:mb-6"
       ></div>
-      <p class="text-gray-600 text-lg">Chargement...</p>
+      <p class="text-sm sm:text-base md:text-lg text-gray-600">Chargement...</p>
     </div>
 
     <!-- Quiz Question -->
-    <div v-else-if="current && !gameEnded" class="space-y-6">
+    <div v-else-if="current && !gameEnded" class="space-y-3 sm:space-y-4 md:space-y-6 pb-4 sm:pb-6">
       <!-- Timer -->
-      <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-3 sm:p-4">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs sm:text-sm font-medium text-gray-700">
-            Question {{ currentQuestionIndex + 1 }} sur {{ totalQuestions }}
+      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-3 sm:p-4 md:p-5 sticky top-0 z-10 backdrop-blur-sm bg-white/95">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+          <span class="text-xs sm:text-sm md:text-base font-semibold text-gray-700">
+            Question {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
           </span>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 sm:space-x-3">
             <div
-              class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 flex items-center justify-center font-bold text-base sm:text-lg"
+              class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-4 sm:border-[5px] flex items-center justify-center font-bold text-lg sm:text-xl md:text-2xl shadow-lg"
               :class="{
                 'border-green-500 text-green-600': timeLeft > 10,
                 'border-yellow-500 text-yellow-600': timeLeft <= 10 && timeLeft > 5,
@@ -46,9 +46,9 @@
             </div>
           </div>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 md:h-3 shadow-inner">
           <div
-            class="h-2 rounded-full transition-all duration-1000"
+            class="h-2 sm:h-2.5 md:h-3 rounded-full transition-all duration-1000 shadow-sm"
             :class="{
               'bg-green-500': timeLeft > 10,
               'bg-yellow-500': timeLeft <= 10 && timeLeft > 5,
@@ -60,12 +60,12 @@
       </div>
 
       <!-- Question Card -->
-      <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 md:p-8">
-        <div class="text-center mb-4 sm:mb-6 md:mb-8">
+      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-4 sm:p-5 md:p-6 lg:p-8">
+        <div class="text-center mb-4 sm:mb-5 md:mb-6 lg:mb-8">
           <div
-            class="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-2 sm:mb-3 md:mb-4"
+            class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4 md:mb-5 shadow-lg"
           >
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -74,37 +74,37 @@
               />
             </svg>
           </div>
-          <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 px-2 break-words">
+          <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-5 px-2 sm:px-4 leading-tight break-words">
             {{ current.question }}
           </h2>
         </div>
 
         <!-- Choices -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
           <button
             v-for="(choice, index) in current.choices"
             :key="choice"
             @click="answer(choice)"
             :disabled="answering || hasAnswered"
-            class="group relative p-3 sm:p-4 md:p-5 lg:p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
+            class="group relative p-4 sm:p-5 md:p-6 lg:p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-3 sm:border-[3px] rounded-xl sm:rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[60px] sm:min-h-[70px] md:min-h-[80px] shadow-md hover:shadow-lg"
+            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;"
             :class="{
               'border-gray-200 hover:border-blue-500 hover:shadow-lg': !hasAnswered,
               'border-green-500 bg-green-50': hasAnswered && choice === selectedAnswer,
               'border-gray-300': hasAnswered && choice !== selectedAnswer,
             }"
           >
-            <div class="flex items-center justify-between">
-              <span class="text-sm sm:text-base md:text-lg font-medium text-gray-900 break-words text-left flex-1">{{ choice }}</span>
+            <div class="flex items-center justify-between gap-2 sm:gap-3 w-full">
+              <span class="text-base sm:text-lg md:text-xl font-semibold text-gray-900 break-words text-left flex-1 leading-snug">{{ choice }}</span>
               <div
-                class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 flex items-center justify-center transition-colors flex-shrink-0 ml-2"
+                class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border-3 sm:border-[3px] flex items-center justify-center transition-colors flex-shrink-0 shadow-sm"
                 :class="{
                   'border-gray-300 group-hover:border-blue-500': !hasAnswered,
                   'border-green-500': hasAnswered && choice === selectedAnswer,
                   'border-gray-300': hasAnswered && choice !== selectedAnswer,
                 }"
               >
-                <span class="text-sm font-bold text-gray-600">{{
+                <span class="text-sm sm:text-base md:text-lg font-bold text-gray-700">{{
                   String.fromCharCode(65 + index)
                 }}</span>
               </div>
@@ -112,19 +112,19 @@
           </button>
         </div>
 
-        <div v-if="hasAnswered" class="mt-4 text-center">
-          <p class="text-sm text-gray-600">Réponse enregistrée. En attente de la question suivante...</p>
+        <div v-if="hasAnswered" class="mt-4 sm:mt-5 md:mt-6 text-center p-3 sm:p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+          <p class="text-sm sm:text-base md:text-lg font-medium text-green-700">✓ Réponse enregistrée. En attente de la question suivante...</p>
         </div>
       </div>
 
       <!-- Player Info -->
-      <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-4">
+      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-3 sm:p-4 md:p-5">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2 sm:space-x-3">
             <div
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"
+              class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md"
             >
-              <span class="text-white font-bold">{{
+              <span class="text-white font-bold text-sm sm:text-base md:text-lg">{{
                 playerName ? playerName.charAt(0).toUpperCase() : '?'
               }}</span>
             </div>

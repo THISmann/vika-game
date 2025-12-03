@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-4 sm:py-8 md:py-12 px-4 sm:px-6">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-3 sm:py-4 md:py-6 lg:py-8 px-3 sm:px-4 md:px-6">
     <!-- Étape 1: Entrer le code -->
     <div v-if="step === 1" class="max-w-md w-full">
-      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8">
-        <div class="text-center mb-8">
-          <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 sm:mb-6 animate-pulse">
-            <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 p-5 sm:p-6 md:p-8">
+        <div class="text-center mb-6 sm:mb-8">
+          <div class="mx-auto flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4 md:mb-6 animate-pulse shadow-lg">
+            <svg class="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -14,13 +14,13 @@
               />
             </svg>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Entrer le code de la partie</h2>
-          <p class="text-xs sm:text-sm text-gray-600">Demandez le code à l'administrateur</p>
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 mb-2 sm:mb-3 px-2">Entrer le code de la partie</h2>
+          <p class="text-xs sm:text-sm md:text-base text-gray-600 px-2">Demandez le code à l'administrateur</p>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-5 md:space-y-6">
           <div>
-            <label for="game-code" class="block text-sm font-medium text-gray-700 mb-3">
+            <label for="game-code" class="block text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3">
               Code de la partie
             </label>
             <input
@@ -30,7 +30,7 @@
               required
               maxlength="6"
               autofocus
-              class="appearance-none relative block w-full px-4 sm:px-6 py-3 sm:py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-2xl sm:text-3xl font-mono tracking-widest uppercase bg-gray-50"
+              class="appearance-none relative block w-full px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 border-3 sm:border-[3px] border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-2xl sm:text-3xl md:text-4xl font-mono tracking-widest uppercase bg-gray-50 shadow-inner"
               placeholder="ABC123"
               @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
             />
@@ -46,7 +46,7 @@
             @click.prevent="verifyGameCode"
             @touchstart.prevent.stop="verifyGameCode"
             @mousedown.prevent
-            class="group relative w-full flex justify-center py-3 sm:py-4 px-4 border border-transparent text-sm sm:text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            class="group relative w-full flex justify-center py-4 sm:py-5 md:py-6 px-4 border border-transparent text-base sm:text-lg md:text-xl font-semibold rounded-xl sm:rounded-2xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px]"
             style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;"
           >
             <span v-if="verifyingCode" class="absolute left-0 inset-y-0 flex items-center pl-4">
