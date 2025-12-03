@@ -255,27 +255,43 @@ export default {
         // Passer à l'étape 3 (attente)
         this.step = 3
 
-        // Se connecter au WebSocket
-        this.socket = io(API_CONFIG.GAME_SERVICE)
+        // Se connecter au WebSocket avec options de reconnexion
+        this.socket = io(API_CONFIG.GAME_SERVICE, {
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 5
+        })
         
-        // Enregistrer le joueur
-        this.socket.emit('register', res.data.id)
+        // Attendre que la connexion soit établie
+        this.socket.on('connect', () => {
+          console.log('WebSocket connected, registering player:', res.data.id)
+          // Enregistrer le joueur une fois connecté
+          this.socket.emit('register', res.data.id)
+        })
 
         // Écouter le démarrage du jeu
-        this.socket.on('game:started', () => {
-          // Rediriger vers le quiz
+        this.socket.on('game:started', (data) => {
+          console.log('Game started event received:', data)
+          // Rediriger vers le quiz immédiatement
           this.$router.push('/player/quiz')
         })
 
-        this.socket.on('question:next', () => {
+        this.socket.on('question:next', (data) => {
+          console.log('Question next event received:', data)
           // Rediriger vers le quiz si une question arrive
           this.$router.push('/player/quiz')
         })
 
         this.socket.on('error', (data) => {
+          console.error('WebSocket error:', data)
           this.error = data.message
           this.step = 2
         })
+
+        // Si la connexion est déjà établie, enregistrer immédiatement
+        if (this.socket.connected) {
+          this.socket.emit('register', res.data.id)
+        }
 
       } catch (err) {
         if (err.response && err.response.status === 409) {

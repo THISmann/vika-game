@@ -253,8 +253,10 @@ export default {
       }, 3000)
     })
 
-    this.socket.on('game:started', () => {
+    this.socket.on('game:started', (data) => {
+      console.log('Game started event received in QuizPlay:', data)
       this.gameStarted = true
+      // Charger l'état du jeu immédiatement
       this.loadGameState()
     })
 
@@ -264,6 +266,7 @@ export default {
     })
 
     this.socket.on('question:next', (data) => {
+      console.log('Question next received in QuizPlay:', data)
       this.current = data.question
       this.currentQuestionIndex = data.questionIndex
       this.totalQuestions = data.totalQuestions
@@ -271,11 +274,23 @@ export default {
       this.questionDuration = data.duration
       this.hasAnswered = false
       this.selectedAnswer = null
+      this.gameStarted = true
+      this.loading = false
       this.startTimer()
     })
 
+    // Charger l'état du jeu immédiatement
     await this.loadGameState()
-    this.loading = false
+    
+    // Si le jeu a déjà commencé et qu'il y a une question, l'afficher
+    if (this.gameStarted && this.current) {
+      this.loading = false
+    } else if (this.gameStarted && !this.current) {
+      // Le jeu a commencé mais on n'a pas encore la question, attendre l'événement
+      this.loading = false
+    } else {
+      this.loading = false
+    }
   },
   beforeUnmount() {
     if (this.timerInterval) {
