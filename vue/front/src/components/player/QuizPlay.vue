@@ -241,13 +241,32 @@ export default {
     }
 
     // Connecter au WebSocket
-    // En production, utiliser l'URL de base pour que Socket.io passe par le proxy Nginx
-    const wsUrl = import.meta.env.PROD 
+    // Détecter si on est en production (pas localhost)
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    const wsUrl = isProduction 
       ? `${window.location.protocol}//${window.location.host}`
       : API_CONFIG.GAME_SERVICE
+    
+    console.log('Connecting to WebSocket:', wsUrl, 'isProduction:', isProduction)
+    
     this.socket = io(wsUrl, {
       path: '/socket.io',
-      transports: ['polling', 'websocket']
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    })
+    
+    this.socket.on('connect', () => {
+      console.log('✅ WebSocket connected:', this.socket.id)
+    })
+    
+    this.socket.on('connect_error', (error) => {
+      console.error('❌ WebSocket connection error:', error)
+    })
+    
+    this.socket.on('disconnect', (reason) => {
+      console.warn('⚠️ WebSocket disconnected:', reason)
     })
     
     // Enregistrer le joueur
@@ -261,11 +280,18 @@ export default {
     })
 
     this.socket.on('game:started', (data) => {
-      console.log('Game started event received in QuizPlay:', data)
+      console.log('🎮 Game started event received in QuizPlay:', data)
       this.gameStarted = true
       // Charger l'état du jeu immédiatement
       this.loadGameState()
     })
+    
+    // Écouter tous les événements pour déboguer (si disponible)
+    if (this.socket.onAny) {
+      this.socket.onAny((eventName, ...args) => {
+        console.log('📡 Socket event received in QuizPlay:', eventName, args)
+      })
+    }
 
     this.socket.on('game:ended', async () => {
       this.gameEnded = true

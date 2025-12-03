@@ -35,7 +35,7 @@ app.use("/game", (req, res, next) => {
 const playersSockets = new Map();
 
 io.on("connection", (socket) => {
-  console.log("ws connected", socket.id);
+  console.log("✅ WebSocket client connected:", socket.id, "Total clients:", io.sockets.sockets.size);
 
   socket.on("register", async (playerId) => {
     try {

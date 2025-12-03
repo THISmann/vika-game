@@ -63,14 +63,14 @@
         <div class="text-center mb-8">
           <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-6">
             <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </div>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+        </div>
           <div class="mb-4">
             <div class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium mb-4">
               <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -81,18 +81,18 @@
           </div>
           <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
           <p class="text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
-        </div>
+      </div>
 
         <form @submit.prevent="registerPlayer" class="space-y-6">
-          <div>
+        <div>
             <label for="player-name" class="block text-sm font-medium text-gray-700 mb-3">
               Votre nom de joueur
-            </label>
-            <input
-              id="player-name"
-              v-model="name"
-              type="text"
-              required
+          </label>
+          <input
+            id="player-name"
+            v-model="name"
+            type="text"
+            required
               autofocus
               maxlength="20"
               class="appearance-none relative block w-full px-4 py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-lg bg-gray-50"
@@ -103,11 +103,11 @@
 
           <div v-if="gameStarted" class="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
             ⚠️ Le jeu a déjà commencé. Vous ne pourrez pas vous connecter.
-          </div>
+        </div>
 
           <div v-if="error" class="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {{ error }}
-          </div>
+          {{ error }}
+        </div>
 
           <div class="flex space-x-3">
             <button
@@ -117,17 +117,17 @@
             >
               ← Retour
             </button>
-            <button
-              type="submit"
+        <button
+          type="submit"
               :disabled="!name || name.trim().length < 2 || loading || gameStarted"
               class="flex-1 group relative flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
+        >
               <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-4">
-                <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </span>
+            </svg>
+          </span>
               {{ loading ? 'Inscription...' : 'Rejoindre la partie' }}
             </button>
           </div>
@@ -256,10 +256,14 @@ export default {
         this.step = 3
 
         // Se connecter au WebSocket avec options de reconnexion
-        // En production, utiliser l'URL de base pour que Socket.io passe par le proxy Nginx
-        const wsUrl = import.meta.env.PROD 
+        // Détecter si on est en production (pas localhost)
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+        const wsUrl = isProduction 
           ? `${window.location.protocol}//${window.location.host}`
           : API_CONFIG.GAME_SERVICE
+        
+        console.log('Connecting to WebSocket:', wsUrl, 'isProduction:', isProduction)
+        
         this.socket = io(wsUrl, {
           path: '/socket.io',
           transports: ['polling', 'websocket'],
@@ -270,23 +274,39 @@ export default {
         
         // Attendre que la connexion soit établie
         this.socket.on('connect', () => {
-          console.log('WebSocket connected, registering player:', res.data.id)
+          console.log('✅ WebSocket connected:', this.socket.id)
           // Enregistrer le joueur une fois connecté
+          console.log('Registering player:', res.data.id)
           this.socket.emit('register', res.data.id)
+        })
+        
+        this.socket.on('connect_error', (error) => {
+          console.error('❌ WebSocket connection error:', error)
         })
 
         // Écouter le démarrage du jeu
         this.socket.on('game:started', (data) => {
-          console.log('Game started event received:', data)
+          console.log('🎮 Game started event received in PlayerRegister:', data)
           // Rediriger vers le quiz immédiatement
-          this.$router.push('/player/quiz')
+          setTimeout(() => {
+            this.$router.push('/player/quiz')
+          }, 100)
         })
 
         this.socket.on('question:next', (data) => {
-          console.log('Question next event received:', data)
+          console.log('❓ Question next event received in PlayerRegister:', data)
           // Rediriger vers le quiz si une question arrive
+        setTimeout(() => {
           this.$router.push('/player/quiz')
+          }, 100)
         })
+        
+        // Écouter tous les événements pour déboguer (si disponible)
+        if (this.socket.onAny) {
+          this.socket.onAny((eventName, ...args) => {
+            console.log('📡 Socket event received:', eventName, args)
+          })
+        }
 
         this.socket.on('error', (data) => {
           console.error('WebSocket error:', data)

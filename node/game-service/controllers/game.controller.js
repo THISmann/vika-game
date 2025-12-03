@@ -291,12 +291,17 @@ exports.startGame = async (req, res) => {
       await gameState.setCurrentQuestion(firstQuestion.id, questionDurationMs);
       const newState = await gameState.getState();
 
+      // Compter les clients connectés avant d'émettre
+      const connectedClients = req.io.sockets.sockets.size;
+      console.log(`🚀 Starting game with ${connectedClients} connected clients`);
+
       // Émettre l'événement de début de jeu avec la première question
       req.io.emit("game:started", {
         questionIndex: newState.currentQuestionIndex,
         totalQuestions: questions.length,
         gameCode: newState.gameCode
       });
+      console.log("📢 Emitted 'game:started' event to all clients");
 
       req.io.emit("question:next", {
         question: {
@@ -309,9 +314,14 @@ exports.startGame = async (req, res) => {
         startTime: newState.questionStartTime,
         duration: newState.questionDuration
       });
+      console.log("📢 Emitted 'question:next' event to all clients");
 
       // Programmer le timer pour passer automatiquement à la question suivante
-      scheduleNextQuestion(req.io);
+      scheduleNextQuestion(req.io, questionDurationMs);
+      
+      console.log(`✅ Game started - all events emitted to ${connectedClients} clients`);
+    } else {
+      console.error("❌ Cannot start game: no questions or no io instance");
     }
 
     res.json({

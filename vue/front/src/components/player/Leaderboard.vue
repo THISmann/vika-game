@@ -169,13 +169,16 @@ export default {
     }
 
     // --- 2. Connect to Socket.IO
-    // En production, utiliser l'URL de base pour que Socket.io passe par le proxy Nginx
-    const wsUrl = import.meta.env.PROD 
+    // Détecter si on est en production (pas localhost)
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    const wsUrl = isProduction 
       ? `${window.location.protocol}//${window.location.host}`
       : API_CONFIG.GAME_SERVICE
+    
     this.socket = io(wsUrl, {
       path: '/socket.io',
-      transports: ['polling', 'websocket']
+      transports: ['polling', 'websocket'],
+      reconnection: true
     })
 
     // Optional: register player socket
