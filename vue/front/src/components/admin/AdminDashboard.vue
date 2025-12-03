@@ -235,16 +235,25 @@ export default {
     // Connecter au WebSocket
     // Détecter si on est en production (pas localhost)
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-    const wsUrl = isProduction 
-      ? `${window.location.protocol}//${window.location.host}`
-      : API_CONFIG.GAME_SERVICE
     
-    console.log('Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction)
+    // En production, utiliser exactement la même URL que la page actuelle (qui passe par le proxy Nginx)
+    let wsUrl
+    if (isProduction) {
+      wsUrl = `${window.location.protocol}//${window.location.host}`
+      console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
+    } else {
+      wsUrl = API_CONFIG.GAME_SERVICE
+      console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
+    }
+    
+    console.log('🔌 Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction, 'hostname:', window.location.hostname, 'port:', window.location.port)
     
     this.socket = io(wsUrl, {
       path: '/socket.io',
       transports: ['polling', 'websocket'],
-      reconnection: true
+      reconnection: true,
+      forceNew: false,
+      autoConnect: true
     })
     
     this.socket.on('connect', () => {

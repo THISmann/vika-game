@@ -22,7 +22,14 @@ const server = http.createServer(app);
 
 // Create websocket server
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: { 
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  path: "/socket.io/",
+  transports: ['polling', 'websocket'],
+  allowEIO3: true
 });
 
 // Import routes (but now we pass "io" to controllers)
