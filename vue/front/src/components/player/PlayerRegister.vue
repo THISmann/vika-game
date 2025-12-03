@@ -281,18 +281,25 @@ export default {
         // Écouter le démarrage du jeu
         socketService.on('game:started', (data) => {
           console.log('🎮 Game started event received in PlayerRegister:', data)
-          // Rediriger vers le quiz immédiatement
-          setTimeout(() => {
-            this.$router.push('/player/quiz')
-          }, 100)
+          // Rediriger vers le quiz immédiatement (sans délai pour éviter de manquer la question)
+          this.$router.push('/player/quiz').catch(err => {
+            // Ignorer l'erreur de navigation si on est déjà sur la route
+            if (err.name !== 'NavigationDuplicated') {
+              console.error('Navigation error:', err)
+            }
+          })
         }, componentId)
 
         socketService.on('question:next', (data) => {
           console.log('❓ Question next event received in PlayerRegister:', data)
-          // Rediriger vers le quiz si une question arrive
-          setTimeout(() => {
-            this.$router.push('/player/quiz')
-          }, 100)
+          // Rediriger vers le quiz immédiatement si une question arrive
+          // Le composant QuizPlay chargera la question via le polling ou recevra l'événement
+          this.$router.push('/player/quiz').catch(err => {
+            // Ignorer l'erreur de navigation si on est déjà sur la route
+            if (err.name !== 'NavigationDuplicated') {
+              console.error('Navigation error:', err)
+            }
+          })
         }, componentId)
 
         socketService.on('error', (data) => {

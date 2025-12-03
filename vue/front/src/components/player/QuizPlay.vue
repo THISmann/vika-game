@@ -335,14 +335,33 @@ export default {
     // Charger l'état du jeu immédiatement
     await this.loadGameState()
     
-    // Si le jeu a déjà commencé et qu'il y a une question, l'afficher
+    // Si le jeu a déjà commencé, forcer le chargement de la question si elle n'est pas déjà chargée
+    if (this.gameStarted && !this.current) {
+      console.log('🔄 Game already started but no question, loading immediately...')
+      await this.loadCurrentQuestion()
+      // Si toujours pas de question après le chargement, réessayer une fois
+      if (!this.current) {
+        console.log('🔄 Still no question, retrying loadCurrentQuestion()...')
+        await new Promise(resolve => setTimeout(resolve, 500)) // Attendre 500ms
+        await this.loadCurrentQuestion()
+      }
+    }
+    
+    // Mettre à jour l'état de chargement
     if (this.gameStarted && this.current) {
       this.loading = false
+      console.log('✅ Game started and question loaded on mount')
+      // Démarrer le timer si on a une question
+      if (this.questionStartTime) {
+        this.startTimer()
+      }
     } else if (this.gameStarted && !this.current) {
-      // Le jeu a commencé mais on n'a pas encore la question, attendre l'événement
+      // Le jeu a commencé mais on n'a pas encore la question, le polling va la charger
       this.loading = false
+      console.log('⏳ Game started but waiting for question (polling will load it)...')
     } else {
       this.loading = false
+      console.log('⏳ Waiting for game to start...')
     }
     
     // Polling périodique pour vérifier l'état du jeu (CRITIQUE: les événements Socket.io ne sont pas partagés entre pods Kubernetes)
@@ -362,20 +381,24 @@ export default {
       try {
         const wasGameStarted = this.gameStarted
         const hadCurrent = !!this.current
+        const hadCurrentId = this.current?.id
         
-        // Charger l'état du jeu
+        // Charger l'état du jeu (cela va aussi charger la question si nécessaire)
         await this.loadGameState()
         
-        // Si le jeu vient de démarrer, charger immédiatement la question
-        if (this.gameStarted && !wasGameStarted) {
-          console.log('🔄 Game started detected via polling, loading question...')
+        // FORCER le chargement de la question si le jeu a démarré mais qu'on n'a pas de question
+        // Cela peut arriver si loadGameState() n'a pas réussi à charger la question
+        if (this.gameStarted && !this.current) {
+          console.log('🔄 Game started but no question after loadGameState(), forcing load...')
           await this.loadCurrentQuestion()
         }
         
-        // Si le jeu a démarré mais qu'on n'a pas encore la question, la charger
-        if (this.gameStarted && !this.current) {
-          console.log('🔄 Game started but no question, loading...')
-          await this.loadCurrentQuestion()
+        // Si le jeu vient de démarrer, s'assurer que la question est chargée
+        if (this.gameStarted && !wasGameStarted) {
+          console.log('🔄 Game started detected via polling, ensuring question is loaded...')
+          if (!this.current) {
+            await this.loadCurrentQuestion()
+          }
         }
         
         // Si on a maintenant la question et qu'on ne l'avait pas avant, démarrer le timer
@@ -384,13 +407,14 @@ export default {
           this.startTimer()
         }
         
-        // Le polling continue même si gameStarted=true tant qu'on n'a pas de question
-        // Il s'arrête seulement si le jeu est terminé ou si on a une question ET que le jeu a démarré
-        // Mais on continue le polling pour détecter les nouvelles questions
-        if (this.gameStarted && this.current) {
-          // On a une question, mais on continue le polling pour les questions suivantes
-          // Le polling s'arrêtera seulement quand le jeu est terminé
+        // Si l'ID de la question a changé, redémarrer le timer
+        if (this.current && hadCurrentId && hadCurrentId !== this.current.id) {
+          console.log('🔄 Question ID changed, restarting timer...')
+          this.startTimer()
         }
+        
+        // Le polling continue pour détecter les nouvelles questions et les changements d'état
+        // Il s'arrête seulement quand le jeu est terminé
       } catch (err) {
         console.error('❌ Error polling game state:', err)
         // Ne pas arrêter le polling en cas d'erreur, continuer à essayer
@@ -415,21 +439,38 @@ export default {
         const state = res.data
         
         const wasGameStarted = this.gameStarted
+        const hadCurrentQuestionId = this.current?.id
+        
         this.gameStarted = state.isStarted
         this.currentQuestionIndex = state.currentQuestionIndex
         this.questionStartTime = state.questionStartTime
         this.questionDuration = state.questionDuration || 30000
 
-        // Si le jeu vient de démarrer ou si le jeu a démarré mais qu'on n'a pas la question
+        // Si le jeu a démarré et qu'il y a une question actuelle
         if (state.isStarted && state.currentQuestionId) {
-          if (!this.current || (!wasGameStarted && state.isStarted)) {
-            // Charger la question si on ne l'a pas ou si le jeu vient de démarrer
-            console.log('🔄 Loading current question in loadGameState()')
+          // FORCER le chargement si :
+          // 1. On n'a pas de question actuelle
+          // 2. Le jeu vient de démarrer (transition de false à true)
+          // 3. L'ID de la question a changé (nouvelle question)
+          const questionIdChanged = hadCurrentQuestionId && hadCurrentQuestionId !== state.currentQuestionId
+          const shouldLoad = !this.current || !wasGameStarted || questionIdChanged
+          
+          if (shouldLoad) {
+            console.log('🔄 Loading current question in loadGameState()', {
+              reason: !this.current ? 'no current' : !wasGameStarted ? 'game just started' : 'question ID changed',
+              currentQuestionId: state.currentQuestionId,
+              hadCurrentId: hadCurrentQuestionId
+            })
             await this.loadCurrentQuestion()
           }
+        } else if (state.isStarted && !state.currentQuestionId) {
+          // Le jeu a démarré mais pas encore de question (transition)
+          console.log('ℹ️ Game started but no current question yet, waiting...')
+          this.loading = false
         }
       } catch (err) {
-        console.error('Erreur chargement état:', err)
+        console.error('❌ Erreur chargement état:', err)
+        // Ne pas mettre gameStarted à false en cas d'erreur, garder l'état précédent
       }
     },
     
@@ -466,13 +507,12 @@ export default {
               this.gameStarted = true
               this.loading = false
               
-              // Démarrer le timer seulement si on a un startTime valide
-              if (this.questionStartTime) {
-                this.startTimer()
-                console.log('✅ Current question loaded and timer started:', question.question)
-              } else {
-                console.warn('⚠️ Question loaded but no startTime, waiting for next question...')
-              }
+              // Toujours démarrer le timer (il calculera le temps restant même sans startTime)
+              this.startTimer()
+              console.log('✅ Current question loaded and timer started:', question.question, {
+                startTime: this.questionStartTime,
+                duration: this.questionDuration
+              })
             } else {
               console.warn('⚠️ Question not found in quiz list:', state.currentQuestionId)
               // Ne pas mettre current à null, garder l'état précédent
