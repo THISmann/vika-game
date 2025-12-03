@@ -211,6 +211,40 @@ exports.getConnectedPlayersCount = async (req, res) => {
   }
 };
 
+exports.getConnectedPlayers = async (req, res) => {
+  try {
+    const playerIds = await gameState.getConnectedPlayers();
+    
+    // Récupérer les noms des joueurs depuis auth-service
+    const axios = require('axios');
+    const services = require('../config/services');
+    
+    const players = [];
+    for (const playerId of playerIds) {
+      try {
+        const playerRes = await axios.get(`${services.AUTH_SERVICE}/auth/players/${playerId}`);
+        if (playerRes.data) {
+          players.push({
+            id: playerId,
+            name: playerRes.data.name || 'Joueur anonyme'
+          });
+        }
+      } catch (err) {
+        // Si le joueur n'existe pas, l'ajouter quand même avec un nom par défaut
+        players.push({
+          id: playerId,
+          name: 'Joueur anonyme'
+        });
+      }
+    }
+    
+    res.json({ players, count: players.length });
+  } catch (error) {
+    console.error("Error getting connected players:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // Variable globale pour stocker le timer
 let questionTimer = null;
 

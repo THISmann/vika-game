@@ -7,7 +7,7 @@
             to="/player/register"
             class="text-2xl font-bold text-white hover:text-yellow-300 transition-colors"
           >
-            🎮 IntelectGame
+            🎮 Vika-Game
           </router-link>
         </div>
 

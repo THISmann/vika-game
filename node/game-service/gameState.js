@@ -136,6 +136,16 @@ module.exports = {
     }
   },
   
+  getConnectedPlayers: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      return state?.connectedPlayers || [];
+    } catch (error) {
+      console.error("Error getting connected players:", error);
+      return [];
+    }
+  },
+  
   startGame: async () => {
     try {
       const updates = {

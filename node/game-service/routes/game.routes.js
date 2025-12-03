@@ -13,6 +13,7 @@ router.get("/state", gameController.getGameState);
 router.get("/code", gameController.getGameCode);
 router.post("/verify-code", gameController.verifyGameCode);
 router.get("/players/count", gameController.getConnectedPlayersCount);
+router.get("/players", gameController.getConnectedPlayers);
 router.post("/start", gameController.startGame);
 router.post("/next", gameController.nextQuestion);
 router.post("/end", gameController.endGame);

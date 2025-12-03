@@ -71,6 +71,7 @@ export const API_URLS = {
     code: `${API_CONFIG.GAME_SERVICE}/code`,
     verifyCode: `${API_CONFIG.GAME_SERVICE}/verify-code`,
     playersCount: `${API_CONFIG.GAME_SERVICE}/players/count`,
+    players: `${API_CONFIG.GAME_SERVICE}/players`,
     start: `${API_CONFIG.GAME_SERVICE}/start`,
     next: `${API_CONFIG.GAME_SERVICE}/next`,
     end: `${API_CONFIG.GAME_SERVICE}/end`,

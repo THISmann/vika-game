@@ -21,17 +21,17 @@
     </div>
 
     <!-- Leaderboard List -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
       <!-- Loading State -->
-      <div v-if="loading" class="p-12 text-center">
+      <div v-if="loading" class="p-8 sm:p-12 text-center">
         <div
           class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"
         ></div>
-        <p class="text-gray-600">Chargement du classement...</p>
+        <p class="text-sm sm:text-base text-gray-600">Chargement du classement...</p>
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="leaderboard.length === 0" class="p-12 text-center">
+      <div v-else-if="leaderboard.length === 0" class="p-8 sm:p-12 text-center">
         <svg
           class="mx-auto h-12 w-12 text-gray-400 mb-4"
           fill="none"
@@ -52,8 +52,8 @@
       <div v-else class="divide-y divide-gray-200">
         <div
           v-for="(player, index) in leaderboard"
-          :key="player.playerId"
-          class="p-6 hover:bg-gray-50 transition-colors"
+          :key="player.playerId || index"
+          class="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
           :class="{
             'bg-gradient-to-r from-yellow-50 to-orange-50': index === 0,
             'bg-gradient-to-r from-gray-50 to-slate-50': index === 1,
@@ -64,7 +64,7 @@
             <div class="flex items-center space-x-4 flex-1">
               <!-- Rank -->
               <div
-                class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
+                class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg"
                 :class="{
                   'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': index === 0,
                   'bg-gradient-to-br from-gray-300 to-gray-400 text-white': index === 1,
@@ -82,7 +82,7 @@
               <div class="flex-1">
                 <div class="flex items-center space-x-3">
                   <div
-                    class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white"
+                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base"
                     :class="{
                       'bg-gradient-to-br from-yellow-400 to-orange-500': index === 0,
                       'bg-gradient-to-br from-gray-400 to-gray-500': index === 1,
@@ -93,10 +93,10 @@
                     {{ player.playerName ? player.playerName.charAt(0).toUpperCase() : '?' }}
                   </div>
                   <div>
-                    <p class="font-semibold text-gray-900 text-lg">
+                    <p class="font-semibold text-gray-900 text-base sm:text-lg truncate">
                       {{ player.playerName || 'Joueur anonyme' }}
                     </p>
-                    <p class="text-sm text-gray-500">
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">
                       {{ player.playerId }}
                     </p>
                   </div>
@@ -104,10 +104,10 @@
               </div>
 
               <!-- Score -->
-              <div class="text-right">
-                <div class="flex items-center space-x-2">
+              <div class="text-right flex-shrink-0">
+                <div class="flex items-center space-x-1 sm:space-x-2">
                   <span
-                    class="text-2xl font-bold"
+                    class="text-xl sm:text-2xl font-bold"
                     :class="{
                       'text-yellow-600': index === 0,
                       'text-gray-600': index === 1,
@@ -127,16 +127,16 @@
     </div>
 
     <!-- Actions -->
-    <div class="mt-6 flex justify-center space-x-4">
+    <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
       <router-link
         to="/player/quiz"
-        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+        class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 text-center"
       >
         Rejouer
       </router-link>
       <router-link
         to="/player/register"
-        class="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all"
+        class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all text-center"
       >
         Nouveau joueur
       </router-link>
@@ -161,9 +161,14 @@ export default {
     // --- 1. Load initial leaderboard from API
     try {
       const res = await axios.get(API_URLS.game.leaderboard)
-      this.leaderboard = res.data
+      // S'assurer que les données sont un tableau
+      this.leaderboard = Array.isArray(res.data) ? res.data : []
+      // Trier par score décroissant
+      this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
+      console.log('✅ Leaderboard loaded:', this.leaderboard)
     } catch (err) {
-      console.error('Erreur chargement leaderboard:', err)
+      console.error('❌ Erreur chargement leaderboard:', err)
+      this.leaderboard = []
     } finally {
       this.loading = false
     }
@@ -200,23 +205,35 @@ export default {
     this.socket.on('score:update', (data) => {
       const entry = this.leaderboard.find((p) => p.playerId === data.playerId)
       if (entry) {
-        entry.score = data.score
+        entry.score = data.score || 0
       } else {
         this.leaderboard.push({
           playerId: data.playerId,
-          playerName: data.playerName || 'Joueur',
-          score: data.score,
+          playerName: data.playerName || 'Joueur anonyme',
+          score: data.score || 0,
         })
       }
 
       // Sort descending
-      this.leaderboard.sort((a, b) => b.score - a.score)
+      this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
     })
 
     // Optional: listen to leaderboard broadcast
     this.socket.on('leaderboard:update', (scores) => {
-      this.leaderboard = scores.sort((a, b) => b.score - a.score)
+      this.leaderboard = Array.isArray(scores) ? scores : []
+      this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
     })
+    
+    // Polling périodique pour mettre à jour le leaderboard
+    setInterval(async () => {
+      try {
+        const res = await axios.get(API_URLS.game.leaderboard)
+        this.leaderboard = Array.isArray(res.data) ? res.data : []
+        this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
+      } catch (err) {
+        console.error('❌ Erreur polling leaderboard:', err)
+      }
+    }, 3000) // Toutes les 3 secondes
   },
   beforeUnmount() {
     if (this.socket) {
