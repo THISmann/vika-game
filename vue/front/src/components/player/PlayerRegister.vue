@@ -209,9 +209,11 @@ export default {
         if (res.data.valid) {
           this.codeVerified = true
           this.gameStarted = res.data.isStarted
+          // Si le jeu a commencé, afficher un message mais permettre quand même l'inscription
+          // Le joueur pourra se connecter s'il était déjà enregistré
           if (this.gameStarted) {
-            this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
-            return
+            this.error = 'Le jeu a déjà commencé. Vous pouvez vous inscrire mais vous ne pourrez rejoindre que si vous étiez déjà enregistré.'
+            // Permettre quand même de continuer
           }
           // Passer à l'étape 2
           this.step = 2
@@ -318,9 +320,15 @@ export default {
         }
 
         this.socket.on('error', (data) => {
-          console.error('WebSocket error:', data)
-          this.error = data.message
-          this.step = 2
+          console.error('❌ Socket error:', data)
+          // Si c'est une erreur de jeu déjà commencé, permettre la reconnexion
+          if (data.code === 'GAME_ALREADY_STARTED') {
+            this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
+            this.step = 2 // Go back to name step
+          } else {
+            this.error = data.message || 'Erreur de connexion'
+            this.step = 2 // Go back to name step on error
+          }
         })
 
         // Si la connexion est déjà établie, enregistrer immédiatement

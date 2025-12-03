@@ -8,6 +8,8 @@ const path = require("path");
 const cors = require('cors');
 const gameState = require("./gameState");
 const connectDB = require("./config/database");
+const axios = require("axios");
+const services = require("./config/services");
 
 // Enable CORS for all routes
 app.use(cors());
@@ -26,13 +28,19 @@ const io = new Server(server, {
   cors: { 
     origin: "*",
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
   },
   path: "/socket.io",
   transports: ['polling', 'websocket'],
   allowEIO3: true,
   pingTimeout: 60000,
-  pingInterval: 25000
+  pingInterval: 25000,
+  // Désactiver la vérification stricte pour éviter les erreurs 400
+  allowRequest: (req, callback) => {
+    // Accepter toutes les requêtes (la vérification sera faite dans les handlers)
+    callback(null, true);
+  }
 });
 
 // Import routes (but now we pass "io" to controllers)
@@ -51,15 +59,26 @@ io.on("connection", (socket) => {
     try {
       const state = await gameState.getState();
       
-      // Vérifier si le jeu a déjà commencé
-      if (state.isStarted) {
-        socket.emit("error", { message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter." });
+      // Vérifier si le joueur est déjà dans la liste des joueurs connectés
+      const isAlreadyConnected = state.connectedPlayers && state.connectedPlayers.includes(playerId);
+      
+      // Si le jeu a déjà commencé, vérifier si le joueur était déjà enregistré
+      if (state.isStarted && !isAlreadyConnected) {
+        socket.emit("error", { 
+          message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.",
+          code: "GAME_ALREADY_STARTED"
+        });
         return;
       }
       
+      // Enregistrer le socket du joueur
       playersSockets.set(playerId, socket.id);
       socket.playerId = playerId;
-      await gameState.addConnectedPlayer(playerId);
+      
+      // Ajouter le joueur à la liste des connectés seulement s'il n'y est pas déjà
+      if (!isAlreadyConnected) {
+        await gameState.addConnectedPlayer(playerId);
+      }
       
       // Envoyer le nombre de joueurs connectés à tous
       const connectedCount = await gameState.getConnectedPlayersCount();
@@ -70,7 +89,46 @@ io.on("connection", (socket) => {
       // Envoyer le code de jeu au joueur qui vient de se connecter
       socket.emit("game:code", { gameCode: currentState.gameCode });
       
-      console.log("player registered:", playerId, "Total:", connectedCount);
+      // Si le jeu a déjà commencé, envoyer l'état actuel au joueur qui se reconnecte
+      if (currentState.isStarted) {
+        console.log("🔄 Player reconnecting during active game:", playerId);
+        
+        // Envoyer l'événement de jeu démarré
+        socket.emit("game:started", {
+          questionIndex: currentState.currentQuestionIndex,
+          totalQuestions: 0, // Sera mis à jour si nécessaire
+          gameCode: currentState.gameCode
+        });
+        
+        // Si une question est active, envoyer la question actuelle
+        if (currentState.currentQuestionId) {
+          try {
+            const axios = require("axios");
+            const services = require("./config/services");
+            const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
+            const questions = quiz.data;
+            const currentQuestion = questions.find(q => q.id === currentState.currentQuestionId);
+            
+            if (currentQuestion) {
+              socket.emit("question:next", {
+                question: {
+                  id: currentQuestion.id,
+                  question: currentQuestion.question,
+                  choices: currentQuestion.choices
+                },
+                questionIndex: currentState.currentQuestionIndex,
+                totalQuestions: questions.length,
+                startTime: currentState.questionStartTime,
+                duration: currentState.questionDuration
+              });
+            }
+          } catch (err) {
+            console.error("Error fetching current question for reconnecting player:", err);
+          }
+        }
+      }
+      
+      console.log("✅ Player registered:", playerId, "Total:", connectedCount, "Game started:", currentState.isStarted);
     } catch (error) {
       console.error("Error registering player:", error);
       socket.emit("error", { message: "Erreur lors de l'enregistrement" });

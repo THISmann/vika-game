@@ -183,10 +183,17 @@ exports.verifyGameCode = async (req, res) => {
     const state = await gameState.getState();
     const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase();
     
+    // Si le code est valide mais le jeu a commencé, permettre quand même la vérification
+    // Le joueur pourra se connecter s'il était déjà enregistré
     res.json({ 
       valid: isValid,
       gameCode: state.gameCode,
-      isStarted: state.isStarted
+      isStarted: state.isStarted,
+      message: isValid 
+        ? (state.isStarted 
+            ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
+            : "Code valide. Vous pouvez continuer.")
+        : "Code invalide"
     });
   } catch (error) {
     console.error("Error verifying game code:", error);
