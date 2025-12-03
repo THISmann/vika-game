@@ -1,46 +1,5 @@
-const fs = require("fs");
-const path = require("path");
 const { generateToken } = require("../utils/token");
-
-const usersPath = path.join(__dirname, "../data/users.json");
-
-// Ensure data directory exists
-const dataDir = path.dirname(usersPath);
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-}
-
-function readUsers() {
-    try {
-        // Check if file exists, if not create it with empty array
-        if (!fs.existsSync(usersPath)) {
-            fs.writeFileSync(usersPath, JSON.stringify([], null, 2));
-            return [];
-        }
-        
-        const data = fs.readFileSync(usersPath, 'utf8');
-        
-        // If file is empty, return empty array
-        if (!data.trim()) {
-            return [];
-        }
-        
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading users file:', error);
-        // Return empty array if there's any parsing error
-        return [];
-    }
-}
-
-function writeUsers(data) {
-    try {
-        fs.writeFileSync(usersPath, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error('Error writing users file:', error);
-        throw error; // Re-throw to handle in calling functions
-    }
-}
+const User = require("../models/User");
 
 exports.adminLogin = (req, res) => {
     const { username, password } = req.body;
@@ -52,53 +11,49 @@ exports.adminLogin = (req, res) => {
     res.status(401).json({ error: "Invalid credentials" });
 };
 
-exports.registerPlayer = (req, res) => {
+exports.registerPlayer = async (req, res) => {
     const { name } = req.body;
 
     if (!name) return res.status(400).json({ error: "Name is required" });
 
     try {
-        const users = readUsers();
-        
         // Check if player name already exists
-        const existingPlayer = users.find(user => user.name === name);
+        const existingPlayer = await User.findOne({ name: name.trim() });
         if (existingPlayer) {
             return res.status(409).json({ error: "Player name already exists" });
         }
 
-        const newUser = { 
-            id: "p" + Date.now(), 
-            name: name.trim(), 
-            score: 0 
-        };
-        users.push(newUser);
-        writeUsers(users);
+        const newUser = new User({
+            id: "p" + Date.now(),
+            name: name.trim(),
+            score: 0
+        });
 
-        res.status(201).json(newUser);
+        await newUser.save();
+        res.status(201).json(newUser.toObject());
     } catch (error) {
         console.error('Error registering player:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
-exports.getPlayer = (req, res) => {
+exports.getPlayer = async (req, res) => {
     try {
-        const users = readUsers();
-        const player = users.find(u => u.id === req.params.id);
+        const player = await User.findOne({ id: req.params.id });
 
         if (!player) return res.status(404).json({ error: "Player not found" });
 
-        res.json(player);
+        res.json(player.toObject());
     } catch (error) {
         console.error('Error getting player:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
 
-exports.getAllPlayers = (req, res) => {
+exports.getAllPlayers = async (req, res) => {
     try {
-        const users = readUsers();
-        res.json(users);
+        const users = await User.find({});
+        res.json(users.map(user => user.toObject()));
     } catch (error) {
         console.error('Error getting all players:', error);
         res.status(500).json({ error: "Internal server error" });

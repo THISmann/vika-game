@@ -1,8 +1,5 @@
-// gameState.js - Gestion de l'état du jeu
-const fs = require("fs");
-const path = require("path");
-
-const gameStatePath = path.join(__dirname, "../data/gameState.json");
+// gameState.js - Gestion de l'état du jeu avec MongoDB
+const GameState = require("./models/GameState");
 
 // Fonction pour générer un code de jeu unique (6 caractères alphanumériques)
 function generateGameCode() {
@@ -14,151 +11,225 @@ function generateGameCode() {
   return code;
 }
 
-// État initial du jeu
-const initialState = {
-  isStarted: false,
-  currentQuestionIndex: -1,
-  currentQuestionId: null,
-  questionStartTime: null,
-  questionDuration: 30000, // 30 secondes par défaut
-  connectedPlayers: [],
-  gameSessionId: null,
-  gameCode: null, // Code de jeu pour les joueurs
-  answers: {}, // { playerId: { questionId: answer, ... } }
-  results: {} // { questionId: { correctAnswer, playerResults: [] } }
-};
-
-function readGameState() {
-  try {
-    if (fs.existsSync(gameStatePath)) {
-      return JSON.parse(fs.readFileSync(gameStatePath));
-    }
-  } catch (err) {
-    console.error("Error reading game state:", err);
-  }
-  return { ...initialState };
-}
-
-function writeGameState(state) {
-  try {
-    // Ensure directory exists
-    const dir = path.dirname(gameStatePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(gameStatePath, JSON.stringify(state, null, 2));
-  } catch (err) {
-    console.error("Error writing game state:", err);
-  }
-}
-
-let gameState = readGameState();
-
-// Réinitialiser l'état si nécessaire
-if (!gameState.gameSessionId) {
-  gameState.gameSessionId = `session_${Date.now()}`;
-  if (!gameState.gameCode) {
-    gameState.gameCode = generateGameCode();
-  }
-  writeGameState(gameState);
+// Convertir le document MongoDB en objet simple
+function toPlainObject(doc) {
+  if (!doc) return null;
+  return doc.toObject();
 }
 
 module.exports = {
-  getState: () => ({ ...gameState }),
-  
-  setState: (updates) => {
-    gameState = { ...gameState, ...updates };
-    writeGameState(gameState);
-    return gameState;
-  },
-  
-  resetGame: () => {
-    gameState = {
-      ...initialState,
-      gameSessionId: `session_${Date.now()}`,
-      gameCode: generateGameCode(),
-      connectedPlayers: [],
-      answers: {},
-      results: {}
-    };
-    writeGameState(gameState);
-    return gameState;
-  },
-  
-  generateNewGameCode: () => {
-    gameState.gameCode = generateGameCode();
-    writeGameState(gameState);
-    return gameState.gameCode;
-  },
-  
-  getGameCode: () => gameState.gameCode,
-  
-  addConnectedPlayer: (playerId) => {
-    if (!gameState.connectedPlayers.includes(playerId)) {
-      gameState.connectedPlayers.push(playerId);
-      writeGameState(gameState);
+  getState: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      return toPlainObject(state) || {
+        isStarted: false,
+        currentQuestionIndex: -1,
+        currentQuestionId: null,
+        questionStartTime: null,
+        questionDuration: 30000,
+        connectedPlayers: [],
+        gameSessionId: null,
+        gameCode: null,
+        answers: {},
+        results: {}
+      };
+    } catch (error) {
+      console.error("Error getting game state:", error);
+      return {
+        isStarted: false,
+        currentQuestionIndex: -1,
+        currentQuestionId: null,
+        questionStartTime: null,
+        questionDuration: 30000,
+        connectedPlayers: [],
+        gameSessionId: null,
+        gameCode: null,
+        answers: {},
+        results: {}
+      };
     }
   },
   
-  removeConnectedPlayer: (playerId) => {
-    gameState.connectedPlayers = gameState.connectedPlayers.filter(p => p !== playerId);
-    writeGameState(gameState);
-  },
-  
-  getConnectedPlayersCount: () => gameState.connectedPlayers.length,
-  
-  startGame: () => {
-    gameState.isStarted = true;
-    gameState.currentQuestionIndex = 0;
-    gameState.answers = {};
-    gameState.results = {};
-    writeGameState(gameState);
-    return gameState;
-  },
-  
-  setCurrentQuestion: (questionId, duration = 30000) => {
-    gameState.currentQuestionId = questionId;
-    gameState.questionStartTime = Date.now();
-    gameState.questionDuration = duration;
-    writeGameState(gameState);
-    return gameState;
-  },
-  
-  nextQuestion: () => {
-    gameState.currentQuestionIndex++;
-    gameState.currentQuestionId = null;
-    gameState.questionStartTime = null;
-    writeGameState(gameState);
-    return gameState;
-  },
-  
-  saveAnswer: (playerId, questionId, answer) => {
-    if (!gameState.answers[playerId]) {
-      gameState.answers[playerId] = {};
+  setState: async (updates) => {
+    try {
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error setting game state:", error);
+      throw error;
     }
-    gameState.answers[playerId][questionId] = answer;
-    writeGameState(gameState);
-    return gameState;
   },
   
-  saveQuestionResult: (questionId, correctAnswer, playerResults) => {
-    gameState.results[questionId] = {
-      correctAnswer,
-      playerResults
-    };
-    writeGameState(gameState);
-    return gameState;
+  resetGame: async () => {
+    try {
+      const newGameCode = generateGameCode();
+      const updates = {
+        isStarted: false,
+        currentQuestionIndex: -1,
+        currentQuestionId: null,
+        questionStartTime: null,
+        questionDuration: 30000,
+        connectedPlayers: [],
+        gameSessionId: `session_${Date.now()}`,
+        gameCode: newGameCode,
+        answers: {},
+        results: {}
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error resetting game:", error);
+      throw error;
+    }
   },
   
-  endGame: () => {
-    gameState.isStarted = false;
-    gameState.currentQuestionIndex = -1;
-    gameState.currentQuestionId = null;
-    gameState.questionStartTime = null;
-    writeGameState(gameState);
-    return gameState;
+  generateNewGameCode: async () => {
+    try {
+      const newCode = generateGameCode();
+      await GameState.updateCurrent({ gameCode: newCode });
+      return newCode;
+    } catch (error) {
+      console.error("Error generating game code:", error);
+      throw error;
+    }
+  },
+  
+  getGameCode: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      return state?.gameCode || null;
+    } catch (error) {
+      console.error("Error getting game code:", error);
+      return null;
+    }
+  },
+  
+  addConnectedPlayer: async (playerId) => {
+    try {
+      const state = await GameState.getCurrent();
+      if (!state.connectedPlayers.includes(playerId)) {
+        state.connectedPlayers.push(playerId);
+        await state.save();
+      }
+    } catch (error) {
+      console.error("Error adding connected player:", error);
+    }
+  },
+  
+  removeConnectedPlayer: async (playerId) => {
+    try {
+      const state = await GameState.getCurrent();
+      state.connectedPlayers = state.connectedPlayers.filter(p => p !== playerId);
+      await state.save();
+    } catch (error) {
+      console.error("Error removing connected player:", error);
+    }
+  },
+  
+  getConnectedPlayersCount: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      return state?.connectedPlayers?.length || 0;
+    } catch (error) {
+      console.error("Error getting connected players count:", error);
+      return 0;
+    }
+  },
+  
+  startGame: async () => {
+    try {
+      const updates = {
+        isStarted: true,
+        currentQuestionIndex: 0,
+        answers: {},
+        results: {}
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error starting game:", error);
+      throw error;
+    }
+  },
+  
+  setCurrentQuestion: async (questionId, duration = 30000) => {
+    try {
+      const updates = {
+        currentQuestionId: questionId,
+        questionStartTime: Date.now(),
+        questionDuration: duration
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error setting current question:", error);
+      throw error;
+    }
+  },
+  
+  nextQuestion: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      state.currentQuestionIndex += 1;
+      state.currentQuestionId = null;
+      state.questionStartTime = null;
+      await state.save();
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error moving to next question:", error);
+      throw error;
+    }
+  },
+  
+  saveAnswer: async (playerId, questionId, answer) => {
+    try {
+      const state = await GameState.getCurrent();
+      if (!state.answers) {
+        state.answers = {};
+      }
+      if (!state.answers[playerId]) {
+        state.answers[playerId] = {};
+      }
+      state.answers[playerId][questionId] = answer;
+      await state.save();
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error saving answer:", error);
+      throw error;
+    }
+  },
+  
+  saveQuestionResult: async (questionId, correctAnswer, playerResults) => {
+    try {
+      const state = await GameState.getCurrent();
+      if (!state.results) {
+        state.results = {};
+      }
+      state.results[questionId] = {
+        correctAnswer,
+        playerResults
+      };
+      await state.save();
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error saving question result:", error);
+      throw error;
+    }
+  },
+  
+  endGame: async () => {
+    try {
+      const updates = {
+        isStarted: false,
+        currentQuestionIndex: -1,
+        currentQuestionId: null,
+        questionStartTime: null
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error ending game:", error);
+      throw error;
+    }
   }
 };
-
-
-

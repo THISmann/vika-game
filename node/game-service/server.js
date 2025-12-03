@@ -7,11 +7,15 @@ const gameRoutes = require("./routes/game.routes");
 const path = require("path"); 
 const cors = require('cors');
 const gameState = require("./gameState");
+const connectDB = require("./config/database");
 
 // Enable CORS for all routes
 app.use(cors());
 
 app.use(express.json());
+
+// Connect to MongoDB
+connectDB();
 
 // Create server
 const server = http.createServer(app);
@@ -33,33 +37,38 @@ const playersSockets = new Map();
 io.on("connection", (socket) => {
   console.log("ws connected", socket.id);
 
-  socket.on("register", (playerId) => {
-    const state = gameState.getState();
-    
-    // Vérifier si le jeu a déjà commencé
-    if (state.isStarted) {
-      socket.emit("error", { message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter." });
-      return;
-    }
-    
-    playersSockets.set(playerId, socket.id);
-    socket.playerId = playerId;
-    gameState.addConnectedPlayer(playerId);
-    
-    // Envoyer le nombre de joueurs connectés à tous
-    const connectedCount = gameState.getConnectedPlayersCount();
-    io.emit("players:count", { count: connectedCount });
-    
-    console.log("player registered:", playerId, "Total:", connectedCount);
-  });
-
-  socket.on("disconnect", () => {
-    if (socket.playerId) {
-      playersSockets.delete(socket.playerId);
-      gameState.removeConnectedPlayer(socket.playerId);
+  socket.on("register", async (playerId) => {
+    try {
+      const state = await gameState.getState();
+      
+      // Vérifier si le jeu a déjà commencé
+      if (state.isStarted) {
+        socket.emit("error", { message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter." });
+        return;
+      }
+      
+      playersSockets.set(playerId, socket.id);
+      socket.playerId = playerId;
+      await gameState.addConnectedPlayer(playerId);
       
       // Envoyer le nombre de joueurs connectés à tous
-      const connectedCount = gameState.getConnectedPlayersCount();
+      const connectedCount = await gameState.getConnectedPlayersCount();
+      io.emit("players:count", { count: connectedCount });
+      
+      console.log("player registered:", playerId, "Total:", connectedCount);
+    } catch (error) {
+      console.error("Error registering player:", error);
+      socket.emit("error", { message: "Erreur lors de l'enregistrement" });
+    }
+  });
+
+  socket.on("disconnect", async () => {
+    if (socket.playerId) {
+      playersSockets.delete(socket.playerId);
+      await gameState.removeConnectedPlayer(socket.playerId);
+      
+      // Envoyer le nombre de joueurs connectés à tous
+      const connectedCount = await gameState.getConnectedPlayersCount();
       io.emit("players:count", { count: connectedCount });
     }
     console.log("ws disconnected", socket.id);

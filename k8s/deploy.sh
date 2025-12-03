@@ -22,6 +22,20 @@ metadata:
   name: intelectgame
 EOF
 
+# Déployer MongoDB en premier
+echo "🐳 Déploiement de MongoDB..."
+if [ -f "k8s/mongodb-deployment.yaml" ]; then
+  kubectl apply -f k8s/mongodb-deployment.yaml
+  echo "⏳ Attente que MongoDB soit prêt..."
+  kubectl wait --for=condition=available --timeout=300s deployment/mongodb -n intelectgame || {
+    echo "⚠️  MongoDB prend plus de temps que prévu"
+  }
+  echo "✅ MongoDB déployé"
+else
+  echo "⚠️  Fichier mongodb-deployment.yaml non trouvé, MongoDB ne sera pas déployé"
+fi
+echo ""
+
 # Demander le token Telegram si nécessaire
 if ! kubectl get secret telegram-bot-secret -n intelectgame &> /dev/null; then
     echo "🤖 Configuration du token Telegram Bot..."

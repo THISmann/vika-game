@@ -1,84 +1,80 @@
-const fs = require("fs");
-const path = require("path");
+const Question = require("../models/Question");
 
-const questionsPath = path.join(__dirname, "../data/questions.json");
-const dataDir = path.dirname(questionsPath);
-
-// Créer le répertoire s'il n'existe pas
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-// Initialiser le fichier s'il n'existe pas
-if (!fs.existsSync(questionsPath)) {
-  fs.writeFileSync(questionsPath, JSON.stringify([], null, 2));
-}
-
-function readQuestions() {
-  try {
-    const data = fs.readFileSync(questionsPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    // Si erreur de lecture, initialiser avec un tableau vide
-    const emptyArray = [];
-    writeQuestions(emptyArray);
-    return emptyArray;
-  }
-}
-
-function writeQuestions(data) {
-  // S'assurer que le répertoire existe
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  fs.writeFileSync(questionsPath, JSON.stringify(data, null, 2));
-}
-
-exports.addQuestion = (req, res) => {
+exports.addQuestion = async (req, res) => {
   const { question, choices, answer } = req.body;
 
   if (!question || !choices || !answer) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  const questions = readQuestions();
-  const newQuestion = { id: "q" + Date.now(), question, choices, answer };
-  questions.push(newQuestion);
-  writeQuestions(questions);
+  try {
+    const newQuestion = new Question({
+      id: "q" + Date.now(),
+      question,
+      choices,
+      answer
+    });
 
-  res.json(newQuestion);
+    await newQuestion.save();
+    res.json(newQuestion.toObject());
+  } catch (error) {
+    console.error('Error adding question:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.updateQuestion = (req, res) => {
-  const questions = readQuestions();
-  const index = questions.findIndex(q => q.id === req.params.id);
+exports.updateQuestion = async (req, res) => {
+  try {
+    const question = await Question.findOne({ id: req.params.id });
 
-  if (index === -1) return res.status(404).json({ error: "Not found" });
+    if (!question) return res.status(404).json({ error: "Not found" });
 
-  questions[index] = { ...questions[index], ...req.body };
-  writeQuestions(questions);
+    // Update fields
+    if (req.body.question) question.question = req.body.question;
+    if (req.body.choices) question.choices = req.body.choices;
+    if (req.body.answer) question.answer = req.body.answer;
 
-  res.json(questions[index]);
+    await question.save();
+    res.json(question.toObject());
+  } catch (error) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.deleteQuestion = (req, res) => {
-  let questions = readQuestions();
-  questions = questions.filter(q => q.id !== req.params.id);
-  writeQuestions(questions);
+exports.deleteQuestion = async (req, res) => {
+  try {
+    const question = await Question.findOneAndDelete({ id: req.params.id });
 
-  res.json({ message: "Deleted" });
+    if (!question) return res.status(404).json({ error: "Not found" });
+
+    res.json({ message: "Deleted" });
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.getQuestions = (req, res) => {
-  const questions = readQuestions().map(q => ({
-    id: q.id,
-    question: q.question,
-    choices: q.choices
-  }));
-
-  res.json(questions);
+exports.getQuestions = async (req, res) => {
+  try {
+    const questions = await Question.find({});
+    res.json(questions.map(q => ({
+      id: q.id,
+      question: q.question,
+      choices: q.choices
+    })));
+  } catch (error) {
+    console.error('Error getting questions:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.getFullQuestions = (req, res) => {
-  res.json(readQuestions());
+exports.getFullQuestions = async (req, res) => {
+  try {
+    const questions = await Question.find({});
+    res.json(questions.map(q => q.toObject()));
+  } catch (error) {
+    console.error('Error getting full questions:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };

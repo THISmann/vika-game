@@ -1,46 +1,36 @@
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
 const gameState = require("../gameState");
 const services = require("../config/services");
-
-const scoresPath = path.join(__dirname, "../data/scores.json");
-
-function readScores() {
-  try {
-  return JSON.parse(fs.readFileSync(scoresPath));
-  } catch (err) {
-    return [];
-  }
-}
-
-function writeScores(data) {
-  fs.writeFileSync(scoresPath, JSON.stringify(data, null, 2));
-}
+const Score = require("../models/Score");
 
 // Update player score + save playerName
 async function updateScore(playerId, playerName, delta) {
-  const scores = readScores();
+  try {
+    let score = await Score.findOne({ playerId });
 
-  let entry = scores.find(s => s.playerId === playerId);
-
-  if (!entry) {
-    entry = { playerId, playerName, score: 0 };
-    scores.push(entry);
+    if (!score) {
+      score = new Score({
+        playerId,
+        playerName,
+        score: 0
+      });
   }
 
   // Always keep name updated (in case player changed his name)
-  entry.playerName = playerName;
+    score.playerName = playerName;
+    score.score += delta;
 
-  entry.score += delta;
-  writeScores(scores);
-
-  return entry;
+    await score.save();
+    return score.toObject();
+  } catch (error) {
+    console.error("Error updating score:", error);
+    throw error;
+  }
 }
 
 exports.answerQuestion = async (req, res) => {
   const { playerId, questionId, answer } = req.body;
-  const state = gameState.getState();
+  const state = await gameState.getState();
 
   try {
     // Vérifier si le jeu a commencé
@@ -76,7 +66,7 @@ exports.answerQuestion = async (req, res) => {
     const isCorrect = question.answer === answer;
 
     // Sauvegarder la réponse (mais ne pas mettre à jour le score maintenant)
-    gameState.saveAnswer(playerId, questionId, answer);
+    await gameState.saveAnswer(playerId, questionId, answer);
 
     res.json({
       correct: isCorrect,
@@ -92,56 +82,82 @@ exports.answerQuestion = async (req, res) => {
   }
 };
 
-exports.getScore = (req, res) => {
-  const scores = readScores();
-  const entry = scores.find(s => s.playerId === req.params.playerId);
-  res.json(entry || { playerId: req.params.playerId, playerName: null, score: 0 });
-};
-
-exports.leaderboard = (req, res) => {
-  const state = gameState.getState();
-  const scores = readScores();
-  
-  // Filtrer par session de jeu en cours
-  // Si le jeu est en cours, on retourne seulement les scores de la session actuelle
-  // Sinon, on retourne tous les scores (pour l'historique)
-  let sessionScores = scores;
-  
-  if (state.isStarted && state.gameSessionId) {
-    // Pour cette version, on retourne tous les scores car ils sont réinitialisés à chaque nouvelle partie
-    // Dans une version future, on pourrait filtrer par gameSessionId si on stocke cette info dans les scores
-    sessionScores = scores;
+exports.getScore = async (req, res) => {
+  try {
+    const score = await Score.findOne({ playerId: req.params.playerId });
+    res.json(score ? score.toObject() : { playerId: req.params.playerId, playerName: null, score: 0 });
+  } catch (error) {
+    console.error("Error getting score:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-  
-  // Trier par score décroissant
-  sessionScores = sessionScores.sort((a, b) => b.score - a.score);
-  
-  res.json(sessionScores);
 };
 
-exports.getGameState = (req, res) => {
-  const state = gameState.getState();
-  res.json({
-    isStarted: state.isStarted,
-    currentQuestionIndex: state.currentQuestionIndex,
-    currentQuestionId: state.currentQuestionId,
-    questionStartTime: state.questionStartTime,
-    questionDuration: state.questionDuration,
-    connectedPlayersCount: gameState.getConnectedPlayersCount(),
-    gameSessionId: state.gameSessionId,
-    gameCode: state.gameCode
-  });
+exports.leaderboard = async (req, res) => {
+  try {
+    const state = await gameState.getState();
+    const scores = await Score.find({});
+    
+    // Filtrer par session de jeu en cours
+    // Si le jeu est en cours, on retourne seulement les scores de la session actuelle
+    // Sinon, on retourne tous les scores (pour l'historique)
+    let sessionScores = scores.map(s => s.toObject());
+    
+    if (state.isStarted && state.gameSessionId) {
+      // Pour cette version, on retourne tous les scores car ils sont réinitialisés à chaque nouvelle partie
+      // Dans une version future, on pourrait filtrer par gameSessionId si on stocke cette info dans les scores
+      sessionScores = scores.map(s => s.toObject());
+    }
+    
+    // Trier par score décroissant
+    sessionScores = sessionScores.sort((a, b) => b.score - a.score);
+    
+    res.json(sessionScores);
+  } catch (error) {
+    console.error("Error getting leaderboard:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.getGameCode = (req, res) => {
-  const state = gameState.getState();
-  // Générer un nouveau code si aucun n'existe
-  const code = state.gameCode || gameState.generateNewGameCode();
-  res.json({ gameCode: code });
+exports.getGameState = async (req, res) => {
+  try {
+    const state = await gameState.getState();
+    const connectedCount = await gameState.getConnectedPlayersCount();
+    res.json({
+      isStarted: state.isStarted,
+      currentQuestionIndex: state.currentQuestionIndex,
+      currentQuestionId: state.currentQuestionId,
+      questionStartTime: state.questionStartTime,
+      questionDuration: state.questionDuration,
+      connectedPlayersCount: connectedCount,
+      gameSessionId: state.gameSessionId,
+      gameCode: state.gameCode
+    });
+  } catch (error) {
+    console.error("Error getting game state:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
-exports.getConnectedPlayersCount = (req, res) => {
-  res.json({ count: gameState.getConnectedPlayersCount() });
+exports.getGameCode = async (req, res) => {
+  try {
+    const state = await gameState.getState();
+    // Générer un nouveau code si aucun n'existe
+    const code = state.gameCode || await gameState.generateNewGameCode();
+    res.json({ gameCode: code });
+  } catch (error) {
+    console.error("Error getting game code:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getConnectedPlayersCount = async (req, res) => {
+  try {
+    const count = await gameState.getConnectedPlayersCount();
+    res.json({ count });
+  } catch (error) {
+    console.error("Error getting connected players count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 // Variable globale pour stocker le timer
@@ -153,7 +169,7 @@ async function scheduleNextQuestion(io) {
     clearTimeout(questionTimer);
   }
 
-  const state = gameState.getState();
+  const state = await gameState.getState();
   if (!state.isStarted || !state.currentQuestionId) {
     return;
   }
@@ -174,16 +190,16 @@ async function scheduleNextQuestion(io) {
       
       if (nextIndex >= questions.length) {
         // Fin du jeu
-        gameState.endGame();
+        await gameState.endGame();
         io.emit("game:ended", { message: "Le jeu est terminé" });
         return;
       }
 
       const nextQuestion = questions[nextIndex];
-      gameState.nextQuestion();
-      gameState.setCurrentQuestion(nextQuestion.id, 30000);
+      await gameState.nextQuestion();
+      await gameState.setCurrentQuestion(nextQuestion.id, 30000);
 
-      const newState = gameState.getState();
+      const newState = await gameState.getState();
 
       // Émettre la nouvelle question
       io.emit("question:next", {
@@ -209,21 +225,21 @@ async function scheduleNextQuestion(io) {
 exports.startGame = async (req, res) => {
   try {
     // Récupérer les questions
-    const quiz = await axios.get(`http://localhost:3002/quiz/full`);
+    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
     const questions = quiz.data;
 
     if (questions.length === 0) {
       return res.status(400).json({ error: "Aucune question disponible" });
     }
 
-    gameState.startGame();
-    const state = gameState.getState();
+    await gameState.startGame();
+    const state = await gameState.getState();
 
     // Démarrer avec la première question
     if (questions.length > 0 && req.io) {
       const firstQuestion = questions[0];
-      gameState.setCurrentQuestion(firstQuestion.id, 30000);
-      const newState = gameState.getState();
+      await gameState.setCurrentQuestion(firstQuestion.id, 30000);
+      const newState = await gameState.getState();
 
       // Émettre l'événement de début de jeu avec la première question
       req.io.emit("game:started", {
@@ -249,7 +265,7 @@ exports.startGame = async (req, res) => {
 
     res.json({
       message: "Jeu démarré",
-      state: gameState.getState()
+      state: await gameState.getState()
     });
   } catch (err) {
     console.error("Error starting game:", err);
@@ -259,7 +275,7 @@ exports.startGame = async (req, res) => {
 
 exports.nextQuestion = async (req, res) => {
   try {
-    const state = gameState.getState();
+    const state = await gameState.getState();
     
     if (!state.isStarted) {
       return res.status(400).json({ error: "Le jeu n'a pas commencé" });
@@ -272,7 +288,7 @@ exports.nextQuestion = async (req, res) => {
     }
 
     // Récupérer les questions
-    const quiz = await axios.get(`http://localhost:3002/quiz/full`);
+    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
     const questions = quiz.data;
 
     // Calculer les scores de la question précédente si elle existe
@@ -285,7 +301,7 @@ exports.nextQuestion = async (req, res) => {
     
     if (nextIndex >= questions.length) {
       // Fin du jeu
-      gameState.endGame();
+      await gameState.endGame();
       
       if (req.io) {
         req.io.emit("game:ended", {
@@ -300,10 +316,10 @@ exports.nextQuestion = async (req, res) => {
     }
 
     const nextQuestion = questions[nextIndex];
-    gameState.nextQuestion();
-    gameState.setCurrentQuestion(nextQuestion.id, 30000); // 30 secondes par défaut
+    await gameState.nextQuestion();
+    await gameState.setCurrentQuestion(nextQuestion.id, 30000); // 30 secondes par défaut
 
-    const newState = gameState.getState();
+    const newState = await gameState.getState();
 
     // Émettre la nouvelle question à tous les clients
     if (req.io) {
@@ -344,13 +360,13 @@ async function calculateQuestionResults(questionId, questions) {
   const question = questions.find(q => q.id === questionId);
   if (!question) return;
 
-  const state = gameState.getState();
-  const answers = state.answers;
+  const state = await gameState.getState();
+  const answers = state.answers || {};
   const playerResults = [];
 
   // Calculer les résultats pour chaque joueur
   for (const playerId in answers) {
-    if (answers[playerId][questionId]) {
+    if (answers[playerId] && answers[playerId][questionId]) {
       const answer = answers[playerId][questionId];
       const isCorrect = answer === question.answer;
       
@@ -374,12 +390,12 @@ async function calculateQuestionResults(questionId, questions) {
   }
 
   // Sauvegarder les résultats
-  gameState.saveQuestionResult(questionId, question.answer, playerResults);
+  await gameState.saveQuestionResult(questionId, question.answer, playerResults);
 }
 
 exports.endGame = async (req, res) => {
   try {
-    const state = gameState.getState();
+    const state = await gameState.getState();
     
     if (state.currentQuestionId) {
       // Calculer les résultats de la dernière question
@@ -387,7 +403,7 @@ exports.endGame = async (req, res) => {
       await calculateQuestionResults(state.currentQuestionId, quiz.data);
     }
 
-    gameState.endGame();
+    await gameState.endGame();
 
     if (req.io) {
       req.io.emit("game:ended", {
@@ -405,15 +421,10 @@ exports.endGame = async (req, res) => {
 exports.deleteGame = async (req, res) => {
   try {
     // Réinitialiser les scores pour cette session
-    const scores = readScores();
-    const state = gameState.getState();
-    
-    // Optionnel: supprimer tous les scores ou seulement ceux de la session
-    // Pour l'instant, on réinitialise tout
-    writeScores([]);
+    await Score.deleteMany({});
     
     // Réinitialiser l'état du jeu
-    gameState.resetGame();
+    await gameState.resetGame();
 
     if (req.io) {
       req.io.emit("game:deleted", {
@@ -428,7 +439,12 @@ exports.deleteGame = async (req, res) => {
   }
 };
 
-exports.getQuestionResults = (req, res) => {
-  const state = gameState.getState();
-  res.json(state.results);
+exports.getQuestionResults = async (req, res) => {
+  try {
+    const state = await gameState.getState();
+    res.json(state.results || {});
+  } catch (error) {
+    console.error("Error getting question results:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };

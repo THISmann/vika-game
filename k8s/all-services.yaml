@@ -18,56 +18,10 @@ type: Opaque
 stringData:
   TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN_HERE"  # Remplacez par votre token réel
 ---
-# MongoDB
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mongodb
-  namespace: intelectgame
-  labels:
-    app: mongodb
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mongodb
-  template:
-    metadata:
-      labels:
-        app: mongodb
-    spec:
-      containers:
-      - name: mongodb
-        image: mongo:7.0
-        ports:
-        - containerPort: 27017
-        env:
-        - name: MONGO_INITDB_DATABASE
-          value: "intelectgame"
-        volumeMounts:
-        - name: mongodb-data
-          mountPath: /data/db
-      volumes:
-      - name: mongodb-data
-        emptyDir: {}
+# MongoDB est déployé via mongodb-deployment.yaml
+# Référence: k8s/mongodb-deployment.yaml
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: mongodb
-  namespace: intelectgame
-  labels:
-    app: mongodb
-spec:
-  type: ClusterIP
-  ports:
-  - port: 27017
-    targetPort: 27017
-    protocol: TCP
-  selector:
-    app: mongodb
----
-# ConfigMap
+# ConfigMap pour les variables d'environnement des services
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -75,6 +29,9 @@ metadata:
   namespace: intelectgame
 data:
   MONGODB_URI: "mongodb://mongodb:27017/intelectgame"
+  AUTH_SERVICE_URL: "http://auth-service:3001"
+  QUIZ_SERVICE_URL: "http://quiz-service:3002"
+  GAME_SERVICE_URL: "http://game-service:3003"
   AUTH_SERVICE_PORT: "3001"
   QUIZ_SERVICE_PORT: "3002"
   GAME_SERVICE_PORT: "3003"

@@ -1,0 +1,13 @@
+# ConfigMap pour MongoDB URI utilisé par les micro-services
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-uri-config
+  namespace: intelectgame
+data:
+  # URI MongoDB sans authentification (pour développement)
+  MONGODB_URI: "mongodb://mongodb:27017/intelectgame"
+  
+  # URI MongoDB avec authentification (pour production - décommenter et utiliser)
+  # MONGODB_URI: "mongodb://admin:admin123@mongodb:27017/intelectgame?authSource=admin"
+
