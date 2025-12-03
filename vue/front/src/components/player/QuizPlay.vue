@@ -63,9 +63,9 @@
       <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 md:p-8">
         <div class="text-center mb-4 sm:mb-6 md:mb-8">
           <div
-            class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4"
+            class="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-2 sm:mb-3 md:mb-4"
           >
-            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -74,19 +74,20 @@
               />
             </svg>
           </div>
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
+          <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 px-2 break-words">
             {{ current.question }}
           </h2>
         </div>
 
         <!-- Choices -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
           <button
             v-for="(choice, index) in current.choices"
             :key="choice"
             @click="answer(choice)"
             :disabled="answering || hasAnswered"
-            class="group relative p-4 sm:p-5 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="group relative p-3 sm:p-4 md:p-5 lg:p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
             :class="{
               'border-gray-200 hover:border-blue-500 hover:shadow-lg': !hasAnswered,
               'border-green-500 bg-green-50': hasAnswered && choice === selectedAnswer,
@@ -94,7 +95,7 @@
             }"
           >
             <div class="flex items-center justify-between">
-              <span class="text-base sm:text-lg font-medium text-gray-900 break-words">{{ choice }}</span>
+              <span class="text-sm sm:text-base md:text-lg font-medium text-gray-900 break-words text-left flex-1">{{ choice }}</span>
               <div
                 class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 flex items-center justify-center transition-colors flex-shrink-0 ml-2"
                 :class="{

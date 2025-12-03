@@ -61,8 +61,8 @@ data:
             # Game Service (HTTP)
             location /api/game {
                 set $game "game-service.intelectgame.svc.cluster.local:3003";
-                rewrite ^/api/game/(.*)$ /game/$1 break;
-                proxy_pass http://$game;
+                # Ne pas utiliser rewrite, utiliser proxy_pass avec trailing slash
+                proxy_pass http://$game/game/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

@@ -53,18 +53,18 @@
         <div
           v-for="(player, index) in leaderboard"
           :key="player.playerId || index"
-          class="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
+          class="p-3 sm:p-4 md:p-6 hover:bg-gray-50 transition-colors"
           :class="{
             'bg-gradient-to-r from-yellow-50 to-orange-50': index === 0,
             'bg-gradient-to-r from-gray-50 to-slate-50': index === 1,
             'bg-gradient-to-r from-amber-50 to-yellow-50': index === 2,
           }"
         >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4 flex-1">
+          <div class="flex items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0">
               <!-- Rank -->
               <div
-                class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg"
+                class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg"
                 :class="{
                   'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': index === 0,
                   'bg-gradient-to-br from-gray-300 to-gray-400 text-white': index === 1,
@@ -79,10 +79,10 @@
               </div>
 
               <!-- Player Info -->
-              <div class="flex-1">
-                <div class="flex items-center space-x-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2 sm:space-x-3">
                   <div
-                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base"
+                    class="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-white text-xs sm:text-sm md:text-base"
                     :class="{
                       'bg-gradient-to-br from-yellow-400 to-orange-500': index === 0,
                       'bg-gradient-to-br from-gray-400 to-gray-500': index === 1,
@@ -92,11 +92,11 @@
                   >
                     {{ player.playerName ? player.playerName.charAt(0).toUpperCase() : '?' }}
                   </div>
-                  <div>
-                    <p class="font-semibold text-gray-900 text-base sm:text-lg truncate">
+                  <div class="min-w-0 flex-1">
+                    <p class="font-semibold text-gray-900 text-sm sm:text-base md:text-lg truncate">
                       {{ player.playerName || 'Joueur anonyme' }}
                     </p>
-                    <p class="text-xs sm:text-sm text-gray-500 truncate">
+                    <p class="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
                       {{ player.playerId }}
                     </p>
                   </div>
@@ -105,9 +105,9 @@
 
               <!-- Score -->
               <div class="text-right flex-shrink-0">
-                <div class="flex items-center space-x-1 sm:space-x-2">
+                <div class="flex items-center space-x-1">
                   <span
-                    class="text-xl sm:text-2xl font-bold"
+                    class="text-lg sm:text-xl md:text-2xl font-bold"
                     :class="{
                       'text-yellow-600': index === 0,
                       'text-gray-600': index === 1,
@@ -117,7 +117,7 @@
                   >
                     {{ player.score }}
                   </span>
-                  <span class="text-gray-500 text-sm">pts</span>
+                  <span class="text-gray-500 text-xs sm:text-sm">pts</span>
                 </div>
               </div>
             </div>
