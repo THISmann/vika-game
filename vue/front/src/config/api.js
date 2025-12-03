@@ -67,6 +67,7 @@ export const API_URLS = {
     score: (playerId) => `${API_CONFIG.GAME_SERVICE}/score/${playerId}`,
     leaderboard: `${API_CONFIG.GAME_SERVICE}/leaderboard`,
     state: `${API_CONFIG.GAME_SERVICE}/state`,
+    code: `${API_CONFIG.GAME_SERVICE}/code`,
     playersCount: `${API_CONFIG.GAME_SERVICE}/players/count`,
     start: `${API_CONFIG.GAME_SERVICE}/start`,
     next: `${API_CONFIG.GAME_SERVICE}/next`,

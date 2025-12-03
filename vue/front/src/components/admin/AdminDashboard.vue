@@ -7,6 +7,19 @@
         <p class="text-gray-600">Gérez votre jeu de questions-réponses</p>
       </div>
 
+      <!-- Game Code -->
+      <div v-if="gameCode" class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 mb-6 border-2 border-yellow-300">
+        <div class="text-center">
+          <div class="text-sm text-gray-600 mb-2">Code de la partie</div>
+          <div class="text-5xl font-bold text-yellow-600 mb-2 font-mono tracking-wider">
+            {{ gameCode }}
+          </div>
+          <div class="text-sm text-gray-600">
+            Partagez ce code avec les joueurs pour qu'ils puissent se connecter
+          </div>
+        </div>
+      </div>
+
       <!-- Game State Info -->
       <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -146,6 +159,7 @@ export default {
         currentQuestionIndex: -1,
         connectedPlayersCount: 0
       },
+      gameCode: null,
       totalQuestions: 0,
       loading: false,
       message: '',
@@ -156,6 +170,7 @@ export default {
   async mounted() {
     await this.loadGameState()
     await this.loadQuestionsCount()
+    await this.loadGameCode()
     
     // Connecter au WebSocket
     this.socket = io(API_CONFIG.GAME_SERVICE)
@@ -194,8 +209,17 @@ export default {
       try {
         const res = await axios.get(API_URLS.game.state)
         this.gameState = res.data
+        this.gameCode = res.data.gameCode || null
       } catch (err) {
         console.error('Error loading game state:', err)
+      }
+    },
+    async loadGameCode() {
+      try {
+        const res = await axios.get(API_URLS.game.code)
+        this.gameCode = res.data.gameCode
+      } catch (err) {
+        console.error('Error loading game code:', err)
       }
     },
     async loadQuestionsCount() {
@@ -215,6 +239,12 @@ export default {
       }
     },
     async startGame() {
+      // Vérifier qu'il y a des questions avant de démarrer
+      if (this.totalQuestions === 0) {
+        this.error = 'Aucune question disponible. Veuillez ajouter des questions avant de démarrer le jeu.'
+        return
+      }
+      
       this.loading = true
       this.error = ''
       this.message = ''
@@ -223,6 +253,7 @@ export default {
         await axios.post(API_URLS.game.start)
         this.message = 'Jeu démarré avec succès !'
         await this.loadGameState()
+        await this.loadQuestionsCount()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
         this.error = err.response?.data?.error || 'Erreur lors du démarrage du jeu'

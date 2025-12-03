@@ -4,6 +4,16 @@ const path = require("path");
 
 const gameStatePath = path.join(__dirname, "../data/gameState.json");
 
+// Fonction pour générer un code de jeu unique (6 caractères alphanumériques)
+function generateGameCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 // État initial du jeu
 const initialState = {
   isStarted: false,
@@ -13,6 +23,7 @@ const initialState = {
   questionDuration: 30000, // 30 secondes par défaut
   connectedPlayers: [],
   gameSessionId: null,
+  gameCode: null, // Code de jeu pour les joueurs
   answers: {}, // { playerId: { questionId: answer, ... } }
   results: {} // { questionId: { correctAnswer, playerResults: [] } }
 };
@@ -46,6 +57,9 @@ let gameState = readGameState();
 // Réinitialiser l'état si nécessaire
 if (!gameState.gameSessionId) {
   gameState.gameSessionId = `session_${Date.now()}`;
+  if (!gameState.gameCode) {
+    gameState.gameCode = generateGameCode();
+  }
   writeGameState(gameState);
 }
 
@@ -62,6 +76,7 @@ module.exports = {
     gameState = {
       ...initialState,
       gameSessionId: `session_${Date.now()}`,
+      gameCode: generateGameCode(),
       connectedPlayers: [],
       answers: {},
       results: {}
@@ -69,6 +84,14 @@ module.exports = {
     writeGameState(gameState);
     return gameState;
   },
+  
+  generateNewGameCode: () => {
+    gameState.gameCode = generateGameCode();
+    writeGameState(gameState);
+    return gameState.gameCode;
+  },
+  
+  getGameCode: () => gameState.gameCode,
   
   addConnectedPlayer: (playerId) => {
     if (!gameState.connectedPlayers.includes(playerId)) {

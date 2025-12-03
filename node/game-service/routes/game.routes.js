@@ -10,6 +10,7 @@ router.post("/answer", gameController.answerQuestion);
 router.get("/score/:playerId", gameController.getScore);
 router.get("/leaderboard", gameController.leaderboard);
 router.get("/state", gameController.getGameState);
+router.get("/code", gameController.getGameCode);
 router.get("/players/count", gameController.getConnectedPlayersCount);
 router.post("/start", gameController.startGame);
 router.post("/next", gameController.nextQuestion);

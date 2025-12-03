@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const gameState = require("../gameState");
+const services = require("../config/services");
 
 const scoresPath = path.join(__dirname, "../data/scores.json");
 
@@ -61,13 +62,13 @@ exports.answerQuestion = async (req, res) => {
     }
 
     // 🔍 Fetch player
-    const players = await axios.get(`http://localhost:3001/auth/players`);
+    const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
     const player = players.data.find(p => p.id === playerId);
 
     if (!player) return res.status(404).json({ error: "Player not found" });
 
     // 🔍 Fetch quiz questions
-    const quiz = await axios.get(`http://localhost:3002/quiz/full`);
+    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
     const question = quiz.data.find(q => q.id === questionId);
 
     if (!question) return res.status(404).json({ error: "Question not found" });
@@ -127,8 +128,16 @@ exports.getGameState = (req, res) => {
     questionStartTime: state.questionStartTime,
     questionDuration: state.questionDuration,
     connectedPlayersCount: gameState.getConnectedPlayersCount(),
-    gameSessionId: state.gameSessionId
+    gameSessionId: state.gameSessionId,
+    gameCode: state.gameCode
   });
+};
+
+exports.getGameCode = (req, res) => {
+  const state = gameState.getState();
+  // Générer un nouveau code si aucun n'existe
+  const code = state.gameCode || gameState.generateNewGameCode();
+  res.json({ gameCode: code });
 };
 
 exports.getConnectedPlayersCount = (req, res) => {
@@ -152,7 +161,7 @@ async function scheduleNextQuestion(io) {
   questionTimer = setTimeout(async () => {
     try {
       // Utiliser la logique de nextQuestion
-      const quiz = await axios.get(`http://localhost:3002/quiz/full`);
+      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
       const questions = quiz.data;
 
       // Calculer les résultats de la question actuelle
@@ -347,7 +356,7 @@ async function calculateQuestionResults(questionId, questions) {
       
       // Mettre à jour le score seulement maintenant
       try {
-        const players = await axios.get(`http://localhost:3001/auth/players`);
+        const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
         const player = players.data.find(p => p.id === playerId);
         if (player) {
           await updateScore(playerId, player.name, isCorrect ? 1 : 0);
@@ -374,7 +383,7 @@ exports.endGame = async (req, res) => {
     
     if (state.currentQuestionId) {
       // Calculer les résultats de la dernière question
-      const quiz = await axios.get(`http://localhost:3002/quiz/full`);
+      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
       await calculateQuestionResults(state.currentQuestionId, quiz.data);
     }
 
