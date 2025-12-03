@@ -21,15 +21,18 @@ connectDB();
 const server = http.createServer(app);
 
 // Create websocket server
+// IMPORTANT: path doit être "/socket.io" (sans slash final) pour compatibilité avec le proxy
 const io = new Server(server, {
   cors: { 
     origin: "*",
     methods: ["GET", "POST"],
     credentials: true
   },
-  path: "/socket.io/",
+  path: "/socket.io",
   transports: ['polling', 'websocket'],
-  allowEIO3: true
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 // Import routes (but now we pass "io" to controllers)
