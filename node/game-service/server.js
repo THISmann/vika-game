@@ -41,9 +41,10 @@ const io = new Server(server, {
     // Logger pour debug
     const sid = req.url?.split('sid=')[1]?.split('&')[0];
     if (sid) {
-      console.log(`🔍 Socket.io request with sid: ${sid.substring(0, 10)}...`);
+      console.log(`🔍 Socket.io request with sid: ${sid.substring(0, 10)}... from ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
     }
     // Accepter toutes les requêtes (la vérification sera faite dans les handlers)
+    // Le sessionAffinity dans Kubernetes garantit que le même client va au même pod
     callback(null, true);
   },
   // Désactiver la vérification stricte des origins
@@ -62,16 +63,17 @@ app.use("/game", (req, res, next) => {
 const playersSockets = new Map();
 
 io.on("connection", (socket) => {
-  console.log("✅ WebSocket client connected:", socket.id, "Total clients:", io.sockets.sockets.size);
+  const clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  console.log("✅ WebSocket client connected:", socket.id, "IP:", clientIP, "Total clients on this pod:", io.sockets.sockets.size);
   
   // Logger les erreurs de connexion
   socket.on("error", (error) => {
-    console.error("❌ Socket error:", error);
+    console.error("❌ Socket error:", socket.id, error);
   });
   
-  // Logger les déconnexions
-  socket.on("disconnect", (reason) => {
-    console.log("⚠️ Socket disconnected:", socket.id, "Reason:", reason);
+  // Logger les tentatives de reconnexion
+  socket.on("reconnect_attempt", (attemptNumber) => {
+    console.log("🔄 Reconnection attempt:", socket.id, "Attempt:", attemptNumber);
   });
 
   socket.on("register", async (playerId) => {
@@ -122,8 +124,6 @@ io.on("connection", (socket) => {
         // Si une question est active, envoyer la question actuelle
         if (currentState.currentQuestionId) {
           try {
-            const axios = require("axios");
-            const services = require("./config/services");
             const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
             const questions = quiz.data;
             const currentQuestion = questions.find(q => q.id === currentState.currentQuestionId);
@@ -154,8 +154,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", async () => {
+  // Handler de déconnexion
+  socket.on("disconnect", async (reason) => {
     if (socket.playerId) {
+      console.log("🔌 Player disconnecting:", socket.playerId, "Socket ID:", socket.id, "Reason:", reason);
       playersSockets.delete(socket.playerId);
       await gameState.removeConnectedPlayer(socket.playerId);
       
@@ -163,7 +165,7 @@ io.on("connection", (socket) => {
       const connectedCount = await gameState.getConnectedPlayersCount();
       io.emit("players:count", { count: connectedCount });
     }
-    console.log("ws disconnected", socket.id);
+    console.log("⚠️ Socket disconnected:", socket.id, "Reason:", reason);
   });
 });
 

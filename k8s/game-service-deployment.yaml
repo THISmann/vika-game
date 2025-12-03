@@ -58,4 +58,10 @@ spec:
     protocol: TCP
   selector:
     app: game-service
+  # Session Affinity pour WebSocket - CRITIQUE pour éviter les erreurs 400
+  # Toutes les requêtes d'un même client iront vers le même pod
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 heures (suffisant pour une session de jeu)
 
