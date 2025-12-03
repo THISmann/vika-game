@@ -38,9 +38,18 @@ const io = new Server(server, {
   pingInterval: 25000,
   // Désactiver la vérification stricte pour éviter les erreurs 400
   allowRequest: (req, callback) => {
+    // Logger pour debug
+    const sid = req.url?.split('sid=')[1]?.split('&')[0];
+    if (sid) {
+      console.log(`🔍 Socket.io request with sid: ${sid.substring(0, 10)}...`);
+    }
     // Accepter toutes les requêtes (la vérification sera faite dans les handlers)
     callback(null, true);
-  }
+  },
+  // Désactiver la vérification stricte des origins
+  connectTimeout: 45000,
+  // Permettre les requêtes cross-origin
+  serveClient: false
 });
 
 // Import routes (but now we pass "io" to controllers)
@@ -54,6 +63,16 @@ const playersSockets = new Map();
 
 io.on("connection", (socket) => {
   console.log("✅ WebSocket client connected:", socket.id, "Total clients:", io.sockets.sockets.size);
+  
+  // Logger les erreurs de connexion
+  socket.on("error", (error) => {
+    console.error("❌ Socket error:", error);
+  });
+  
+  // Logger les déconnexions
+  socket.on("disconnect", (reason) => {
+    console.log("⚠️ Socket disconnected:", socket.id, "Reason:", reason);
+  });
 
   socket.on("register", async (playerId) => {
     try {
