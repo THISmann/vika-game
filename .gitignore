@@ -136,12 +136,12 @@ ENV/
 !node/quiz-service/data/
 !node/game-service/data/
 # Then, allow JSON files and .gitkeep in these directories
-!node/auth-service/data/*.json
-!node/auth-service/data/.gitkeep
-!node/quiz-service/data/*.json
-!node/quiz-service/data/.gitkeep
-!node/game-service/data/*.json
-!node/game-service/data/.gitkeep
+# !node/auth-service/data/*.json
+# !node/auth-service/data/.gitkeep
+# !node/quiz-service/data/*.json
+# !node/quiz-service/data/.gitkeep
+# !node/game-service/data/*.json
+# !node/game-service/data/.gitkeep
 
 # But ignore other data files that might be generated
 *.data
