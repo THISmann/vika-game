@@ -1,5 +1,6 @@
 # Configuration Nginx pour proxy vers les services Kubernetes
 # Cette ConfigMap sera utilisée par un pod Nginx
+# Le proxy gère les routes vers les services backend et supporte WebSocket
 
 apiVersion: v1
 kind: ConfigMap
@@ -11,7 +12,7 @@ data:
     events {
         worker_connections 1024;
     }
-    
+
     http {
         # Résolveur DNS pour la résolution dynamique des services Kubernetes
         resolver kube-dns.kube-system.svc.cluster.local valid=10s;
@@ -21,7 +22,7 @@ data:
             default upgrade;
             '' close;
         }
-    
+
     server {
             listen 80;
             server_name _;
@@ -128,7 +129,6 @@ data:
             }
         }
     }
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -158,7 +158,6 @@ spec:
       - name: nginx-config
         configMap:
           name: nginx-proxy-config
-
 ---
 apiVersion: v1
 kind: Service
@@ -170,7 +169,6 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-    nodePort: 30081  # Port différent pour éviter le conflit
+    nodePort: 30081 # Port différent pour éviter le conflit
   selector:
     app: nginx-proxy
-
