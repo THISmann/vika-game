@@ -1,0 +1,175 @@
+# Configuration Nginx avec initContainer pour résoudre les noms de services
+# Cette version résout les noms de services avant le démarrage de Nginx
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-proxy-config-template
+  namespace: intelectgame
+data:
+  nginx.conf.template: |
+    events {
+        worker_connections 1024;
+    }
+    
+    http {
+        server {
+            listen 80;
+            server_name _;
+            
+            # Frontend (utilise les variables résolues par l'initContainer)
+            location / {
+                proxy_pass http://${FRONTEND_IP}:80;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Auth Service
+            location /api/auth {
+                rewrite ^/api/auth/(.*)$ /auth/$1 break;
+                proxy_pass http://${AUTH_SERVICE_IP}:3001;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Quiz Service
+            location /api/quiz {
+                rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
+                proxy_pass http://${QUIZ_SERVICE_IP}:3002;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Game Service (HTTP)
+            location /api/game {
+                rewrite ^/api/game/(.*)$ /game/$1 break;
+                proxy_pass http://${GAME_SERVICE_IP}:3003;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                
+                # WebSocket support
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+            }
+            
+            # Game Service WebSocket (Socket.IO)
+            location /socket.io {
+                proxy_pass http://${GAME_SERVICE_IP}:3003;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_read_timeout 86400;
+            }
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-proxy
+  namespace: intelectgame
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-proxy
+  template:
+    metadata:
+      labels:
+        app: nginx-proxy
+    spec:
+      initContainers:
+      - name: resolve-services
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Résolution des adresses IP des services..."
+          
+          # Attendre que les services soient disponibles
+          until nslookup frontend.intelectgame.svc.cluster.local > /dev/null 2>&1; do
+            echo "En attente du service frontend..."
+            sleep 2;
+          done
+          
+          until nslookup auth-service.intelectgame.svc.cluster.local > /dev/null 2>&1; do
+            echo "En attente du service auth-service..."
+            sleep 2;
+          done
+          
+          until nslookup quiz-service.intelectgame.svc.cluster.local > /dev/null 2>&1; do
+            echo "En attente du service quiz-service..."
+            sleep 2;
+          done
+          
+          until nslookup game-service.intelectgame.svc.cluster.local > /dev/null 2>&1; do
+            echo "En attente du service game-service..."
+            sleep 2;
+          done
+          
+          # Résoudre les adresses IP
+          FRONTEND_IP=$(nslookup frontend.intelectgame.svc.cluster.local | grep -A 1 "Name:" | grep "Address" | awk '{print $2}' | head -1)
+          AUTH_IP=$(nslookup auth-service.intelectgame.svc.cluster.local | grep -A 1 "Name:" | grep "Address" | awk '{print $2}' | head -1)
+          QUIZ_IP=$(nslookup quiz-service.intelectgame.svc.cluster.local | grep -A 1 "Name:" | grep "Address" | awk '{print $2}' | head -1)
+          GAME_IP=$(nslookup game-service.intelectgame.svc.cluster.local | grep -A 1 "Name:" | grep "Address" | awk '{print $2}' | head -1)
+          
+          echo "Frontend IP: $FRONTEND_IP"
+          echo "Auth Service IP: $AUTH_IP"
+          echo "Quiz Service IP: $QUIZ_IP"
+          echo "Game Service IP: $GAME_IP"
+          
+          # Remplacer les variables dans le template
+          sed -e "s/\${FRONTEND_IP}/$FRONTEND_IP/g" \
+              -e "s/\${AUTH_SERVICE_IP}/$AUTH_IP/g" \
+              -e "s/\${QUIZ_SERVICE_IP}/$QUIZ_IP/g" \
+              -e "s/\${GAME_SERVICE_IP}/$GAME_IP/g" \
+              /config/nginx.conf.template > /config/nginx.conf
+          
+          echo "Configuration Nginx générée avec succès!"
+          cat /config/nginx.conf
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /config
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: false
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-proxy-config-template
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-proxy
+  namespace: intelectgame
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30081
+  selector:
+    app: nginx-proxy
+
