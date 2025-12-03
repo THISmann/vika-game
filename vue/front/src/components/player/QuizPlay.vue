@@ -204,6 +204,7 @@
 import axios from 'axios'
 import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import socketService from '@/services/socketService'
 
 export default {
   data() {
