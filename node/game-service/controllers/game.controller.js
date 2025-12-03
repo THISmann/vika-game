@@ -150,6 +150,27 @@ exports.getGameCode = async (req, res) => {
   }
 };
 
+exports.verifyGameCode = async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ error: "Code requis" });
+    }
+
+    const state = await gameState.getState();
+    const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase();
+    
+    res.json({ 
+      valid: isValid,
+      gameCode: state.gameCode,
+      isStarted: state.isStarted
+    });
+  } catch (error) {
+    console.error("Error verifying game code:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.getConnectedPlayersCount = async (req, res) => {
   try {
     const count = await gameState.getConnectedPlayersCount();
@@ -164,7 +185,7 @@ exports.getConnectedPlayersCount = async (req, res) => {
 let questionTimer = null;
 
 // Fonction helper pour passer à la question suivante automatiquement
-async function scheduleNextQuestion(io) {
+async function scheduleNextQuestion(io, defaultDuration = 30000) {
   if (questionTimer) {
     clearTimeout(questionTimer);
   }
@@ -173,6 +194,8 @@ async function scheduleNextQuestion(io) {
   if (!state.isStarted || !state.currentQuestionId) {
     return;
   }
+
+  const duration = state.questionDuration || defaultDuration;
 
   questionTimer = setTimeout(async () => {
     try {
@@ -197,7 +220,7 @@ async function scheduleNextQuestion(io) {
 
       const nextQuestion = questions[nextIndex];
       await gameState.nextQuestion();
-      await gameState.setCurrentQuestion(nextQuestion.id, 30000);
+      await gameState.setCurrentQuestion(nextQuestion.id, duration);
 
       const newState = await gameState.getState();
 
@@ -224,6 +247,10 @@ async function scheduleNextQuestion(io) {
 
 exports.startGame = async (req, res) => {
   try {
+    // Récupérer le temps par question (en secondes) depuis le body, défaut 30 secondes
+    const questionDurationSeconds = req.body.questionDuration || 30;
+    const questionDurationMs = questionDurationSeconds * 1000; // Convertir en millisecondes
+
     // Récupérer les questions
     const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
     const questions = quiz.data;
@@ -238,13 +265,14 @@ exports.startGame = async (req, res) => {
     // Démarrer avec la première question
     if (questions.length > 0 && req.io) {
       const firstQuestion = questions[0];
-      await gameState.setCurrentQuestion(firstQuestion.id, 30000);
+      await gameState.setCurrentQuestion(firstQuestion.id, questionDurationMs);
       const newState = await gameState.getState();
 
       // Émettre l'événement de début de jeu avec la première question
       req.io.emit("game:started", {
         questionIndex: newState.currentQuestionIndex,
-        totalQuestions: questions.length
+        totalQuestions: questions.length,
+        gameCode: newState.gameCode
       });
 
       req.io.emit("question:next", {
@@ -317,7 +345,10 @@ exports.nextQuestion = async (req, res) => {
 
     const nextQuestion = questions[nextIndex];
     await gameState.nextQuestion();
-    await gameState.setCurrentQuestion(nextQuestion.id, 30000); // 30 secondes par défaut
+    // Utiliser la durée de la question précédente ou 30 secondes par défaut
+    const currentState = await gameState.getState();
+    const duration = currentState.questionDuration || 30000;
+    await gameState.setCurrentQuestion(nextQuestion.id, duration);
 
     const newState = await gameState.getState();
 
@@ -336,7 +367,7 @@ exports.nextQuestion = async (req, res) => {
       });
 
       // Programmer le timer pour passer automatiquement à la question suivante
-      scheduleNextQuestion(req.io);
+      scheduleNextQuestion(req.io, duration);
     }
 
     res.json({

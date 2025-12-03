@@ -43,14 +43,35 @@
       </div>
 
       <!-- Game Controls -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <button
-          @click="startGame"
-          :disabled="gameState.isStarted || loading"
-          class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          ▶️ Démarrer le jeu
-        </button>
+      <div class="space-y-4 mb-6">
+        <!-- Configuration du temps par question -->
+        <div v-if="!gameState.isStarted" class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            ⏱️ Temps par question (en secondes)
+          </label>
+          <div class="flex items-center space-x-4">
+            <input
+              v-model.number="questionDuration"
+              type="number"
+              min="5"
+              max="300"
+              class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="30"
+            />
+            <span class="text-sm text-gray-600">
+              (Minimum: 5s, Maximum: 300s)
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            @click="startGame"
+            :disabled="gameState.isStarted || loading || totalQuestions === 0"
+            class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ▶️ Démarrer le jeu
+          </button>
         <button
           @click="nextQuestion"
           :disabled="!gameState.isStarted || loading"
@@ -161,6 +182,7 @@ export default {
       },
       gameCode: null,
       totalQuestions: 0,
+      questionDuration: 30, // Temps par question en secondes (défaut: 30)
       loading: false,
       message: '',
       error: '',
@@ -244,14 +266,22 @@ export default {
         this.error = 'Aucune question disponible. Veuillez ajouter des questions avant de démarrer le jeu.'
         return
       }
+
+      // Valider le temps par question
+      if (!this.questionDuration || this.questionDuration < 5 || this.questionDuration > 300) {
+        this.error = 'Le temps par question doit être entre 5 et 300 secondes.'
+        return
+      }
       
       this.loading = true
       this.error = ''
       this.message = ''
       
       try {
-        await axios.post(API_URLS.game.start)
-        this.message = 'Jeu démarré avec succès !'
+        await axios.post(API_URLS.game.start, {
+          questionDuration: this.questionDuration
+        })
+        this.message = `Jeu démarré avec succès ! (${this.questionDuration}s par question)`
         await this.loadGameState()
         await this.loadQuestionsCount()
         setTimeout(() => this.message = '', 3000)

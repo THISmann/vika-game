@@ -53,7 +53,12 @@ io.on("connection", (socket) => {
       
       // Envoyer le nombre de joueurs connectés à tous
       const connectedCount = await gameState.getConnectedPlayersCount();
+      const currentState = await gameState.getState();
+      
       io.emit("players:count", { count: connectedCount });
+      
+      // Envoyer le code de jeu au joueur qui vient de se connecter
+      socket.emit("game:code", { gameCode: currentState.gameCode });
       
       console.log("player registered:", playerId, "Total:", connectedCount);
     } catch (error) {
