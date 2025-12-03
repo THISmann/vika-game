@@ -43,16 +43,8 @@ spec:
         env:
         - name: MONGO_INITDB_DATABASE
           value: "intelectgame"
-        - name: MONGO_INITDB_ROOT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-secret
-              key: username
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-secret
-              key: password
+        # Pas d'authentification pour simplifier (développement)
+        # Pour la production, activez l'authentification et utilisez l'URI avec credentials
         volumeMounts:
         - name: mongodb-data
           mountPath: /data/db
@@ -104,13 +96,13 @@ spec:
   selector:
     app: mongodb
 ---
-# Secret pour les credentials MongoDB
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mongodb-secret
-  namespace: intelectgame
-type: Opaque
-stringData:
-  username: "admin"
-  password: "admin123"  # ⚠️ Changez ce mot de passe en production!
+# Secret pour les credentials MongoDB (optionnel, non utilisé si auth désactivée)
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: mongodb-secret
+#   namespace: intelectgame
+# type: Opaque
+# stringData:
+#   username: "admin"
+#   password: "admin123"

@@ -46,18 +46,28 @@ const gameStateSchema = new mongoose.Schema({
   collection: 'gamestate'
 });
 
-// Use a single document with _id = 'current'
+// Use a single document identified by a fixed key field
+gameStateSchema.add({
+  key: {
+    type: String,
+    default: 'current',
+    unique: true,
+    index: true
+  }
+});
+
+// Use a single document with key = 'current'
 gameStateSchema.statics.getCurrent = async function() {
-  let state = await this.findOne({ _id: 'current' });
+  let state = await this.findOne({ key: 'current' });
   if (!state) {
-    state = await this.create({ _id: 'current' });
+    state = await this.create({ key: 'current' });
   }
   return state;
 };
 
 gameStateSchema.statics.updateCurrent = async function(updates) {
   return await this.findOneAndUpdate(
-    { _id: 'current' },
+    { key: 'current' },
     { $set: updates },
     { new: true, upsert: true }
   );
