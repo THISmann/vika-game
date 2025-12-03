@@ -8,19 +8,19 @@ metadata:
   namespace: intelectgame
 data:
   nginx.conf: |
-events {
-    worker_connections 1024;
-}
-
-http {
-    # Résolveur DNS pour la résolution dynamique des services Kubernetes
-    resolver kube-dns.kube-system.svc.cluster.local valid=10s;
-    
-    # Map pour gérer l'upgrade WebSocket
-    map $http_upgrade $connection_upgrade {
-        default upgrade;
-        '' close;
+    events {
+        worker_connections 1024;
     }
+    
+    http {
+        # Résolveur DNS pour la résolution dynamique des services Kubernetes
+        resolver kube-dns.kube-system.svc.cluster.local valid=10s;
+        
+        # Map pour gérer l'upgrade WebSocket
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            '' close;
+        }
     
     server {
             listen 80;
