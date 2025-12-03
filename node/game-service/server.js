@@ -84,12 +84,22 @@ io.on("connection", (socket) => {
       const isAlreadyConnected = state.connectedPlayers && state.connectedPlayers.includes(playerId);
       
       // Si le jeu a déjà commencé, vérifier si le joueur était déjà enregistré
+      // Si le joueur était déjà enregistré, permettre la reconnexion (par exemple après une déconnexion temporaire)
       if (state.isStarted && !isAlreadyConnected) {
+        // Vérifier si le joueur avait déjà été enregistré dans une session précédente
+        // En regardant les scores ou autres données persistantes
+        // Pour l'instant, on rejette seulement les nouveaux joueurs
+        console.log(`⚠️ Game already started, rejecting new player: ${playerId}`);
         socket.emit("error", { 
           message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.",
           code: "GAME_ALREADY_STARTED"
         });
         return;
+      }
+      
+      // Si le joueur était déjà connecté et que le jeu a commencé, c'est une reconnexion
+      if (state.isStarted && isAlreadyConnected) {
+        console.log(`🔄 Player reconnecting during active game: ${playerId}`);
       }
       
       // Enregistrer le socket du joueur

@@ -1,9 +1,9 @@
 <template>
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
     <!-- Waiting for game to start -->
     <div
       v-if="!gameStarted && !gameEnded"
-      class="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center"
+      class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8 md:p-12 text-center"
     >
       <div
         class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"
@@ -28,14 +28,14 @@
     <!-- Quiz Question -->
     <div v-else-if="current && !gameEnded" class="space-y-6">
       <!-- Timer -->
-      <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-4">
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-3 sm:p-4">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700">
+          <span class="text-xs sm:text-sm font-medium text-gray-700">
             Question {{ currentQuestionIndex + 1 }} sur {{ totalQuestions }}
           </span>
           <div class="flex items-center space-x-2">
             <div
-              class="w-12 h-12 rounded-full border-4 flex items-center justify-center font-bold text-lg"
+              class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-4 flex items-center justify-center font-bold text-base sm:text-lg"
               :class="{
                 'border-green-500 text-green-600': timeLeft > 10,
                 'border-yellow-500 text-yellow-600': timeLeft <= 10 && timeLeft > 5,
@@ -60,12 +60,12 @@
       </div>
 
       <!-- Question Card -->
-      <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-        <div class="text-center mb-8">
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 md:p-8">
+        <div class="text-center mb-4 sm:mb-6 md:mb-8">
           <div
-            class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4"
+            class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4"
           >
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -74,19 +74,19 @@
               />
             </svg>
           </div>
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">
+          <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
             {{ current.question }}
           </h2>
         </div>
 
         <!-- Choices -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <button
             v-for="(choice, index) in current.choices"
             :key="choice"
             @click="answer(choice)"
             :disabled="answering || hasAnswered"
-            class="group relative p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="group relative p-4 sm:p-5 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             :class="{
               'border-gray-200 hover:border-blue-500 hover:shadow-lg': !hasAnswered,
               'border-green-500 bg-green-50': hasAnswered && choice === selectedAnswer,
@@ -94,9 +94,9 @@
             }"
           >
             <div class="flex items-center justify-between">
-              <span class="text-lg font-medium text-gray-900">{{ choice }}</span>
+              <span class="text-base sm:text-lg font-medium text-gray-900 break-words">{{ choice }}</span>
               <div
-                class="w-8 h-8 rounded-full bg-white border-2 flex items-center justify-center transition-colors"
+                class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white border-2 flex items-center justify-center transition-colors flex-shrink-0 ml-2"
                 :class="{
                   'border-gray-300 group-hover:border-blue-500': !hasAnswered,
                   'border-green-500': hasAnswered && choice === selectedAnswer,
@@ -240,36 +240,23 @@ export default {
       return
     }
 
-    // Connecter au WebSocket
-    // Détecter si on est en production (pas localhost)
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    // Utiliser le socketService singleton pour réutiliser la même connexion
+    this.socket = socketService.getSocket()
+    const componentId = 'QuizPlay'
     
-    // En production, utiliser exactement la même URL que la page actuelle (qui passe par le proxy Nginx)
-    // Cela garantit que Socket.io passe par le même proxy
-    let wsUrl
-    if (isProduction) {
-      // Utiliser l'URL complète de la page actuelle (incluant le port si présent)
-      wsUrl = `${window.location.protocol}//${window.location.host}`
-      console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
-    } else {
-      wsUrl = API_CONFIG.GAME_SERVICE
-      console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
+    // Enregistrer le joueur via le service (ne créera pas de nouvelle connexion)
+    socketService.registerPlayer(this.playerId)
+    
+    // Attendre que la connexion soit établie si nécessaire
+    if (!this.socket.connected) {
+      this.socket.once('connect', () => {
+        console.log('✅ WebSocket connected, registering player:', this.playerId)
+        socketService.registerPlayer(this.playerId)
+      })
     }
     
-    console.log('🔌 Connecting to WebSocket:', wsUrl, 'isProduction:', isProduction, 'hostname:', window.location.hostname)
-    
-    this.socket = io(wsUrl, {
-      path: '/socket.io',
-      transports: ['polling', 'websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-      forceNew: false,
-      autoConnect: true
-    })
-    
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', this.socket.id)
+      console.log('✅ WebSocket connected in QuizPlay:', this.socket.id)
     })
     
     this.socket.on('connect_error', (error) => {
@@ -278,24 +265,28 @@ export default {
     
     this.socket.on('disconnect', (reason) => {
       console.warn('⚠️ WebSocket disconnected:', reason)
+      // Ne pas rediriger automatiquement, la reconnexion se fera automatiquement
     })
     
-    // Enregistrer le joueur
-    this.socket.emit('register', this.playerId)
-    
-    this.socket.on('error', (data) => {
-      this.error = data.message
-      setTimeout(() => {
-        this.$router.push('/player/register')
-      }, 3000)
-    })
+    socketService.on('error', (data) => {
+      console.error('❌ Socket error in QuizPlay:', data)
+      // Si c'est une erreur de jeu déjà commencé, vérifier si le joueur était déjà enregistré
+      if (data.code === 'GAME_ALREADY_STARTED') {
+        // Le joueur était déjà enregistré, ne pas bloquer
+        console.log('🔄 Game already started but player was registered, continuing...')
+        // Ne pas afficher l'erreur, juste continuer
+      } else {
+        this.error = data.message || 'Erreur de connexion'
+        // Ne pas rediriger automatiquement, laisser l'utilisateur continuer
+      }
+    }, componentId)
 
-    this.socket.on('game:started', (data) => {
+    socketService.on('game:started', (data) => {
       console.log('🎮 Game started event received in QuizPlay:', data)
       this.gameStarted = true
       // Charger l'état du jeu immédiatement
       this.loadGameState()
-    })
+    }, componentId)
     
     // Écouter tous les événements pour déboguer (si disponible)
     if (this.socket.onAny) {
@@ -309,7 +300,7 @@ export default {
       await this.loadResults()
     })
 
-    this.socket.on('question:next', (data) => {
+    socketService.on('question:next', (data) => {
       console.log('Question next received in QuizPlay:', data)
       this.current = data.question
       this.currentQuestionIndex = data.questionIndex
@@ -321,7 +312,7 @@ export default {
       this.gameStarted = true
       this.loading = false
       this.startTimer()
-    })
+    }, componentId)
 
     // Charger l'état du jeu immédiatement
     await this.loadGameState()

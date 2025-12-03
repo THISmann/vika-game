@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-4 sm:py-8 md:py-12 px-4 sm:px-6">
     <!-- Étape 1: Entrer le code -->
     <div v-if="step === 1" class="max-w-md w-full">
-      <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8">
         <div class="text-center mb-8">
-          <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-6 animate-pulse">
-            <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 sm:mb-6 animate-pulse">
+            <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -14,8 +14,8 @@
               />
             </svg>
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Entrer le code de la partie</h2>
-          <p class="text-sm text-gray-600">Demandez le code à l'administrateur</p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Entrer le code de la partie</h2>
+          <p class="text-xs sm:text-sm text-gray-600">Demandez le code à l'administrateur</p>
         </div>
 
         <form @submit.prevent="verifyGameCode" class="space-y-6">
@@ -30,7 +30,7 @@
               required
               maxlength="6"
               autofocus
-              class="appearance-none relative block w-full px-6 py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-3xl font-mono tracking-widest uppercase bg-gray-50"
+              class="appearance-none relative block w-full px-4 sm:px-6 py-3 sm:py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-2xl sm:text-3xl font-mono tracking-widest uppercase bg-gray-50"
               placeholder="ABC123"
               @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
             />
@@ -59,10 +59,10 @@
 
     <!-- Étape 2: Entrer le nom -->
     <div v-else-if="step === 2" class="max-w-md w-full">
-      <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
-        <div class="text-center mb-8">
-          <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-6">
-            <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8">
+        <div class="text-center mb-6 sm:mb-8">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-4 sm:mb-6">
+            <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -79,13 +79,13 @@
               Code vérifié: {{ gameCode }}
             </div>
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
-          <p class="text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
+          <p class="text-xs sm:text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
       </div>
 
-        <form @submit.prevent="registerPlayer" class="space-y-6">
+        <form @submit.prevent="registerPlayer" class="space-y-4 sm:space-y-6">
         <div>
-            <label for="player-name" class="block text-sm font-medium text-gray-700 mb-3">
+            <label for="player-name" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
               Votre nom de joueur
           </label>
           <input
@@ -95,7 +95,7 @@
             required
               autofocus
               maxlength="20"
-              class="appearance-none relative block w-full px-4 py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-lg bg-gray-50"
+              class="appearance-none relative block w-full px-4 py-3 sm:py-4 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all text-base sm:text-lg bg-gray-50"
               placeholder="Ex: Alice, Bob, SuperJoueur..."
             />
             <p class="mt-2 text-xs text-gray-500">Maximum 20 caractères</p>
@@ -109,18 +109,18 @@
           {{ error }}
         </div>
 
-          <div class="flex space-x-3">
+          <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               type="button"
               @click="step = 1"
-              class="flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
+              class="w-full sm:flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-all font-medium text-sm sm:text-base"
             >
               ← Retour
             </button>
         <button
           type="submit"
               :disabled="!name || name.trim().length < 2 || loading || gameStarted"
-              class="flex-1 group relative flex justify-center py-3 px-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              class="w-full sm:flex-1 group relative flex justify-center py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg sm:rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
               <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-4">
             <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -137,15 +137,15 @@
 
     <!-- Étape 3: En attente du démarrage -->
     <div v-else-if="step === 3" class="max-w-md w-full">
-      <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8 text-center">
-        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-6">
-          <svg class="h-10 w-10 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8 text-center">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 sm:mb-6">
+          <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">⏳ En attente du démarrage</h2>
-        <p class="text-gray-600 mb-2">Bienvenue, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
-        <p class="text-gray-600 text-sm">L'administrateur va bientôt démarrer la partie...</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">⏳ En attente du démarrage</h2>
+        <p class="text-sm sm:text-base text-gray-600 mb-2">Bienvenue, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
+        <p class="text-xs sm:text-sm text-gray-600">L'administrateur va bientôt démarrer la partie...</p>
         <div class="mt-6">
           <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm">
             <svg class="w-4 h-4 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
@@ -161,8 +161,8 @@
 
 <script>
 import axios from 'axios'
-import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import socketService from '@/services/socketService'
 
 export default {
   data() {
@@ -187,9 +187,9 @@ export default {
     }
   },
   beforeUnmount() {
-    if (this.socket) {
-      this.socket.disconnect()
-    }
+    // Nettoyer les listeners mais garder la connexion active pour les autres composants
+    socketService.off('PlayerRegister')
+    // Ne pas déconnecter le socket car il est partagé avec QuizPlay
   },
   methods: {
     async verifyGameCode() {
@@ -257,84 +257,60 @@ export default {
         // Passer à l'étape 3 (attente)
         this.step = 3
 
-        // Se connecter au WebSocket avec options de reconnexion
-        // Détecter si on est en production (pas localhost)
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+        // Utiliser le socketService singleton pour réutiliser la même connexion
+        this.socket = socketService.getSocket()
+        const componentId = 'PlayerRegister'
         
-        // En production, utiliser exactement la même URL que la page actuelle (qui passe par le proxy Nginx)
-        let wsUrl
-        if (isProduction) {
-          wsUrl = `${window.location.protocol}//${window.location.host}`
-          console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
-        } else {
-          wsUrl = API_CONFIG.GAME_SERVICE
-          console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
+        // Enregistrer le joueur via le service
+        socketService.registerPlayer(res.data.id)
+        
+        // Attendre que la connexion soit établie si nécessaire
+        if (!this.socket.connected) {
+          this.socket.once('connect', () => {
+            console.log('✅ WebSocket connected, registering player:', res.data.id)
+            socketService.registerPlayer(res.data.id)
+          })
         }
-        
-        console.log('🔌 Connecting to WebSocket:', wsUrl, 'isProduction:', isProduction, 'hostname:', window.location.hostname)
-        
-        this.socket = io(wsUrl, {
-          path: '/socket.io',
-          transports: ['polling', 'websocket'],
-          reconnection: true,
-          reconnectionDelay: 1000,
-          reconnectionAttempts: 5,
-          forceNew: false,
-          autoConnect: true
-        })
-        
-        // Attendre que la connexion soit établie
-        this.socket.on('connect', () => {
-          console.log('✅ WebSocket connected:', this.socket.id)
-          // Enregistrer le joueur une fois connecté
-          console.log('Registering player:', res.data.id)
-          this.socket.emit('register', res.data.id)
-        })
-        
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ WebSocket connection error:', error)
-        })
 
         // Écouter le démarrage du jeu
-        this.socket.on('game:started', (data) => {
+        socketService.on('game:started', (data) => {
           console.log('🎮 Game started event received in PlayerRegister:', data)
           // Rediriger vers le quiz immédiatement
           setTimeout(() => {
             this.$router.push('/player/quiz')
           }, 100)
-        })
+        }, componentId)
 
-        this.socket.on('question:next', (data) => {
+        socketService.on('question:next', (data) => {
           console.log('❓ Question next event received in PlayerRegister:', data)
           // Rediriger vers le quiz si une question arrive
-        setTimeout(() => {
-          this.$router.push('/player/quiz')
+          setTimeout(() => {
+            this.$router.push('/player/quiz')
           }, 100)
-        })
-        
-        // Écouter tous les événements pour déboguer (si disponible)
-        if (this.socket.onAny) {
-          this.socket.onAny((eventName, ...args) => {
-            console.log('📡 Socket event received:', eventName, args)
-          })
-        }
+        }, componentId)
 
-        this.socket.on('error', (data) => {
+        socketService.on('error', (data) => {
           console.error('❌ Socket error:', data)
-          // Si c'est une erreur de jeu déjà commencé, permettre la reconnexion
+          // Si c'est une erreur de jeu déjà commencé, ne pas bloquer si le joueur était déjà enregistré
           if (data.code === 'GAME_ALREADY_STARTED') {
-            this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
-            this.step = 2 // Go back to name step
+            // Vérifier si le joueur était déjà enregistré avant le démarrage
+            // Si oui, permettre la reconnexion
+            const wasRegistered = localStorage.getItem('playerId') === res.data.id
+            if (wasRegistered) {
+              console.log('🔄 Player was already registered, allowing reconnection')
+              // Ne pas afficher l'erreur, juste rediriger vers le quiz
+              setTimeout(() => {
+                this.$router.push('/player/quiz')
+              }, 100)
+            } else {
+              this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
+              this.step = 2 // Go back to name step
+            }
           } else {
             this.error = data.message || 'Erreur de connexion'
             this.step = 2 // Go back to name step on error
           }
-        })
-
-        // Si la connexion est déjà établie, enregistrer immédiatement
-        if (this.socket.connected) {
-          this.socket.emit('register', res.data.id)
-        }
+        }, componentId)
 
       } catch (err) {
         if (err.response && err.response.status === 409) {
