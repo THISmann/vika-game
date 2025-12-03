@@ -18,7 +18,7 @@
           <p class="text-xs sm:text-sm text-gray-600">Demandez le code à l'administrateur</p>
         </div>
 
-        <form @submit.prevent="verifyGameCode" class="space-y-6">
+        <div class="space-y-6">
           <div>
             <label for="game-code" class="block text-sm font-medium text-gray-700 mb-3">
               Code de la partie
@@ -41,9 +41,9 @@
           </div>
 
           <button
-            type="submit"
+            type="button"
             :disabled="!gameCode || gameCode.length < 3 || verifyingCode"
-            @click.prevent="verifyGameCode"
+            @click="verifyGameCode"
             @touchstart.prevent
             class="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-manipulation"
             style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
@@ -56,7 +56,7 @@
             </span>
             {{ verifyingCode ? 'Vérification...' : 'Vérifier le code' }}
           </button>
-        </form>
+        </div>
       </div>
     </div>
 
@@ -137,7 +137,7 @@
               {{ loading ? 'Inscription...' : 'Rejoindre la partie' }}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
 

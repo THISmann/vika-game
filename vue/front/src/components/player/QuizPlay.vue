@@ -344,15 +344,26 @@ export default {
       this.loading = false
     }
     
-    // Polling périodique pour vérifier l'état du jeu (au cas où on manque l'événement WebSocket)
+    // Polling périodique pour vérifier l'état du jeu (CRITIQUE: les événements Socket.io ne sont pas partagés entre pods Kubernetes)
+    // Ce polling est essentiel car l'admin peut être sur un pod différent des joueurs
     this.gameStatePolling = setInterval(async () => {
-      if (!this.gameStarted && !this.gameEnded) {
+      if (!this.gameEnded) {
         try {
+          const wasGameStarted = this.gameStarted
           await this.loadGameState()
-          // Si le jeu a démarré, charger la question actuelle
-          if (this.gameStarted && !this.current) {
+          
+          // Si le jeu vient de démarrer, charger immédiatement la question
+          if (this.gameStarted && !wasGameStarted) {
+            console.log('🔄 Game started detected via polling, loading question...')
             await this.loadCurrentQuestion()
           }
+          
+          // Si le jeu a démarré mais qu'on n'a pas encore la question, la charger
+          if (this.gameStarted && !this.current) {
+            console.log('🔄 Game started but no question, loading...')
+            await this.loadCurrentQuestion()
+          }
+          
           // Si le jeu a démarré et qu'on a la question, arrêter le polling
           if (this.gameStarted && this.current) {
             if (this.gameStatePolling) {
@@ -364,13 +375,13 @@ export default {
         } catch (err) {
           console.error('Error polling game state:', err)
         }
-      } else if (this.gameStarted && this.gameStatePolling) {
-        // Arrêter le polling si le jeu a démarré
+      } else if (this.gameEnded && this.gameStatePolling) {
+        // Arrêter le polling si le jeu est terminé
         clearInterval(this.gameStatePolling)
         this.gameStatePolling = null
-        console.log('✅ Polling stopped, game already started')
+        console.log('✅ Polling stopped, game ended')
       }
-    }, 2000) // Vérifier toutes les 2 secondes
+    }, 1500) // Vérifier toutes les 1.5 secondes (plus fréquent pour une meilleure réactivité)
   },
   beforeUnmount() {
     if (this.timerInterval) {
@@ -389,14 +400,19 @@ export default {
         const res = await axios.get(API_URLS.game.state)
         const state = res.data
         
+        const wasGameStarted = this.gameStarted
         this.gameStarted = state.isStarted
         this.currentQuestionIndex = state.currentQuestionIndex
         this.questionStartTime = state.questionStartTime
         this.questionDuration = state.questionDuration || 30000
 
-        // Si le jeu a démarré, charger la question actuelle
-        if (state.isStarted && state.currentQuestionId && !this.current) {
-          await this.loadCurrentQuestion()
+        // Si le jeu vient de démarrer ou si le jeu a démarré mais qu'on n'a pas la question
+        if (state.isStarted && state.currentQuestionId) {
+          if (!this.current || (!wasGameStarted && state.isStarted)) {
+            // Charger la question si on ne l'a pas ou si le jeu vient de démarrer
+            console.log('🔄 Loading current question in loadGameState()')
+            await this.loadCurrentQuestion()
+          }
         }
       } catch (err) {
         console.error('Erreur chargement état:', err)
@@ -405,14 +421,23 @@ export default {
     
     async loadCurrentQuestion() {
       try {
+        console.log('🔄 loadCurrentQuestion() called')
         const stateRes = await axios.get(API_URLS.game.state)
         const state = stateRes.data
+        
+        console.log('📊 Game state:', {
+          isStarted: state.isStarted,
+          currentQuestionId: state.currentQuestionId,
+          currentQuestionIndex: state.currentQuestionIndex
+        })
         
         if (state.isStarted && state.currentQuestionId) {
           // Charger la question actuelle
           const questionsRes = await axios.get(API_URLS.quiz.all)
           const question = questionsRes.data.find(q => q.id === state.currentQuestionId)
+          
           if (question) {
+            console.log('✅ Found question:', question.question)
             this.current = {
               id: question.id,
               question: question.question,
@@ -422,13 +447,21 @@ export default {
             this.currentQuestionIndex = state.currentQuestionIndex
             this.questionStartTime = state.questionStartTime
             this.questionDuration = state.questionDuration || 30000
+            this.gameStarted = true
             this.loading = false
             this.startTimer()
-            console.log('✅ Current question loaded:', question.question)
+            console.log('✅ Current question loaded and displayed:', question.question)
+          } else {
+            console.warn('⚠️ Question not found in quiz list:', state.currentQuestionId)
           }
+        } else {
+          console.log('ℹ️ Game not started or no current question:', {
+            isStarted: state.isStarted,
+            currentQuestionId: state.currentQuestionId
+          })
         }
       } catch (err) {
-        console.error('Erreur chargement question actuelle:', err)
+        console.error('❌ Erreur chargement question actuelle:', err)
       }
     },
     startTimer() {
