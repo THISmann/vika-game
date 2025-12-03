@@ -1,0 +1,88 @@
+# Configuration Nginx de test avec noms de service courts
+# Cette version utilise les noms courts dans le même namespace
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-proxy-config
+  namespace: intelectgame
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    
+    http {
+        # Resolver DNS pour résolution dynamique
+        resolver 10.96.0.10 valid=10s;
+        resolver_timeout 5s;
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            # Variables pour les services (utilise les noms courts dans le même namespace)
+            # Dans Kubernetes, les noms courts fonctionnent dans le même namespace
+            set $frontend_upstream "frontend.intelectgame:80";
+            set $auth_upstream "auth-service.intelectgame:3001";
+            set $quiz_upstream "quiz-service.intelectgame:3002";
+            set $game_upstream "game-service.intelectgame:3003";
+            
+            # Frontend
+            location / {
+                proxy_pass http://$frontend_upstream;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Auth Service
+            location /api/auth {
+                rewrite ^/api/auth/(.*)$ /auth/$1 break;
+                proxy_pass http://$auth_upstream;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Quiz Service
+            location /api/quiz {
+                rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
+                proxy_pass http://$quiz_upstream;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+            
+            # Game Service (HTTP)
+            location /api/game {
+                rewrite ^/api/game/(.*)$ /game/$1 break;
+                proxy_pass http://$game_upstream;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                
+                # WebSocket support
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+            }
+            
+            # Game Service WebSocket (Socket.IO)
+            location /socket.io {
+                proxy_pass http://$game_upstream;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_read_timeout 86400;
+            }
+        }
+    }
+
