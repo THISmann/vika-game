@@ -30,11 +30,16 @@ async function updateScore(playerId, playerName, delta) {
 
 exports.answerQuestion = async (req, res) => {
   const { playerId, questionId, answer } = req.body;
-  const state = await gameState.getState();
 
   try {
+    if (!playerId || !questionId || !answer) {
+      return res.status(400).json({ error: "playerId, questionId et answer sont requis" });
+    }
+
+    const state = await gameState.getState();
+
     // Vérifier si le jeu a commencé
-    if (!state.isStarted) {
+    if (!state || !state.isStarted) {
       return res.status(400).json({ error: "Le jeu n'a pas encore commencé" });
     }
 
@@ -44,7 +49,8 @@ exports.answerQuestion = async (req, res) => {
     }
 
     // Vérifier si le joueur a déjà répondu
-    if (state.answers[playerId] && state.answers[playerId][questionId]) {
+    const answers = state.answers || {};
+    if (answers[playerId] && answers[playerId][questionId]) {
       return res.json({
         alreadyAnswered: true,
         message: "Vous avez déjà répondu à cette question"
@@ -52,16 +58,30 @@ exports.answerQuestion = async (req, res) => {
     }
 
     // 🔍 Fetch player
-    const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
-    const player = players.data.find(p => p.id === playerId);
-
-    if (!player) return res.status(404).json({ error: "Player not found" });
+    let player;
+    try {
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      player = playersRes.data.find(p => p.id === playerId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+    } catch (err) {
+      console.error("Error fetching player:", err);
+      return res.status(500).json({ error: "Erreur lors de la récupération du joueur" });
+    }
 
     // 🔍 Fetch quiz questions
-    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-    const question = quiz.data.find(q => q.id === questionId);
-
-    if (!question) return res.status(404).json({ error: "Question not found" });
+    let question;
+    try {
+      const quizRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
+      question = quizRes.data.find(q => q.id === questionId);
+      if (!question) {
+        return res.status(404).json({ error: "Question not found" });
+      }
+    } catch (err) {
+      console.error("Error fetching question:", err);
+      return res.status(500).json({ error: "Erreur lors de la récupération de la question" });
+    }
 
     const isCorrect = question.answer === answer;
 
@@ -77,8 +97,11 @@ exports.answerQuestion = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in answerQuestion:", err);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
