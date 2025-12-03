@@ -233,7 +233,14 @@ export default {
     await this.loadGameCode()
     
     // Connecter au WebSocket
-    this.socket = io(API_CONFIG.GAME_SERVICE)
+    // En production, utiliser l'URL de base pour que Socket.io passe par le proxy Nginx
+    const wsUrl = import.meta.env.PROD 
+      ? `${window.location.protocol}//${window.location.host}`
+      : API_CONFIG.GAME_SERVICE
+    this.socket = io(wsUrl, {
+      path: '/socket.io',
+      transports: ['polling', 'websocket']
+    })
     
     this.socket.on('players:count', (data) => {
       this.gameState.connectedPlayersCount = data.count

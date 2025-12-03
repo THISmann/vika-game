@@ -79,16 +79,20 @@ export const API_URLS = {
   },
   ws: {
     game: (() => {
-      const gameUrl = API_CONFIG.GAME_SERVICE
-      // Si c'est une URL relative (commence par /), construire l'URL complète
-      if (gameUrl.startsWith('/')) {
-        // En production, utiliser l'URL actuelle du navigateur
+      const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
+      
+      if (isProduction) {
+        // En production, utiliser le chemin /socket.io qui est configuré dans Nginx
+        // Socket.io va automatiquement ajouter /socket.io/ à la fin
         if (typeof window !== 'undefined') {
-          return `${window.location.protocol}//${window.location.host}${gameUrl}`
+          // Utiliser l'URL de base du navigateur avec le chemin socket.io
+          return `${window.location.protocol}//${window.location.host}`
         }
-        return gameUrl
+        return ''
+      } else {
+        // En développement, utiliser localhost:3003 directement
+        return 'http://localhost:3003'
       }
-      return gameUrl
     })(),
   },
 }

@@ -256,7 +256,13 @@ export default {
         this.step = 3
 
         // Se connecter au WebSocket avec options de reconnexion
-        this.socket = io(API_CONFIG.GAME_SERVICE, {
+        // En production, utiliser l'URL de base pour que Socket.io passe par le proxy Nginx
+        const wsUrl = import.meta.env.PROD 
+          ? `${window.location.protocol}//${window.location.host}`
+          : API_CONFIG.GAME_SERVICE
+        this.socket = io(wsUrl, {
+          path: '/socket.io',
+          transports: ['polling', 'websocket'],
           reconnection: true,
           reconnectionDelay: 1000,
           reconnectionAttempts: 5
