@@ -222,6 +222,7 @@ export default {
       questionDuration: 30000,
       questionStartTime: null,
       timerInterval: null,
+      gameStatePolling: null,
       hasAnswered: false,
       selectedAnswer: null,
       socket: null,
@@ -281,11 +282,21 @@ export default {
       }
     }, componentId)
 
-    socketService.on('game:started', (data) => {
+    socketService.on('game:started', async (data) => {
       console.log('🎮 Game started event received in QuizPlay:', data)
       this.gameStarted = true
-      // Charger l'état du jeu immédiatement
-      this.loadGameState()
+      this.loading = false
+      // Arrêter le polling car le jeu a démarré
+      if (this.gameStatePolling) {
+        clearInterval(this.gameStatePolling)
+        this.gameStatePolling = null
+        console.log('✅ Polling stopped after game:started event')
+      }
+      // Charger l'état du jeu et la question actuelle immédiatement
+      await this.loadGameState()
+      if (!this.current) {
+        await this.loadCurrentQuestion()
+      }
     }, componentId)
     
     // Écouter tous les événements pour déboguer (si disponible)
@@ -311,6 +322,12 @@ export default {
       this.selectedAnswer = null
       this.gameStarted = true
       this.loading = false
+      // Arrêter le polling car on a reçu une question
+      if (this.gameStatePolling) {
+        clearInterval(this.gameStatePolling)
+        this.gameStatePolling = null
+        console.log('✅ Polling stopped after question:next event')
+      }
       this.startTimer()
     }, componentId)
 
@@ -326,14 +343,45 @@ export default {
     } else {
       this.loading = false
     }
+    
+    // Polling périodique pour vérifier l'état du jeu (au cas où on manque l'événement WebSocket)
+    this.gameStatePolling = setInterval(async () => {
+      if (!this.gameStarted && !this.gameEnded) {
+        try {
+          await this.loadGameState()
+          // Si le jeu a démarré, charger la question actuelle
+          if (this.gameStarted && !this.current) {
+            await this.loadCurrentQuestion()
+          }
+          // Si le jeu a démarré et qu'on a la question, arrêter le polling
+          if (this.gameStarted && this.current) {
+            if (this.gameStatePolling) {
+              clearInterval(this.gameStatePolling)
+              this.gameStatePolling = null
+              console.log('✅ Polling stopped, game started and question loaded')
+            }
+          }
+        } catch (err) {
+          console.error('Error polling game state:', err)
+        }
+      } else if (this.gameStarted && this.gameStatePolling) {
+        // Arrêter le polling si le jeu a démarré
+        clearInterval(this.gameStatePolling)
+        this.gameStatePolling = null
+        console.log('✅ Polling stopped, game already started')
+      }
+    }, 2000) // Vérifier toutes les 2 secondes
   },
   beforeUnmount() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
     }
-    if (this.socket) {
-      this.socket.disconnect()
+    if (this.gameStatePolling) {
+      clearInterval(this.gameStatePolling)
     }
+    // Nettoyer les listeners mais garder la connexion active pour les autres composants
+    socketService.off('QuizPlay')
+    // Ne pas déconnecter le socket car il est partagé
   },
   methods: {
     async loadGameState() {
@@ -346,6 +394,20 @@ export default {
         this.questionStartTime = state.questionStartTime
         this.questionDuration = state.questionDuration || 30000
 
+        // Si le jeu a démarré, charger la question actuelle
+        if (state.isStarted && state.currentQuestionId && !this.current) {
+          await this.loadCurrentQuestion()
+        }
+      } catch (err) {
+        console.error('Erreur chargement état:', err)
+      }
+    },
+    
+    async loadCurrentQuestion() {
+      try {
+        const stateRes = await axios.get(API_URLS.game.state)
+        const state = stateRes.data
+        
         if (state.isStarted && state.currentQuestionId) {
           // Charger la question actuelle
           const questionsRes = await axios.get(API_URLS.quiz.all)
@@ -357,11 +419,16 @@ export default {
               choices: question.choices
             }
             this.totalQuestions = questionsRes.data.length
+            this.currentQuestionIndex = state.currentQuestionIndex
+            this.questionStartTime = state.questionStartTime
+            this.questionDuration = state.questionDuration || 30000
+            this.loading = false
             this.startTimer()
+            console.log('✅ Current question loaded:', question.question)
           }
         }
       } catch (err) {
-        console.error('Erreur chargement état:', err)
+        console.error('Erreur chargement question actuelle:', err)
       }
     },
     startTimer() {

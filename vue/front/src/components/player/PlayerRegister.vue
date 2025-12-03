@@ -43,7 +43,10 @@
           <button
             type="submit"
             :disabled="!gameCode || gameCode.length < 3 || verifyingCode"
-            class="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            @click.prevent="verifyGameCode"
+            @touchstart.prevent
+            class="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-manipulation"
+            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
           >
             <span v-if="verifyingCode" class="absolute left-0 inset-y-0 flex items-center pl-4">
               <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -120,7 +123,10 @@
         <button
           type="submit"
               :disabled="!name || name.trim().length < 2 || loading || gameStarted"
-              class="w-full sm:flex-1 group relative flex justify-center py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg sm:rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              @click.prevent="registerPlayer"
+              @touchstart.prevent
+              class="w-full sm:flex-1 group relative flex justify-center py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg sm:rounded-xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg touch-manipulation"
+              style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
         >
               <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-4">
             <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
