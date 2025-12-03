@@ -57,6 +57,7 @@ export const API_URLS = {
   },
   quiz: {
     all: `${API_CONFIG.QUIZ_SERVICE}/all`,
+    questions: `${API_CONFIG.QUIZ_SERVICE}/questions`, // Alias pour /all
     full: `${API_CONFIG.QUIZ_SERVICE}/full`,
     create: `${API_CONFIG.QUIZ_SERVICE}/create`,
     update: (id) => `${API_CONFIG.QUIZ_SERVICE}/${id}`,

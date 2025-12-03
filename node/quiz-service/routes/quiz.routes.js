@@ -13,6 +13,7 @@ router.delete("/:id", quizController.deleteQuestion);
 
 // Player
 router.get("/all", quizController.getQuestions);
+router.get("/questions", quizController.getQuestions); // Alias pour compatibilité
 router.get("/full", quizController.getFullQuestions);
 
 module.exports = router;

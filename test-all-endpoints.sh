@@ -111,9 +111,14 @@ echo "📝 QUIZ SERVICE"
 echo "═══════════════════════════════════════════════════════════"
 
 # Test get questions (sans réponses)
-test_endpoint "GET" "$API_BASE/quiz/questions" \
+test_endpoint "GET" "$API_BASE/quiz/all" \
   "" \
   "Get questions (without answers)" 200
+
+# Test avec l'alias aussi
+test_endpoint "GET" "$API_BASE/quiz/questions" \
+  "" \
+  "Get questions (alias /questions)" 200
 
 # Test get full questions (avec réponses)
 test_endpoint "GET" "$API_BASE/quiz/full" \

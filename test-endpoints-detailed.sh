@@ -74,9 +74,13 @@ echo "════════════════════════�
 echo "📝 QUIZ SERVICE"
 echo "═══════════════════════════════════════════════════════════"
 
-test_detailed "GET" "$API_BASE/quiz/questions" \
+test_detailed "GET" "$API_BASE/quiz/all" \
   "" \
   "Get questions (without answers)"
+
+test_detailed "GET" "$API_BASE/quiz/questions" \
+  "" \
+  "Get questions (alias /questions)"
 
 test_detailed "GET" "$API_BASE/quiz/full" \
   "" \
