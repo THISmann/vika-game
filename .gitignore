@@ -126,10 +126,19 @@ ENV/
 *.backup
 *.old
 
-# Local data files (keep structure but ignore content)
-# Uncomment if you want to ignore data files
-# node/*/data/*.json
-# !node/*/data/.gitkeep
+# Local data files - IMPORTANT: Keep game data files
+# Allow JSON files in data directories of micro-services (they contain important game data)
+# These files contain important game state, questions, and user data
+!node/auth-service/data/*.json
+!node/auth-service/data/.gitkeep
+!node/quiz-service/data/*.json
+!node/quiz-service/data/.gitkeep
+!node/game-service/data/*.json
+!node/game-service/data/.gitkeep
+
+# But ignore other data files that might be generated
+*.data
+*.dat
 
 # Secrets and credentials
 secrets/
