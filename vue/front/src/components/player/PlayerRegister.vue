@@ -84,7 +84,7 @@
           </div>
           <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
           <p class="text-xs sm:text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
-      </div>
+        </div>
 
         <form @submit.prevent="registerPlayer" class="space-y-4 sm:space-y-6">
         <div>
@@ -137,7 +137,7 @@
               {{ loading ? 'Inscription...' : 'Rejoindre la partie' }}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
 
