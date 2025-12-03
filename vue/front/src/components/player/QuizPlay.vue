@@ -286,16 +286,21 @@ export default {
       console.log('🎮 Game started event received in QuizPlay:', data)
       this.gameStarted = true
       this.loading = false
-      // Arrêter le polling car le jeu a démarré
-      if (this.gameStatePolling) {
-        clearInterval(this.gameStatePolling)
-        this.gameStatePolling = null
-        console.log('✅ Polling stopped after game:started event')
-      }
+      // NE PAS arrêter le polling ici - il continuera pour charger la question et détecter les suivantes
       // Charger l'état du jeu et la question actuelle immédiatement
-      await this.loadGameState()
-      if (!this.current) {
-        await this.loadCurrentQuestion()
+      try {
+        await this.loadGameState()
+        if (!this.current) {
+          console.log('🔄 No current question after game:started, loading...')
+          await this.loadCurrentQuestion()
+        }
+        if (this.current) {
+          console.log('✅ Question loaded after game:started event')
+          this.startTimer()
+        }
+      } catch (err) {
+        console.error('❌ Error loading game state after game:started:', err)
+        // Le polling continuera et réessayera
       }
     }, componentId)
     
@@ -312,7 +317,7 @@ export default {
     })
 
     socketService.on('question:next', (data) => {
-      console.log('Question next received in QuizPlay:', data)
+      console.log('❓ Question next received in QuizPlay:', data)
       this.current = data.question
       this.currentQuestionIndex = data.questionIndex
       this.totalQuestions = data.totalQuestions
@@ -322,13 +327,9 @@ export default {
       this.selectedAnswer = null
       this.gameStarted = true
       this.loading = false
-      // Arrêter le polling car on a reçu une question
-      if (this.gameStatePolling) {
-        clearInterval(this.gameStatePolling)
-        this.gameStatePolling = null
-        console.log('✅ Polling stopped after question:next event')
-      }
+      // NE PAS arrêter le polling - il continuera pour détecter les questions suivantes
       this.startTimer()
+      console.log('✅ Question displayed, timer started')
     }, componentId)
 
     // Charger l'état du jeu immédiatement
@@ -346,42 +347,55 @@ export default {
     
     // Polling périodique pour vérifier l'état du jeu (CRITIQUE: les événements Socket.io ne sont pas partagés entre pods Kubernetes)
     // Ce polling est essentiel car l'admin peut être sur un pod différent des joueurs
+    // Le polling continue tant que le jeu n'est pas terminé ET qu'on n'a pas de question affichée
     this.gameStatePolling = setInterval(async () => {
-      if (!this.gameEnded) {
-        try {
-          const wasGameStarted = this.gameStarted
-          await this.loadGameState()
-          
-          // Si le jeu vient de démarrer, charger immédiatement la question
-          if (this.gameStarted && !wasGameStarted) {
-            console.log('🔄 Game started detected via polling, loading question...')
-            await this.loadCurrentQuestion()
-          }
-          
-          // Si le jeu a démarré mais qu'on n'a pas encore la question, la charger
-          if (this.gameStarted && !this.current) {
-            console.log('🔄 Game started but no question, loading...')
-            await this.loadCurrentQuestion()
-          }
-          
-          // Si le jeu a démarré et qu'on a la question, arrêter le polling
-          if (this.gameStarted && this.current) {
-            if (this.gameStatePolling) {
-              clearInterval(this.gameStatePolling)
-              this.gameStatePolling = null
-              console.log('✅ Polling stopped, game started and question loaded')
-            }
-          }
-        } catch (err) {
-          console.error('Error polling game state:', err)
-        }
-      } else if (this.gameEnded && this.gameStatePolling) {
+      if (this.gameEnded) {
         // Arrêter le polling si le jeu est terminé
-        clearInterval(this.gameStatePolling)
-        this.gameStatePolling = null
-        console.log('✅ Polling stopped, game ended')
+        if (this.gameStatePolling) {
+          clearInterval(this.gameStatePolling)
+          this.gameStatePolling = null
+          console.log('✅ Polling stopped, game ended')
+        }
+        return
       }
-    }, 1500) // Vérifier toutes les 1.5 secondes (plus fréquent pour une meilleure réactivité)
+
+      try {
+        const wasGameStarted = this.gameStarted
+        const hadCurrent = !!this.current
+        
+        // Charger l'état du jeu
+        await this.loadGameState()
+        
+        // Si le jeu vient de démarrer, charger immédiatement la question
+        if (this.gameStarted && !wasGameStarted) {
+          console.log('🔄 Game started detected via polling, loading question...')
+          await this.loadCurrentQuestion()
+        }
+        
+        // Si le jeu a démarré mais qu'on n'a pas encore la question, la charger
+        if (this.gameStarted && !this.current) {
+          console.log('🔄 Game started but no question, loading...')
+          await this.loadCurrentQuestion()
+        }
+        
+        // Si on a maintenant la question et qu'on ne l'avait pas avant, démarrer le timer
+        if (this.current && !hadCurrent && this.gameStarted) {
+          console.log('✅ Question loaded via polling, starting timer...')
+          this.startTimer()
+        }
+        
+        // Le polling continue même si gameStarted=true tant qu'on n'a pas de question
+        // Il s'arrête seulement si le jeu est terminé ou si on a une question ET que le jeu a démarré
+        // Mais on continue le polling pour détecter les nouvelles questions
+        if (this.gameStarted && this.current) {
+          // On a une question, mais on continue le polling pour les questions suivantes
+          // Le polling s'arrêtera seulement quand le jeu est terminé
+        }
+      } catch (err) {
+        console.error('❌ Error polling game state:', err)
+        // Ne pas arrêter le polling en cas d'erreur, continuer à essayer
+      }
+    }, 1000) // Vérifier toutes les 1 seconde (plus fréquent pour une meilleure réactivité)
   },
   beforeUnmount() {
     if (this.timerInterval) {
@@ -428,31 +442,44 @@ export default {
         console.log('📊 Game state:', {
           isStarted: state.isStarted,
           currentQuestionId: state.currentQuestionId,
-          currentQuestionIndex: state.currentQuestionIndex
+          currentQuestionIndex: state.currentQuestionIndex,
+          questionStartTime: state.questionStartTime
         })
         
         if (state.isStarted && state.currentQuestionId) {
           // Charger la question actuelle
-          const questionsRes = await axios.get(API_URLS.quiz.all)
-          const question = questionsRes.data.find(q => q.id === state.currentQuestionId)
-          
-          if (question) {
-            console.log('✅ Found question:', question.question)
-            this.current = {
-              id: question.id,
-              question: question.question,
-              choices: question.choices
+          try {
+            const questionsRes = await axios.get(API_URLS.quiz.all)
+            const question = questionsRes.data.find(q => q.id === state.currentQuestionId)
+            
+            if (question) {
+              console.log('✅ Found question:', question.question)
+              this.current = {
+                id: question.id,
+                question: question.question,
+                choices: question.choices
+              }
+              this.totalQuestions = questionsRes.data.length
+              this.currentQuestionIndex = state.currentQuestionIndex
+              this.questionStartTime = state.questionStartTime
+              this.questionDuration = state.questionDuration || 30000
+              this.gameStarted = true
+              this.loading = false
+              
+              // Démarrer le timer seulement si on a un startTime valide
+              if (this.questionStartTime) {
+                this.startTimer()
+                console.log('✅ Current question loaded and timer started:', question.question)
+              } else {
+                console.warn('⚠️ Question loaded but no startTime, waiting for next question...')
+              }
+            } else {
+              console.warn('⚠️ Question not found in quiz list:', state.currentQuestionId)
+              // Ne pas mettre current à null, garder l'état précédent
             }
-            this.totalQuestions = questionsRes.data.length
-            this.currentQuestionIndex = state.currentQuestionIndex
-            this.questionStartTime = state.questionStartTime
-            this.questionDuration = state.questionDuration || 30000
-            this.gameStarted = true
-            this.loading = false
-            this.startTimer()
-            console.log('✅ Current question loaded and displayed:', question.question)
-          } else {
-            console.warn('⚠️ Question not found in quiz list:', state.currentQuestionId)
+          } catch (quizErr) {
+            console.error('❌ Error fetching questions:', quizErr)
+            throw quizErr
           }
         } else {
           console.log('ℹ️ Game not started or no current question:', {
@@ -462,6 +489,8 @@ export default {
         }
       } catch (err) {
         console.error('❌ Erreur chargement question actuelle:', err)
+        // Ne pas mettre current à null en cas d'erreur, garder l'état précédent
+        // Le polling réessayera
       }
     },
     startTimer() {
