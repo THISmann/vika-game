@@ -2,12 +2,35 @@ const fs = require("fs");
 const path = require("path");
 
 const questionsPath = path.join(__dirname, "../data/questions.json");
+const dataDir = path.dirname(questionsPath);
+
+// Créer le répertoire s'il n'existe pas
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Initialiser le fichier s'il n'existe pas
+if (!fs.existsSync(questionsPath)) {
+  fs.writeFileSync(questionsPath, JSON.stringify([], null, 2));
+}
 
 function readQuestions() {
-  return JSON.parse(fs.readFileSync(questionsPath));
+  try {
+    const data = fs.readFileSync(questionsPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    // Si erreur de lecture, initialiser avec un tableau vide
+    const emptyArray = [];
+    writeQuestions(emptyArray);
+    return emptyArray;
+  }
 }
 
 function writeQuestions(data) {
+  // S'assurer que le répertoire existe
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
   fs.writeFileSync(questionsPath, JSON.stringify(data, null, 2));
 }
 
