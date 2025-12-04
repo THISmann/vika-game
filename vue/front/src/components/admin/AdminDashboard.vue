@@ -456,9 +456,9 @@ export default {
     async copyGameCode() {
       try {
         await navigator.clipboard.writeText(this.gameCode)
-        this.copyButtonText = '✓ Copié!'
+        this.copyButtonText = this.t('admin.dashboard.codeCopied')
         setTimeout(() => {
-          this.copyButtonText = 'Copier le code'
+          this.copyButtonText = ''
         }, 2000)
       } catch (err) {
         // Fallback pour les navigateurs qui ne supportent pas clipboard API
@@ -468,9 +468,9 @@ export default {
         textArea.select()
         document.execCommand('copy')
         document.body.removeChild(textArea)
-        this.copyButtonText = '✓ Copié!'
+        this.copyButtonText = this.t('admin.dashboard.codeCopied')
         setTimeout(() => {
-          this.copyButtonText = 'Copier le code'
+          this.copyButtonText = ''
         }, 2000)
       }
     },
