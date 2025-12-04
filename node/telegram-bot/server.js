@@ -479,6 +479,20 @@ async function initializeBot() {
         if (gameSocket.connected) {
           gameSocket.emit('register', session.playerId);
           console.log(`✅ Player ${session.playerName} (${session.playerId}) registered via WebSocket`);
+          
+          // Vérifier si le jeu a déjà commencé et envoyer la question actuelle si nécessaire
+          try {
+            const gameState = await getGameState();
+            if (gameState && gameState.isStarted) {
+              session.gameStarted = true;
+              userSessions.set(chatId, session);
+              console.log(`⚠️  Game already started, player will receive next question`);
+            }
+          } catch (err) {
+            console.error('Error checking game state:', err.message);
+          }
+        } else {
+          console.error(`❌ WebSocket not connected, cannot register player ${session.playerId}`);
         }
 
         await bot.sendMessage(chatId, t(lang, 'registrationSuccess', {
@@ -656,6 +670,7 @@ async function initializeBot() {
   // Connexion WebSocket
   gameSocket.on('connect', () => {
     console.log('✅ Telegram bot connected to game WebSocket');
+    console.log(`📡 Socket ID: ${gameSocket.id}`);
     
     // Réenregistrer tous les joueurs actifs
     for (const [chatId, session] of userSessions.entries()) {
@@ -664,6 +679,11 @@ async function initializeBot() {
         console.log(`🔄 Re-registered player ${session.playerName} (${session.playerId})`);
       }
     }
+  });
+  
+  // Écouter tous les événements pour debug
+  gameSocket.onAny((event, ...args) => {
+    console.log(`📡 WebSocket event received: ${event}`, args.length > 0 ? JSON.stringify(args[0]) : '');
   });
 
   gameSocket.on('disconnect', (reason) => {
@@ -676,7 +696,7 @@ async function initializeBot() {
 
   // Événement: Jeu démarré
   gameSocket.on('game:started', async (data) => {
-    console.log('🚀 Game started event received:', data);
+    console.log('🚀 Game started event received:', JSON.stringify(data));
     
     for (const [chatId, session] of userSessions.entries()) {
       if (session.playerId && !session.gameStarted) {
@@ -684,6 +704,8 @@ async function initializeBot() {
         session.gameStarted = true;
         session.hasAnsweredCurrentQuestion = false;
         userSessions.set(chatId, session);
+        
+        console.log(`✅ Updated session for player ${session.playerName} (${session.playerId}): gameStarted = true`);
         
         await bot.sendMessage(chatId, t(lang, 'gameStarted'), {
           parse_mode: 'Markdown'
@@ -694,25 +716,43 @@ async function initializeBot() {
 
   // Événement: Nouvelle question
   gameSocket.on('question:next', async (data) => {
-    console.log('📝 Question next event received:', data);
+    console.log('📝 Question next event received:', JSON.stringify(data));
     
     const { question, questionIndex, totalQuestions, startTime, duration } = data;
     
     if (!question || !question.id) {
-      console.error('Invalid question data:', data);
+      console.error('❌ Invalid question data:', data);
       return;
     }
+
+    console.log(`📝 Processing question ${question.id} for all registered players...`);
 
     const allQuestions = await getAllQuestions();
     const fullQuestion = allQuestions.find(q => q.id === question.id);
     if (!fullQuestion) {
-      console.error('Question not found:', question.id);
+      console.error(`❌ Question not found: ${question.id}`);
+      console.error(`   Available questions: ${allQuestions.map(q => q.id).join(', ')}`);
       return;
     }
 
+    console.log(`✅ Found question: ${fullQuestion.question}`);
+    console.log(`📊 Total sessions: ${userSessions.size}`);
+
+    let sentCount = 0;
     for (const [chatId, session] of userSessions.entries()) {
-      if (session.playerId && session.gameStarted) {
+      console.log(`   Checking session for chatId ${chatId}: playerId=${session.playerId}, gameStarted=${session.gameStarted}`);
+      
+      // Envoyer la question à TOUS les joueurs enregistrés, même si gameStarted est false
+      // car ils peuvent s'être inscrits après le démarrage du jeu
+      if (session.playerId) {
         const lang = session.language || 'en';
+        
+        // Mettre à jour gameStarted si ce n'est pas déjà fait
+        if (!session.gameStarted) {
+          session.gameStarted = true;
+          console.log(`   ⚠️  Setting gameStarted=true for player ${session.playerName} (${session.playerId})`);
+        }
+        
         if (!session.questions || session.questions.length === 0) {
           session.questions = allQuestions;
         }
@@ -721,9 +761,19 @@ async function initializeBot() {
         session.hasAnsweredCurrentQuestion = false;
         userSessions.set(chatId, session);
         
-        await sendQuestion(bot, chatId, fullQuestion, questionIndex, totalQuestions, duration / 1000, lang);
+        try {
+          await sendQuestion(bot, chatId, fullQuestion, questionIndex, totalQuestions, duration / 1000, lang);
+          sentCount++;
+          console.log(`   ✅ Question sent to ${session.playerName} (${session.playerId})`);
+        } catch (err) {
+          console.error(`   ❌ Error sending question to ${session.playerName}:`, err.message);
+        }
+      } else {
+        console.log(`   ⏭️  Skipping session ${chatId}: no playerId`);
       }
     }
+    
+    console.log(`📝 Question sent to ${sentCount} player(s)`);
   });
 
   // Événement: Jeu terminé
