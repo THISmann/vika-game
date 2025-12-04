@@ -10,6 +10,7 @@ const gameState = require("./gameState");
 const connectDB = require("./config/database");
 const axios = require("axios");
 const services = require("./config/services");
+const Score = require("./models/Score");
 
 // Enable CORS for all routes
 app.use(cors());
@@ -103,12 +104,40 @@ io.on("connection", (socket) => {
       }
       
       // Enregistrer le socket du joueur
-      playersSockets.set(playerId, socket.id);
-      socket.playerId = playerId;
+    playersSockets.set(playerId, socket.id);
+    socket.playerId = playerId;
       
       // Ajouter le joueur à la liste des connectés seulement s'il n'y est pas déjà
       if (!isAlreadyConnected) {
         await gameState.addConnectedPlayer(playerId);
+        
+        // Initialiser le score du joueur s'il n'existe pas encore
+        try {
+          const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+          const player = playersRes.data.find(p => p.id === playerId);
+          const playerName = player ? player.name : 'Joueur anonyme';
+          
+          let score = await Score.findOne({ playerId });
+          if (!score) {
+            score = new Score({
+              playerId,
+              playerName,
+              score: 0
+            });
+            await score.save();
+            console.log(`🆕 Initialized score for new player: ${playerName} (${playerId}) = 0`);
+          } else {
+            // Mettre à jour le nom si nécessaire
+            if (score.playerName !== playerName) {
+              score.playerName = playerName;
+              await score.save();
+              console.log(`🔄 Updated name for ${playerId}: ${playerName}`);
+            }
+          }
+        } catch (err) {
+          console.error(`❌ Error initializing score for player ${playerId}:`, err);
+          // Continue même si l'initialisation échoue
+        }
       }
       
       // Envoyer le nombre de joueurs connectés à tous

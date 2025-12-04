@@ -3,6 +3,35 @@ const gameState = require("../gameState");
 const services = require("../config/services");
 const Score = require("../models/Score");
 
+// Initialize score for a player (create if doesn't exist, keep if exists)
+async function initializePlayerScore(playerId, playerName) {
+  try {
+    let score = await Score.findOne({ playerId });
+
+    if (!score) {
+      score = new Score({
+        playerId,
+        playerName,
+        score: 0
+      });
+      await score.save();
+      console.log(`🆕 Initialized score for ${playerName} (${playerId}) = 0`);
+    } else {
+      // Update name if it changed
+      if (score.playerName !== playerName) {
+        score.playerName = playerName;
+        await score.save();
+        console.log(`🔄 Updated name for ${playerId}: ${playerName}`);
+      }
+    }
+
+    return score.toObject();
+  } catch (error) {
+    console.error("Error initializing player score:", error);
+    throw error;
+  }
+}
+
 // Update player score + save playerName
 async function updateScore(playerId, playerName, delta) {
   try {
@@ -123,9 +152,29 @@ exports.leaderboard = async (req, res) => {
     
     console.log(`📊 Leaderboard query: found ${scores ? scores.length : 0} scores in database`);
     
-    // Si aucun score n'existe, retourner un tableau vide
+    // Si aucun score n'existe, essayer d'inclure les joueurs connectés avec score 0
     if (!scores || scores.length === 0) {
-      console.log("ℹ️ No scores found in database - returning empty array");
+      console.log("ℹ️ No scores found in database - checking connected players...");
+      try {
+        const state = await gameState.getState();
+        if (state.connectedPlayers && state.connectedPlayers.length > 0) {
+          // Récupérer les noms des joueurs connectés
+          const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+          const mappedScores = state.connectedPlayers.map(playerId => {
+            const player = playersRes.data.find(p => p.id === playerId);
+            return {
+              playerId: playerId,
+              playerName: player ? player.name : 'Joueur anonyme',
+              score: 0
+            };
+          });
+          console.log(`✅ Leaderboard: returning ${mappedScores.length} connected players with score 0`);
+          return res.json(mappedScores);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching connected players for leaderboard:", err);
+      }
+      console.log("ℹ️ No scores and no connected players - returning empty array");
       return res.json([]);
     }
     
@@ -347,6 +396,25 @@ exports.startGame = async (req, res) => {
 
     await gameState.startGame();
     const state = await gameState.getState();
+    
+    // Initialiser les scores pour tous les joueurs connectés
+    console.log(`🎮 Initializing scores for ${state.connectedPlayers.length} connected players...`);
+    try {
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      for (const playerId of state.connectedPlayers) {
+        const player = playersRes.data.find(p => p.id === playerId);
+        if (player) {
+          await initializePlayerScore(playerId, player.name);
+        } else {
+          console.warn(`⚠️ Player ${playerId} not found in auth service, initializing with default name`);
+          await initializePlayerScore(playerId, 'Joueur anonyme');
+        }
+      }
+      console.log(`✅ Scores initialized for all connected players`);
+    } catch (err) {
+      console.error("❌ Error initializing scores:", err);
+      // Continue même si l'initialisation échoue
+    }
 
     // Démarrer avec la première question
     if (questions.length > 0 && req.io) {
