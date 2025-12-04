@@ -14,7 +14,13 @@ function generateGameCode() {
 // Convertir le document MongoDB en objet simple
 function toPlainObject(doc) {
   if (!doc) return null;
-  return doc.toObject();
+  const obj = doc.toObject();
+  // S'assurer que answers est bien un objet JavaScript (pas un objet Mongoose)
+  if (obj.answers && typeof obj.answers === 'object') {
+    // Convertir en objet JavaScript simple si nécessaire
+    obj.answers = JSON.parse(JSON.stringify(obj.answers));
+  }
+  return obj;
 }
 
 module.exports = {
@@ -148,11 +154,13 @@ module.exports = {
   
   startGame: async () => {
     try {
+      // NE PAS réinitialiser answers ici, car les joueurs peuvent avoir répondu avant le démarrage
+      // On réinitialise seulement results
       const updates = {
         isStarted: true,
         currentQuestionIndex: 0,
-        answers: {},
         results: {}
+        // answers: {} - REMOVED: ne pas effacer les réponses existantes
       };
       const state = await GameState.updateCurrent(updates);
       return toPlainObject(state);
@@ -202,6 +210,13 @@ module.exports = {
       }
       state.answers[playerId][questionId] = answer;
       await state.save();
+      
+      // Vérifier que la réponse a bien été sauvegardée
+      const savedState = await GameState.getCurrent();
+      const savedAnswer = savedState.answers?.[playerId]?.[questionId];
+      console.log(`💾 Saved answer for player ${playerId}, question ${questionId}: "${answer}"`);
+      console.log(`✅ Verified saved answer: "${savedAnswer}"`);
+      
       return toPlainObject(state);
     } catch (error) {
       console.error("Error saving answer:", error);

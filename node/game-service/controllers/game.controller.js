@@ -629,16 +629,34 @@ async function calculateQuestionResults(questionId, questions) {
   const answers = state.answers || {};
   const playerResults = [];
 
-  console.log(`📊 Calculating results for question ${questionId}, ${Object.keys(answers).length} players have answers`);
+  console.log(`📊 Calculating results for question ${questionId}`);
+  console.log(`📋 State answers object:`, JSON.stringify(answers, null, 2));
+  console.log(`📋 Number of players with answers: ${Object.keys(answers).length}`);
+  
+  // Vérifier si answers est bien un objet
+  if (typeof answers !== 'object' || answers === null) {
+    console.error(`❌ ERROR: answers is not an object! Type: ${typeof answers}, Value:`, answers);
+    return;
+  }
 
   // Calculer les résultats pour chaque joueur
   for (const playerId in answers) {
-    if (answers[playerId] && answers[playerId][questionId]) {
-      const answer = answers[playerId][questionId];
-      const correctAnswer = question.answer;
-      const isCorrect = answer === correctAnswer;
-      
-      console.log(`🔍 Player ${playerId}: answer="${answer}", correct="${correctAnswer}", isCorrect=${isCorrect}`);
+    if (!answers[playerId]) {
+      console.warn(`⚠️ Player ${playerId} has no answer object`);
+      continue;
+    }
+    
+    if (!answers[playerId][questionId]) {
+      console.warn(`⚠️ Player ${playerId} has no answer for question ${questionId}`);
+      console.log(`   Available question IDs for this player:`, Object.keys(answers[playerId]));
+      continue;
+    }
+    
+    const answer = answers[playerId][questionId];
+    const correctAnswer = question.answer;
+    const isCorrect = answer === correctAnswer;
+    
+    console.log(`🔍 Player ${playerId}: answer="${answer}", correct="${correctAnswer}", isCorrect=${isCorrect}`);
       
       // Mettre à jour le score seulement maintenant
       try {
