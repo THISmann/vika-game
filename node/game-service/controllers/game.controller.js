@@ -500,20 +500,19 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
       // Calculer les résultats de la question actuelle AVANT de passer à la suivante
       console.log(`⏰ Calculating results for question ${freshState.currentQuestionId}...`);
       await calculateQuestionResults(freshState.currentQuestionId, questions);
-        
-        // Émettre les scores mis à jour via WebSocket
-        const updatedScores = await Score.find({}).lean();
-        const sortedScores = updatedScores.sort((a, b) => (b.score || 0) - (a.score || 0));
-        const mappedScores = sortedScores.map(score => ({
-          playerId: score.playerId || score._id?.toString() || 'unknown',
-          playerName: score.playerName || score.name || 'Joueur anonyme',
-          score: score.score || 0
-        }));
-        
-        if (io) {
-          io.emit('leaderboard:update', mappedScores);
-          console.log(`📢 Emitted leaderboard update with ${mappedScores.length} players`);
-        }
+      
+      // Émettre les scores mis à jour via WebSocket
+      const updatedScores = await Score.find({}).lean();
+      const sortedScores = updatedScores.sort((a, b) => (b.score || 0) - (a.score || 0));
+      const mappedScores = sortedScores.map(score => ({
+        playerId: score.playerId || score._id?.toString() || 'unknown',
+        playerName: score.playerName || score.name || 'Joueur anonyme',
+        score: score.score || 0
+      }));
+      
+      if (io) {
+        io.emit('leaderboard:update', mappedScores);
+        console.log(`📢 Emitted leaderboard update with ${mappedScores.length} players`);
       }
 
       // Récupérer l'état FRAIS après le calcul des résultats
@@ -877,12 +876,11 @@ async function calculateQuestionResults(questionId, questions) {
       console.error(`   Error details:`, err.message);
     }
 
-      playerResults.push({
-        playerId,
-        answer,
-        isCorrect
-      });
-    }
+    playerResults.push({
+      playerId,
+      answer,
+      isCorrect
+    });
   }
 
   // Sauvegarder les résultats
