@@ -14,14 +14,14 @@
               />
             </svg>
           </div>
-          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 sm:mb-4 px-3">Entrer le code de la partie</h2>
-          <p class="text-sm sm:text-base md:text-lg text-gray-600 px-3">Demandez le code à l'administrateur</p>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 sm:mb-4 px-3">{{ t('register.enterCode') }}</h2>
+          <p class="text-sm sm:text-base md:text-lg text-gray-600 px-3">{{ t('register.askCode') }}</p>
         </div>
 
         <div class="space-y-5 sm:space-y-6 md:space-y-7">
           <div>
             <label for="game-code" class="block text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
-              Code de la partie
+              {{ t('register.gameCode') }}
             </label>
             <input
               id="game-code"
@@ -55,7 +55,7 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             </span>
-            {{ verifyingCode ? 'Vérification...' : 'Vérifier le code' }}
+            {{ verifyingCode ? t('register.verifying') : t('register.verifyCode') }}
           </button>
         </div>
       </div>
@@ -83,14 +83,14 @@
               Code vérifié: {{ gameCode }}
             </div>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
-          <p class="text-xs sm:text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">{{ t('register.enterName') }}</h2>
+          <p class="text-xs sm:text-sm text-gray-600">{{ t('register.nameHint') }}</p>
       </div>
 
         <form @submit.prevent="registerPlayer" class="space-y-4 sm:space-y-6">
         <div>
             <label for="player-name" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
-              Votre nom de joueur
+              {{ t('register.name') }}
           </label>
           <input
             id="player-name"
@@ -119,7 +119,7 @@
               @click="step = 1"
               class="w-full sm:flex-1 py-3 px-4 border-2 border-gray-300 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-all font-medium text-sm sm:text-base"
             >
-              ← Retour
+              ← {{ t('common.back') }}
             </button>
         <button
           type="submit"
@@ -136,7 +136,7 @@
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </span>
-              {{ loading ? 'Inscription...' : 'Rejoindre la partie' }}
+              {{ loading ? t('register.registering') : t('register.join') }}
             </button>
           </div>
         </form>
@@ -151,9 +151,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </div>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">⏳ En attente du démarrage</h2>
-        <p class="text-sm sm:text-base text-gray-600 mb-2">Bienvenue, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
-        <p class="text-xs sm:text-sm text-gray-600">L'administrateur va bientôt démarrer la partie...</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{{ t('register.waiting') }}</h2>
+        <p class="text-sm sm:text-base text-gray-600 mb-2">{{ t('register.welcome') }}, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
+        <p class="text-xs sm:text-sm text-gray-600">{{ t('register.waitingDesc') }}</p>
         <div class="mt-6">
           <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm">
             <svg class="w-4 h-4 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
@@ -171,8 +171,13 @@
 import axios from 'axios'
 import { API_URLS, API_CONFIG } from '@/config/api'
 import socketService from '@/services/socketService'
+import { useI18n } from '@/composables/useI18n'
 
 export default {
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data() {
     return {
       step: 1, // 1: code, 2: nom, 3: attente
@@ -220,33 +225,33 @@ export default {
           // Si le jeu a commencé, afficher un message mais permettre quand même l'inscription
           // Le joueur pourra se connecter s'il était déjà enregistré
           if (this.gameStarted) {
-            this.error = 'Le jeu a déjà commencé. Vous pouvez vous inscrire mais vous ne pourrez rejoindre que si vous étiez déjà enregistré.'
+            this.error = this.t('register.gameStarted')
             // Permettre quand même de continuer
           }
           // Passer à l'étape 2
           this.step = 2
         } else {
-          this.error = 'Code invalide. Vérifiez le code et réessayez.'
+          this.error = this.t('register.invalidCode')
         }
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erreur lors de la vérification du code'
+        this.error = err.response?.data?.error || this.t('register.error')
       } finally {
         this.verifyingCode = false
       }
     },
     async registerPlayer() {
       if (!this.name || this.name.trim().length < 2) {
-        this.error = 'Veuillez entrer un nom valide (minimum 2 caractères)'
+        this.error = this.t('register.nameRequired')
         return
       }
 
       if (!this.codeVerified) {
-        this.error = 'Veuillez d\'abord vérifier le code de la partie'
+        this.error = this.t('register.verifyFirst')
         return
       }
 
       if (this.gameStarted) {
-        this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
+        this.error = this.t('register.gameStarted')
         return
       }
 
@@ -318,20 +323,20 @@ export default {
           this.$router.push('/player/quiz')
               }, 100)
             } else {
-              this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
+              this.error = this.t('register.gameStarted')
               this.step = 2 // Go back to name step
             }
           } else {
-            this.error = data.message || 'Erreur de connexion'
+            this.error = data.message || this.t('register.connectionError')
             this.step = 2 // Go back to name step on error
           }
         }, componentId)
 
       } catch (err) {
         if (err.response && err.response.status === 409) {
-          this.error = 'Ce nom est déjà pris, choisissez un autre nom'
+          this.error = this.t('register.nameTaken')
         } else {
-          this.error = 'Erreur serveur. Veuillez réessayer.'
+          this.error = this.t('register.serverError')
         }
         this.step = 2
       } finally {

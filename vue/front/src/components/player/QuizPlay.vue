@@ -8,9 +8,9 @@
       <div
         class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-blue-600 mb-5 sm:mb-6 md:mb-8"
       ></div>
-      <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-5 px-3">⏳ En attente du début du jeu</h2>
+      <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-5 px-3">{{ t('quiz.waiting') }}</h2>
       <p class="text-base sm:text-lg md:text-xl text-gray-600 px-4 max-w-md">
-        L'administrateur va bientôt démarrer le jeu...
+        {{ t('quiz.waitingDesc') }}
       </p>
     </div>
 
@@ -22,7 +22,7 @@
       <div
         class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-purple-600 mb-5 sm:mb-6 md:mb-8"
       ></div>
-      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">Chargement...</p>
+      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">{{ t('quiz.loading') }}</p>
     </div>
 
     <!-- Quiz Question -->
@@ -31,7 +31,7 @@
       <div class="bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6 sticky top-0 z-10 backdrop-blur-md bg-white/98 mb-3 sm:mb-4">
         <div class="flex items-center justify-between mb-3 sm:mb-4">
           <span class="text-sm sm:text-base md:text-lg font-bold text-gray-800">
-            Question {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
+            {{ t('quiz.question') }} {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
           </span>
           <div class="flex items-center space-x-2 sm:space-x-3">
             <div
@@ -113,7 +113,7 @@
         </div>
 
         <div v-if="hasAnswered" class="mt-5 sm:mt-6 md:mt-7 text-center p-4 sm:p-5 md:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-3 sm:border-[3px] border-green-300 rounded-2xl shadow-lg">
-          <p class="text-base sm:text-lg md:text-xl font-bold text-green-800">✓ Réponse enregistrée. En attente de la question suivante...</p>
+          <p class="text-base sm:text-lg md:text-xl font-bold text-green-800">{{ t('quiz.answerRecorded') }}</p>
         </div>
       </div>
 
@@ -129,8 +129,8 @@
               }}</span>
             </div>
             <div>
-              <p class="text-sm text-gray-600">Joueur</p>
-              <p class="font-semibold text-gray-900">{{ playerName || 'Anonyme' }}</p>
+              <p class="text-sm text-gray-600">{{ t('quiz.player') }}</p>
+              <p class="font-semibold text-gray-900">{{ playerName || t('quiz.anonymous') }}</p>
             </div>
           </div>
         </div>
@@ -151,30 +151,30 @@
           />
         </svg>
       </div>
-      <h2 class="text-4xl font-bold text-gray-900 mb-4">🎉 Quiz terminé !</h2>
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">{{ t('quiz.gameEnded') }}</h2>
       <p class="text-gray-600 text-lg mb-8">
-        Félicitations ! Le jeu est terminé. Consultez vos résultats ci-dessous.
+        {{ t('quiz.gameEndedDesc') }}
       </p>
 
       <!-- Results Summary -->
       <div v-if="results.length > 0" class="mt-8 space-y-4 max-w-2xl mx-auto">
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">Résultats des questions</h3>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">{{ t('quiz.resultsTitle') }}</h3>
         <div
           v-for="(result, index) in results"
           :key="index"
           class="bg-gray-50 rounded-lg p-4 text-left"
         >
           <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-gray-900">Question {{ index + 1 }}</span>
+            <span class="font-semibold text-gray-900">{{ t('quiz.question') }} {{ index + 1 }}</span>
             <span
               class="px-3 py-1 rounded-full text-sm font-medium"
               :class="result.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
             >
-              {{ result.isCorrect ? '✓ Correct' : '✗ Incorrect' }}
+              {{ result.isCorrect ? t('quiz.correctLabel') : t('quiz.incorrectLabel') }}
             </span>
           </div>
-          <p class="text-sm text-gray-600">Votre réponse: {{ result.playerAnswer }}</p>
-          <p class="text-sm text-gray-600">Bonne réponse: {{ result.correctAnswer }}</p>
+          <p class="text-sm text-gray-600">{{ t('quiz.yourAnswer') }}: {{ result.playerAnswer }}</p>
+          <p class="text-sm text-gray-600">{{ t('quiz.correctAnswerLabel') }}: {{ result.correctAnswer }}</p>
         </div>
       </div>
 
@@ -183,7 +183,7 @@
         to="/player/leaderboard"
         class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
       >
-        Voir le classement
+        {{ t('quiz.viewLeaderboard') }}
         <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
@@ -206,8 +206,13 @@ import axios from 'axios'
 import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
 import socketService from '@/services/socketService'
+import { useI18n } from '@/composables/useI18n'
 
 export default {
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data() {
     return {
       current: null,
@@ -236,7 +241,7 @@ export default {
     this.playerId = localStorage.getItem('playerId') || ''
 
     if (!this.playerId) {
-      this.error = 'Joueur non identifié. Veuillez vous réinscrire.'
+      this.error = this.t('quiz.playerNotIdentified')
       setTimeout(() => {
         this.$router.push('/player/register')
       }, 2000)

@@ -15,8 +15,8 @@
             />
           </svg>
         </div>
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">🏆 Classement</h1>
-        <p class="text-gray-600">Les meilleurs joueurs en temps réel</p>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ t('leaderboard.title') }}</h1>
+        <p class="text-gray-600">{{ t('leaderboard.subtitle') }}</p>
       </div>
     </div>
 
@@ -27,7 +27,7 @@
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 border-4 sm:border-[5px] border-blue-600 mb-5 sm:mb-6"
         ></div>
-        <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">Chargement du classement...</p>
+        <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">{{ t('leaderboard.loading') }}</p>
       </div>
 
       <!-- Empty State -->
@@ -45,7 +45,7 @@
             d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
           />
         </svg>
-        <p class="text-gray-600">Aucun joueur pour le moment</p>
+        <p class="text-gray-600">{{ t('leaderboard.empty') }}</p>
       </div>
 
       <!-- Leaderboard Items -->
@@ -95,7 +95,7 @@
                   </div>
                   <div class="min-w-0 flex-1">
                     <p class="font-extrabold text-gray-900 text-lg sm:text-xl md:text-2xl truncate">
-                      {{ player.playerName || 'Joueur anonyme' }}
+                      {{ player.playerName || t('leaderboard.anonymous') }}
                     </p>
                     <p class="text-xs sm:text-sm md:text-base text-gray-500 truncate hidden sm:block">
                       {{ player.playerId }}
@@ -118,7 +118,7 @@
                   >
                     {{ player.score }}
                   </span>
-                  <span class="text-sm sm:text-base md:text-lg font-bold text-gray-600">pts</span>
+                  <span class="text-sm sm:text-base md:text-lg font-bold text-gray-600">{{ t('leaderboard.pts') }}</span>
                 </div>
               </div>
             </div>
@@ -134,14 +134,14 @@
         class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 active:scale-95 text-center shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
         style="touch-action: manipulation;"
       >
-        Rejouer
+        {{ t('leaderboard.replay') }}
       </router-link>
       <router-link
         to="/player/register"
         class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-white border-3 sm:border-[3px] border-gray-300 text-gray-700 font-semibold rounded-xl sm:rounded-2xl hover:bg-gray-50 transition-all text-center shadow-md hover:shadow-lg active:scale-95 min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
         style="touch-action: manipulation;"
       >
-        Nouveau joueur
+        {{ t('leaderboard.newPlayer') }}
       </router-link>
     </div>
   </div>
@@ -151,8 +151,13 @@
 import { io } from 'socket.io-client'
 import axios from 'axios'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import { useI18n } from '@/composables/useI18n'
 
 export default {
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data() {
     return {
       leaderboard: [],
@@ -178,7 +183,7 @@ export default {
         .filter(item => item && (item.playerId || item._id))
         .map(item => ({
           playerId: item.playerId || item._id || 'unknown',
-          playerName: item.playerName || item.name || 'Joueur anonyme',
+          playerName: item.playerName || item.name || this.t('leaderboard.anonymous'),
           score: item.score || 0
         }))
       
@@ -228,7 +233,7 @@ export default {
       } else {
         this.leaderboard.push({
           playerId: data.playerId,
-          playerName: data.playerName || 'Joueur anonyme',
+          playerName: data.playerName || this.t('leaderboard.anonymous'),
           score: data.score || 0,
         })
       }
