@@ -671,6 +671,7 @@ async function initializeBot() {
   gameSocket.on('connect', () => {
     console.log('✅ Telegram bot connected to game WebSocket');
     console.log(`📡 Socket ID: ${gameSocket.id}`);
+    console.log(`📡 Connected: ${gameSocket.connected}`);
     
     // Réenregistrer tous les joueurs actifs
     for (const [chatId, session] of userSessions.entries()) {
@@ -679,12 +680,66 @@ async function initializeBot() {
         console.log(`🔄 Re-registered player ${session.playerName} (${session.playerId})`);
       }
     }
+    
+    // Vérifier l'état du jeu au moment de la connexion
+    checkGameStateAndSendQuestions();
   });
   
   // Écouter tous les événements pour debug
   gameSocket.onAny((event, ...args) => {
     console.log(`📡 WebSocket event received: ${event}`, args.length > 0 ? JSON.stringify(args[0]) : '');
   });
+  
+  // Fonction pour vérifier l'état du jeu et envoyer les questions si nécessaire
+  async function checkGameStateAndSendQuestions() {
+    try {
+      const gameState = await getGameState();
+      if (gameState && gameState.isStarted && gameState.currentQuestionId) {
+        console.log(`⚠️  Game already started, fetching current question...`);
+        
+        // Récupérer la question actuelle
+        const allQuestions = await getAllQuestions();
+        const currentQuestion = allQuestions.find(q => q.id === gameState.currentQuestionId);
+        
+        if (currentQuestion) {
+          console.log(`✅ Found current question: ${currentQuestion.id}`);
+          
+          // Envoyer la question à tous les joueurs enregistrés
+          for (const [chatId, session] of userSessions.entries()) {
+            if (session.playerId) {
+              const lang = session.language || 'en';
+              if (!session.gameStarted) {
+                session.gameStarted = true;
+              }
+              if (!session.questions || session.questions.length === 0) {
+                session.questions = allQuestions;
+              }
+              session.currentQuestionIndex = gameState.currentQuestionIndex || 0;
+              session.hasAnsweredCurrentQuestion = false;
+              userSessions.set(chatId, session);
+              
+              try {
+                await sendQuestion(
+                  bot, 
+                  chatId, 
+                  currentQuestion, 
+                  gameState.currentQuestionIndex || 0, 
+                  allQuestions.length, 
+                  (gameState.questionDuration || 30000) / 1000, 
+                  lang
+                );
+                console.log(`✅ Sent current question to ${session.playerName} (${session.playerId})`);
+              } catch (err) {
+                console.error(`❌ Error sending question to ${session.playerName}:`, err.message);
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error checking game state:', err.message);
+    }
+  }
 
   gameSocket.on('disconnect', (reason) => {
     console.log('⚠️ Telegram bot disconnected from WebSocket. Reason:', reason);
@@ -797,26 +852,75 @@ async function initializeBot() {
 
   // Polling pour vérifier l'état du jeu (fallback si WebSocket échoue)
   setInterval(async () => {
-    for (const [chatId, session] of userSessions.entries()) {
-      if (!session.playerId || session.gameStarted) {
-        continue;
-      }
+    try {
+      const gameState = await getGameState();
       
-      try {
-        const gameState = await getGameState();
-        if (gameState && gameState.isStarted && !session.gameStarted) {
-          const lang = session.language || 'en';
-          session.gameStarted = true;
-          userSessions.set(chatId, session);
-          await bot.sendMessage(chatId, t(lang, 'gameStarted'), {
-            parse_mode: 'Markdown'
-          });
+      if (gameState && gameState.isStarted) {
+        // Si le jeu a démarré, vérifier si on a une question active
+        if (gameState.currentQuestionId) {
+          // Vérifier si les joueurs ont déjà reçu cette question
+          for (const [chatId, session] of userSessions.entries()) {
+            if (session.playerId) {
+              // Si le joueur n'a pas encore reçu la question actuelle
+              if (!session.currentQuestionIndex || 
+                  session.currentQuestionIndex !== gameState.currentQuestionIndex ||
+                  !session.questions || 
+                  !session.questions.find(q => q.id === gameState.currentQuestionId)) {
+                
+                console.log(`⚠️  Player ${session.playerName} missing current question, fetching...`);
+                
+                const lang = session.language || 'en';
+                if (!session.gameStarted) {
+                  session.gameStarted = true;
+                }
+                
+                const allQuestions = await getAllQuestions();
+                const currentQuestion = allQuestions.find(q => q.id === gameState.currentQuestionId);
+                
+                if (currentQuestion) {
+                  if (!session.questions || session.questions.length === 0) {
+                    session.questions = allQuestions;
+                  }
+                  session.currentQuestionIndex = gameState.currentQuestionIndex || 0;
+                  session.hasAnsweredCurrentQuestion = false;
+                  userSessions.set(chatId, session);
+                  
+                  try {
+                    await sendQuestion(
+                      bot, 
+                      chatId, 
+                      currentQuestion, 
+                      gameState.currentQuestionIndex || 0, 
+                      allQuestions.length, 
+                      (gameState.questionDuration || 30000) / 1000, 
+                      lang
+                    );
+                    console.log(`✅ Sent missing question to ${session.playerName} via polling`);
+                  } catch (err) {
+                    console.error(`❌ Error sending question via polling:`, err.message);
+                  }
+                }
+              }
+            }
+          }
         }
-      } catch (err) {
-        // Ignorer les erreurs de polling
+        
+        // Mettre à jour gameStarted pour les joueurs qui ne l'ont pas encore
+        for (const [chatId, session] of userSessions.entries()) {
+          if (session.playerId && !session.gameStarted) {
+            const lang = session.language || 'en';
+            session.gameStarted = true;
+            userSessions.set(chatId, session);
+            await bot.sendMessage(chatId, t(lang, 'gameStarted'), {
+              parse_mode: 'Markdown'
+            });
+          }
+        }
       }
+    } catch (err) {
+      // Ignorer les erreurs de polling silencieusement
     }
-  }, 5000);
+  }, 3000); // Vérifier toutes les 3 secondes
 
   console.log('🤖 Telegram bot is running...');
   console.log(`📡 WebSocket URL: ${wsUrl}`);
