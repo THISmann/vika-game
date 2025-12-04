@@ -619,23 +619,44 @@ exports.nextQuestion = async (req, res) => {
 };
 
 async function calculateQuestionResults(questionId, questions) {
+  console.log(`\n🔍 ========== CALCULATING QUESTION RESULTS ==========`);
+  console.log(`📋 Question ID: ${questionId}`);
+  console.log(`📋 Total questions available: ${questions.length}`);
+  
   const question = questions.find(q => q.id === questionId);
   if (!question) {
     console.log(`⚠️ Question ${questionId} not found in questions list`);
+    console.log(`   Available question IDs:`, questions.map(q => q.id).join(', '));
     return;
   }
+  
+  console.log(`✅ Question found: "${question.question}"`);
+  console.log(`✅ Correct answer: "${question.answer}"`);
 
+  // Récupérer l'état frais depuis MongoDB
   const state = await gameState.getState();
+  console.log(`📋 Game state retrieved. isStarted: ${state.isStarted}, currentQuestionId: ${state.currentQuestionId}`);
+  
   const answers = state.answers || {};
   const playerResults = [];
 
   console.log(`📊 Calculating results for question ${questionId}`);
+  console.log(`📋 State answers object type: ${typeof answers}`);
   console.log(`📋 State answers object:`, JSON.stringify(answers, null, 2));
   console.log(`📋 Number of players with answers: ${Object.keys(answers).length}`);
   
   // Vérifier si answers est bien un objet
   if (typeof answers !== 'object' || answers === null) {
     console.error(`❌ ERROR: answers is not an object! Type: ${typeof answers}, Value:`, answers);
+    return;
+  }
+  
+  if (Object.keys(answers).length === 0) {
+    console.warn(`⚠️ WARNING: No answers found in gameState for any player!`);
+    console.warn(`   This means either:`);
+    console.warn(`   1. No players have answered yet`);
+    console.warn(`   2. Answers were not saved correctly`);
+    console.warn(`   3. Answers were cleared somehow`);
     return;
   }
 
@@ -656,33 +677,54 @@ async function calculateQuestionResults(questionId, questions) {
     const correctAnswer = question.answer;
     const isCorrect = answer === correctAnswer;
     
-    console.log(`🔍 Player ${playerId}: answer="${answer}", correct="${correctAnswer}", isCorrect=${isCorrect}`);
+    console.log(`\n🔍 Processing player ${playerId}:`);
+    console.log(`   Answer given: "${answer}"`);
+    console.log(`   Correct answer: "${correctAnswer}"`);
+    console.log(`   Is correct: ${isCorrect}`);
       
-      // Mettre à jour le score seulement maintenant
-      try {
-        const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
-        const player = players.data.find(p => p.id === playerId);
-        if (player) {
-          const delta = isCorrect ? 1 : 0;
-          const updatedScore = await updateScore(playerId, player.name, delta);
-          console.log(`✅ Updated score for ${player.name}: ${updatedScore.score} (${isCorrect ? '+' : ''}${delta})`);
-        } else {
-          console.warn(`⚠️ Player ${playerId} not found in auth service`);
-          // Essayer de mettre à jour quand même avec le nom depuis les scores
-          try {
-            const existingScore = await Score.findOne({ playerId });
-            if (existingScore) {
-              const delta = isCorrect ? 1 : 0;
-              const updatedScore = await updateScore(playerId, existingScore.playerName, delta);
-              console.log(`✅ Updated score using existing name: ${updatedScore.playerName}: ${updatedScore.score}`);
-            }
-          } catch (scoreErr) {
-            console.error(`❌ Error updating score for player ${playerId}:`, scoreErr);
+    // Mettre à jour le score seulement maintenant
+    try {
+      console.log(`   Fetching player info from auth-service...`);
+      const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      const player = players.data.find(p => p.id === playerId);
+      
+      if (player) {
+        console.log(`   ✅ Player found: ${player.name}`);
+        const delta = isCorrect ? 1 : 0;
+        console.log(`   📊 Updating score: delta = ${delta} (${isCorrect ? 'correct' : 'incorrect'})`);
+        
+        // Récupérer le score actuel avant mise à jour
+        const scoreBefore = await Score.findOne({ playerId });
+        const scoreBeforeValue = scoreBefore ? scoreBefore.score : 0;
+        console.log(`   📊 Score before update: ${scoreBeforeValue}`);
+        
+        const updatedScore = await updateScore(playerId, player.name, delta);
+        console.log(`   ✅ Score updated successfully!`);
+        console.log(`   📊 Score after update: ${updatedScore.score}`);
+        console.log(`   📊 Score change: ${scoreBeforeValue} → ${updatedScore.score} (${updatedScore.score - scoreBeforeValue > 0 ? '+' : ''}${updatedScore.score - scoreBeforeValue})`);
+      } else {
+        console.warn(`   ⚠️ Player ${playerId} not found in auth service`);
+        // Essayer de mettre à jour quand même avec le nom depuis les scores
+        try {
+          const existingScore = await Score.findOne({ playerId });
+          if (existingScore) {
+            console.log(`   ✅ Found player in scores: ${existingScore.playerName}`);
+            const delta = isCorrect ? 1 : 0;
+            const scoreBefore = existingScore.score || 0;
+            console.log(`   📊 Score before update: ${scoreBefore}`);
+            const updatedScore = await updateScore(playerId, existingScore.playerName, delta);
+            console.log(`   ✅ Score updated: ${updatedScore.score} (${scoreBefore} + ${delta})`);
+          } else {
+            console.error(`   ❌ Player ${playerId} not found in auth service or scores`);
           }
+        } catch (scoreErr) {
+          console.error(`   ❌ Error updating score for player ${playerId}:`, scoreErr);
         }
-      } catch (err) {
-        console.error(`❌ Error updating score for player ${playerId}:`, err);
       }
+    } catch (err) {
+      console.error(`   ❌ Error updating score for player ${playerId}:`, err);
+      console.error(`   Error details:`, err.message);
+    }
 
       playerResults.push({
         playerId,
@@ -695,6 +737,19 @@ async function calculateQuestionResults(questionId, questions) {
   // Sauvegarder les résultats
   await gameState.saveQuestionResult(questionId, question.answer, playerResults);
   console.log(`✅ Saved results for question ${questionId}: ${playerResults.length} players`);
+  
+  // Vérifier les scores finaux dans MongoDB
+  console.log(`\n📊 Final scores check:`);
+  try {
+    const finalScores = await Score.find({}).lean();
+    for (const score of finalScores) {
+      console.log(`   ${score.playerName} (${score.playerId}): ${score.score} points`);
+    }
+  } catch (err) {
+    console.error(`   ❌ Error checking final scores:`, err);
+  }
+  
+  console.log(`\n✅ ========== CALCULATION COMPLETE ==========\n`);
 }
 
 exports.endGame = async (req, res) => {
