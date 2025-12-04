@@ -9,6 +9,8 @@ metadata:
   name: intelectgame
 ---
 # Secret pour le token Telegram Bot
+# NOTE: Ce secret doit être créé manuellement avec le script k8s/update-telegram-secret.sh
+# ou via: kubectl create secret generic telegram-bot-secret --from-literal=TELEGRAM_BOT_TOKEN=<TOKEN> -n intelectgame
 apiVersion: v1
 kind: Secret
 metadata:
@@ -16,7 +18,7 @@ metadata:
   namespace: intelectgame
 type: Opaque
 stringData:
-  TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN_HERE"  # Remplacez par votre token réel
+  TELEGRAM_BOT_TOKEN: "PLACEHOLDER_REPLACE_WITH_ACTUAL_TOKEN"  # Remplacé par update-telegram-secret.sh
 ---
 # MongoDB est déployé via mongodb-deployment.yaml
 # Référence: k8s/mongodb-deployment.yaml
@@ -270,6 +272,11 @@ spec:
             configMapKeyRef:
               name: app-config
               key: NODE_ENV
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONGODB_URI
 ---
 apiVersion: v1
 kind: Service
