@@ -41,11 +41,6 @@
                 'border-yellow-500 text-yellow-600 ring-yellow-500': timeLeft <= 10 && timeLeft > 5,
                 'border-red-500 text-red-600 ring-red-500 animate-pulse': timeLeft <= 5,
               }"
-              :class="{
-                'border-green-500 text-green-600': timeLeft > 10,
-                'border-yellow-500 text-yellow-600': timeLeft <= 10 && timeLeft > 5,
-                'border-red-500 text-red-600': timeLeft <= 5,
-              }"
             >
               {{ timeLeft }}
             </div>
