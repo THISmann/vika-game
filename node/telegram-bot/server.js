@@ -759,22 +759,30 @@ async function initializeBot() {
   
   // Démarrer le polling APRÈS avoir enregistré tous les handlers
   console.log('🔄 Démarrage du polling...');
-  bot.startPolling({
-    interval: 1000,
-    autoStart: true,
-    params: {
-      timeout: 10
-    }
-  }).then(() => {
-    console.log('✅ Polling démarré avec succès');
-  }).catch((err) => {
-    console.error('❌ Erreur lors du démarrage du polling:', err.message);
-    // Si erreur 409, c'est qu'une autre instance tourne déjà
-    if (err.message && err.message.includes('409')) {
-      console.error('⚠️  Une autre instance du bot tourne déjà. Arrêt de cette instance.');
-      process.exit(1);
-    }
-  });
+  
+  // Attendre un peu avant de démarrer le polling pour éviter les conflits
+  setTimeout(() => {
+    bot.startPolling({
+      interval: 1000,
+      autoStart: true,
+      params: {
+        timeout: 10
+      }
+    }).then(() => {
+      console.log('✅ Polling démarré avec succès');
+    }).catch((err) => {
+      console.error('❌ Erreur lors du démarrage du polling:', err.message);
+      // Si erreur 409, c'est qu'une autre instance tourne déjà
+      if (err.message && err.message.includes('409')) {
+        console.error('⚠️  Une autre instance du bot tourne déjà.');
+        console.error('   Solution: Vérifiez qu\'il n\'y a qu\'un seul pod telegram-bot.');
+        console.error('   Commande: kubectl get pods -n intelectgame | grep telegram-bot');
+        console.error('   Script: ./k8s/check-telegram-bot-pods.sh');
+        // Ne pas arrêter le processus, laisser le bot essayer de se reconnecter
+        // Le handler polling_error gérera les erreurs répétées
+      }
+    });
+  }, 2000); // Attendre 2 secondes avant de démarrer
 }
 
 // Tester le token avant de continuer
