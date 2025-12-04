@@ -59,27 +59,53 @@ function normalizeAnswer(answer) {
 // Update player score + save playerName
 async function updateScore(playerId, playerName, delta) {
   try {
+    console.log(`\n💾 ========== UPDATE SCORE ==========`);
+    console.log(`💾 Player: ${playerName} (${playerId})`);
+    console.log(`💾 Delta: ${delta}`);
+    
     let score = await Score.findOne({ playerId });
+    console.log(`💾 Score before query: ${score ? score.score : 'not found'}`);
 
     if (!score) {
+      console.log(`💾 Creating new score document`);
       score = new Score({
         playerId,
         playerName,
         score: 0
       });
+    } else {
+      console.log(`💾 Found existing score: ${score.score}`);
     }
 
     // Always keep name updated (in case player changed his name)
     score.playerName = playerName;
     const oldScore = score.score || 0;
-    score.score = oldScore + delta;
+    const newScore = oldScore + delta;
+    score.score = newScore;
+    
+    console.log(`💾 Score calculation: ${oldScore} + ${delta} = ${newScore}`);
 
     await score.save();
+    console.log(`💾 Score saved to MongoDB`);
+    
+    // Vérifier que le score a bien été sauvegardé
+    const verifiedScore = await Score.findOne({ playerId });
+    const verifiedScoreValue = verifiedScore ? verifiedScore.score : null;
+    console.log(`💾 Verified score in DB: ${verifiedScoreValue}`);
+    
+    if (verifiedScoreValue !== newScore) {
+      console.error(`❌ ERROR: Score mismatch! Expected ${newScore}, got ${verifiedScoreValue}`);
+    } else {
+      console.log(`✅ Score verified successfully in MongoDB`);
+    }
+    
     const scoreObj = score.toObject();
     console.log(`💾 Score updated: ${playerName} (${playerId}) = ${oldScore} + ${delta} = ${scoreObj.score}`);
+    console.log(`========================================\n`);
     return scoreObj;
   } catch (error) {
     console.error("❌ Error updating score:", error);
+    console.error("❌ Error stack:", error.stack);
     throw error;
   }
 }
@@ -437,14 +463,30 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
 
   questionTimer = setTimeout(async () => {
     try {
+      console.log(`\n⏰ ========== TIMER EXPIRED ==========`);
+      console.log(`⏰ Timer expired at: ${new Date().toISOString()}`);
+      
+      // Récupérer l'état FRAIS depuis MongoDB (important !)
+      const freshState = await gameState.getState();
+      console.log(`⏰ Fresh state retrieved:`, {
+        isStarted: freshState.isStarted,
+        currentQuestionId: freshState.currentQuestionId,
+        currentQuestionIndex: freshState.currentQuestionIndex,
+        answersCount: Object.keys(freshState.answers || {}).length
+      });
+      
+      if (!freshState.isStarted || !freshState.currentQuestionId) {
+        console.log(`⏰ Game not started or no current question, aborting timer`);
+        return;
+      }
+      
       // Utiliser la logique de nextQuestion
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
       const questions = quiz.data;
 
       // Calculer les résultats de la question actuelle AVANT de passer à la suivante
-      if (state.currentQuestionId) {
-        console.log(`⏰ Timer expired for question ${state.currentQuestionId}, calculating results...`);
-        await calculateQuestionResults(state.currentQuestionId, questions);
+      console.log(`⏰ Calculating results for question ${freshState.currentQuestionId}...`);
+      await calculateQuestionResults(freshState.currentQuestionId, questions);
         
         // Émettre les scores mis à jour via WebSocket
         const updatedScores = await Score.find({}).lean();
@@ -461,17 +503,22 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
         }
       }
 
+      // Récupérer l'état FRAIS après le calcul des résultats
+      const stateAfterCalc = await gameState.getState();
+      
       // Passer à la question suivante
-      const nextIndex = state.currentQuestionIndex + 1;
+      const nextIndex = stateAfterCalc.currentQuestionIndex + 1;
       
       if (nextIndex >= questions.length) {
         // Fin du jeu
+        console.log(`⏰ Last question reached, ending game`);
         await gameState.endGame();
         io.emit("game:ended", { message: "Le jeu est terminé" });
         return;
       }
 
       const nextQuestion = questions[nextIndex];
+      console.log(`⏰ Moving to next question: ${nextQuestion.id} (index ${nextIndex})`);
       await gameState.nextQuestion();
       await gameState.setCurrentQuestion(nextQuestion.id, duration);
 
