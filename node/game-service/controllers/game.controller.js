@@ -325,18 +325,26 @@ exports.getGameCode = async (req, res) => {
 
 exports.verifyGameCode = async (req, res) => {
   try {
-    const { code } = req.body;
+    // Accepter soit 'code' soit 'gameCode' pour compatibilité
+    const code = req.body.code || req.body.gameCode;
+    
     if (!code) {
       return res.status(400).json({ error: "Code requis" });
     }
 
     const state = await gameState.getState();
-    const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase();
+    
+    console.log(`🔍 Vérification du code: "${code}"`);
+    console.log(`🔍 Code du jeu actuel: "${state.gameCode}"`);
+    
+    const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase().trim();
+    
+    console.log(`🔍 Code valide: ${isValid}`);
     
     res.json({ 
       valid: isValid,
       gameCode: state.gameCode,
-      isStarted: state.isStarted,
+      isStarted: state.isStarted || false,
       message: isValid 
         ? (state.isStarted 
             ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
@@ -345,6 +353,7 @@ exports.verifyGameCode = async (req, res) => {
     });
   } catch (error) {
     console.error("Error verifying game code:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 };

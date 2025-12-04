@@ -122,10 +122,27 @@ function getApiUrl(endpoint) {
 async function verifyGameCode(gameCode) {
   try {
     const url = getApiUrl('/game/verify-code');
-    const res = await axios.post(url, { gameCode });
+    console.log(`🔍 Vérification du code "${gameCode}" via ${url}`);
+    
+    // Envoyer à la fois 'code' et 'gameCode' pour compatibilité
+    const res = await axios.post(url, { 
+      gameCode: gameCode.trim().toUpperCase(),
+      code: gameCode.trim().toUpperCase()
+    }, {
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log(`🔍 Réponse de vérification:`, JSON.stringify(res.data));
     return res.data;
   } catch (err) {
-    console.error('Error verifying game code:', err.message);
+    console.error('❌ Error verifying game code:', err.message);
+    if (err.response) {
+      console.error('   Status:', err.response.status);
+      console.error('   Data:', err.response.data);
+    }
     return null;
   }
 }
