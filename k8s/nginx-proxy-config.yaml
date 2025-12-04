@@ -60,11 +60,10 @@ data:
             }
             
             # Game Service (HTTP)
-            location /api/game {
+            location /api/game/ {
                 set $game "game-service.intelectgame.svc.cluster.local:3003";
-                # Rewrite pour transformer /api/game/xxx en /game/xxx
-                rewrite ^/api/game/(.*)$ /game/$1 break;
-                proxy_pass http://$game;
+                # Proxy avec trailing slash pour préserver le chemin
+                proxy_pass http://$game/game/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -74,6 +73,16 @@ data:
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection "upgrade";
+            }
+            
+            # Game Service (HTTP) - sans trailing slash pour /api/game exact
+            location = /api/game {
+                set $game "game-service.intelectgame.svc.cluster.local:3003";
+                proxy_pass http://$game/game;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
             }
             
             # Game Service WebSocket (Socket.IO)

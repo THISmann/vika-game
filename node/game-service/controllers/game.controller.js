@@ -121,21 +121,30 @@ exports.leaderboard = async (req, res) => {
   try {
     const scores = await Score.find({}).lean();
     
+    console.log(`📊 Leaderboard query: found ${scores ? scores.length : 0} scores in database`);
+    
     // Si aucun score n'existe, retourner un tableau vide
     if (!scores || scores.length === 0) {
-      console.log("No scores found in database");
+      console.log("ℹ️ No scores found in database - returning empty array");
       return res.json([]);
     }
     
     // Trier par score décroissant
     const sortedScores = scores.sort((a, b) => (b.score || 0) - (a.score || 0));
     
-    console.log(`✅ Leaderboard: returning ${sortedScores.length} scores`);
+    // Mapper les scores pour s'assurer que les champs sont corrects
+    const mappedScores = sortedScores.map(score => ({
+      playerId: score.playerId || score._id?.toString() || 'unknown',
+      playerName: score.playerName || score.name || 'Joueur anonyme',
+      score: score.score || 0
+    }));
     
-    res.json(sortedScores);
+    console.log(`✅ Leaderboard: returning ${mappedScores.length} scores:`, mappedScores.map(s => `${s.playerName}: ${s.score}`).join(', '));
+    
+    res.json(mappedScores);
   } catch (error) {
-    console.error("Error getting leaderboard:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error getting leaderboard:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
 
@@ -265,9 +274,24 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
       const questions = quiz.data;
 
-      // Calculer les résultats de la question actuelle
+      // Calculer les résultats de la question actuelle AVANT de passer à la suivante
       if (state.currentQuestionId) {
+        console.log(`⏰ Timer expired for question ${state.currentQuestionId}, calculating results...`);
         await calculateQuestionResults(state.currentQuestionId, questions);
+        
+        // Émettre les scores mis à jour via WebSocket
+        const updatedScores = await Score.find({}).lean();
+        const sortedScores = updatedScores.sort((a, b) => (b.score || 0) - (a.score || 0));
+        const mappedScores = sortedScores.map(score => ({
+          playerId: score.playerId || score._id?.toString() || 'unknown',
+          playerName: score.playerName || score.name || 'Joueur anonyme',
+          score: score.score || 0
+        }));
+        
+        if (io) {
+          io.emit('leaderboard:update', mappedScores);
+          console.log(`📢 Emitted leaderboard update with ${mappedScores.length} players`);
+        }
       }
 
       // Passer à la question suivante
@@ -393,7 +417,22 @@ exports.nextQuestion = async (req, res) => {
 
     // Calculer les scores de la question précédente si elle existe
     if (state.currentQuestionId) {
+      console.log(`📊 Calculating results for previous question ${state.currentQuestionId}...`);
       await calculateQuestionResults(state.currentQuestionId, questions);
+      
+      // Émettre les scores mis à jour via WebSocket
+      const updatedScores = await Score.find({}).lean();
+      const sortedScores = updatedScores.sort((a, b) => (b.score || 0) - (a.score || 0));
+      const mappedScores = sortedScores.map(score => ({
+        playerId: score.playerId || score._id?.toString() || 'unknown',
+        playerName: score.playerName || score.name || 'Joueur anonyme',
+        score: score.score || 0
+      }));
+      
+      if (req.io) {
+        req.io.emit('leaderboard:update', mappedScores);
+        console.log(`📢 Emitted leaderboard update with ${mappedScores.length} players`);
+      }
     }
 
     // Passer à la question suivante
@@ -511,19 +550,32 @@ exports.endGame = async (req, res) => {
     
     if (state.currentQuestionId) {
       // Calculer les résultats de la dernière question
+      console.log(`🏁 Ending game, calculating results for last question ${state.currentQuestionId}...`);
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
       await calculateQuestionResults(state.currentQuestionId, quiz.data);
     }
 
     await gameState.endGame();
 
+    // Récupérer les scores finaux et les émettre
+    const finalScores = await Score.find({}).lean();
+    const sortedScores = finalScores.sort((a, b) => (b.score || 0) - (a.score || 0));
+    const mappedScores = sortedScores.map(score => ({
+      playerId: score.playerId || score._id?.toString() || 'unknown',
+      playerName: score.playerName || score.name || 'Joueur anonyme',
+      score: score.score || 0
+    }));
+
     if (req.io) {
       req.io.emit("game:ended", {
-        message: "Le jeu est terminé"
+        message: "Le jeu est terminé",
+        leaderboard: mappedScores
       });
+      req.io.emit('leaderboard:update', mappedScores);
+      console.log(`📢 Emitted final leaderboard with ${mappedScores.length} players`);
     }
 
-    res.json({ message: "Jeu terminé" });
+    res.json({ message: "Jeu terminé", leaderboard: mappedScores });
   } catch (err) {
     console.error("Error ending game:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -533,7 +585,8 @@ exports.endGame = async (req, res) => {
 exports.deleteGame = async (req, res) => {
   try {
     // Réinitialiser les scores pour cette session
-    await Score.deleteMany({});
+    const deleteResult = await Score.deleteMany({});
+    console.log(`🗑️ Deleted ${deleteResult.deletedCount} scores from database`);
     
     // Réinitialiser l'état du jeu
     await gameState.resetGame();
