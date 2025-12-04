@@ -450,16 +450,29 @@ let questionTimer = null;
 
 // Fonction helper pour passer à la question suivante automatiquement
 async function scheduleNextQuestion(io, defaultDuration = 30000) {
+  console.log(`\n⏰ ========== SCHEDULING NEXT QUESTION ==========`);
+  
   if (questionTimer) {
+    console.log(`⏰ Clearing existing timer`);
     clearTimeout(questionTimer);
   }
 
   const state = await gameState.getState();
+  console.log(`⏰ Current state:`, {
+    isStarted: state.isStarted,
+    currentQuestionId: state.currentQuestionId,
+    questionDuration: state.questionDuration,
+    defaultDuration: defaultDuration
+  });
+  
   if (!state.isStarted || !state.currentQuestionId) {
+    console.log(`⏰ ❌ Cannot schedule: game not started or no current question`);
     return;
   }
 
   const duration = state.questionDuration || defaultDuration;
+  console.log(`⏰ Scheduling timer for ${duration}ms (${duration / 1000} seconds)`);
+  console.log(`⏰ Timer will expire at: ${new Date(Date.now() + duration).toISOString()}`);
 
   questionTimer = setTimeout(async () => {
     try {
@@ -613,7 +626,9 @@ exports.startGame = async (req, res) => {
       console.log("📢 Emitted 'question:next' event to all clients");
 
       // Programmer le timer pour passer automatiquement à la question suivante
+      console.log(`⏰ Scheduling timer for first question (${questionDurationMs}ms)...`);
       scheduleNextQuestion(req.io, questionDurationMs);
+      console.log(`✅ Timer scheduled successfully`);
       
       console.log(`✅ Game started - all events emitted to ${connectedClients} clients`);
     } else {
