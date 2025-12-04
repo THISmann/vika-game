@@ -43,7 +43,46 @@ if (!token) {
   process.exit(1);
 }
 
-const bot = new TelegramBot(token, { polling: true });
+// Vérifier que le token a le bon format (doit contenir un ':')
+if (!token.includes(':')) {
+  console.error('❌ TELEGRAM_BOT_TOKEN format invalide!');
+  console.error('   Le token doit être au format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
+  process.exit(1);
+}
+
+// Logger le début du token pour debug (sans exposer le token complet)
+const tokenPrefix = token.split(':')[0];
+console.log(`🔐 Telegram Bot Token configuré (ID: ${tokenPrefix}...)`);
+
+const bot = new TelegramBot(token, { 
+  polling: {
+    interval: 1000,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
+
+// Gestion des erreurs de polling
+bot.on('polling_error', (error) => {
+  console.error('❌ Erreur de polling Telegram:', error.message);
+  
+  // Si c'est une erreur 404, le token est probablement invalide
+  if (error.code === 'ETELEGRAM' && error.message.includes('404')) {
+    console.error('⚠️  Le token Telegram semble invalide ou le bot a été supprimé.');
+    console.error('   Vérifiez que:');
+    console.error('   1. Le token est correct dans le secret Kubernetes');
+    console.error('   2. Le bot existe toujours sur Telegram (@BotFather)');
+    console.error('   3. Le token n\'a pas expiré');
+  }
+  
+  // Ne pas arrêter le processus, continuer à essayer de se reconnecter
+});
+
+bot.on('error', (error) => {
+  console.error('❌ Erreur Telegram Bot:', error.message);
+});
 
 // Store user sessions: chatId -> { gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion }
 const userSessions = new Map();
