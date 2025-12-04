@@ -3,19 +3,19 @@
     <!-- Header -->
     <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-4 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">🎯 Dashboard Administrateur</h1>
-        <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">Gérez votre jeu de questions-réponses</p>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">{{ t('admin.dashboard.title') }}</h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">{{ t('admin.dashboard.subtitle') }}</p>
       </div>
 
       <!-- Game Code -->
       <div v-if="gameCode" class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-yellow-300">
         <div class="text-center">
-          <div class="text-xs sm:text-sm text-gray-600 mb-2">Code de la partie</div>
+          <div class="text-xs sm:text-sm text-gray-600 mb-2">{{ t('admin.dashboard.gameCode') }}</div>
           <div class="text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-600 mb-2 font-mono tracking-wider">
             {{ gameCode }}
           </div>
           <div class="text-xs sm:text-sm text-gray-600 mb-4">
-            Partagez ce code avec les joueurs pour qu'ils puissent se connecter
+            {{ t('admin.dashboard.shareCode') }}
           </div>
           
           <!-- Boutons d'action -->
@@ -28,7 +28,7 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span>{{ copyButtonText }}</span>
+              <span>{{ copyButtonText || t('admin.dashboard.copyCode') }}</span>
             </button>
 
             <!-- Bouton Partager WhatsApp -->
@@ -61,25 +61,25 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold text-purple-600">{{ gameState.connectedPlayersCount }}</div>
-            <div class="text-xs sm:text-sm text-gray-600 mt-1">Joueurs connectés</div>
+            <div class="text-xs sm:text-sm text-gray-600 mt-1">{{ t('admin.dashboard.connectedPlayers') }}</div>
           </div>
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold" :class="gameState.isStarted ? 'text-green-600' : 'text-gray-400'">
-              {{ gameState.isStarted ? 'En cours' : 'En attente' }}
+              {{ gameState.isStarted ? t('admin.dashboard.statusInProgress') : t('admin.dashboard.statusWaiting') }}
             </div>
-            <div class="text-xs sm:text-sm text-gray-600 mt-1">Statut du jeu</div>
+            <div class="text-xs sm:text-sm text-gray-600 mt-1">{{ t('admin.dashboard.gameStatus') }}</div>
           </div>
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold text-indigo-600">
               {{ gameState.currentQuestionIndex + 1 }}/{{ totalQuestions }}
             </div>
-            <div class="text-xs sm:text-sm text-gray-600 mt-1">Question actuelle</div>
+            <div class="text-xs sm:text-sm text-gray-600 mt-1">{{ t('admin.dashboard.currentQuestion') }}</div>
           </div>
         </div>
         
         <!-- Liste des joueurs connectés -->
         <div v-if="connectedPlayers.length > 0" class="mt-4 pt-4 border-t border-purple-200">
-          <div class="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Joueurs connectés :</div>
+          <div class="text-xs sm:text-sm font-semibold text-gray-700 mb-2">{{ t('admin.dashboard.connectedPlayersList') }}</div>
           <div class="flex flex-wrap gap-2">
             <div
               v-for="player in connectedPlayers"
@@ -90,7 +90,7 @@
                 {{ player.name ? player.name.charAt(0).toUpperCase() : '?' }}
               </div>
               <span class="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[100px] sm:max-w-none">
-                {{ player.name || 'Joueur anonyme' }}
+                {{ player.name || t('admin.dashboard.anonymousPlayer') }}
               </span>
             </div>
           </div>
@@ -102,7 +102,7 @@
         <!-- Configuration du temps par question -->
         <div v-if="!gameState.isStarted" class="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-200">
           <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-            ⏱️ Temps par question (en secondes)
+            {{ t('admin.dashboard.timePerQuestion') }}
           </label>
           <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <input
@@ -114,7 +114,7 @@
               placeholder="30"
             />
             <span class="text-xs sm:text-sm text-gray-600">
-              (Minimum: 5s, Maximum: 300s)
+              {{ t('admin.dashboard.timeMinMax') }}
             </span>
           </div>
         </div>
@@ -125,28 +125,28 @@
             :disabled="gameState.isStarted || loading || totalQuestions === 0"
             class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ▶️ Démarrer le jeu
+            {{ t('admin.dashboard.startGame') }}
           </button>
           <button
             @click="nextQuestion"
             :disabled="!gameState.isStarted || loading"
             class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ➡️ Question suivante
+            {{ t('admin.dashboard.nextQuestion') }}
           </button>
           <button
             @click="endGame"
             :disabled="!gameState.isStarted || loading"
             class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white font-medium rounded-lg hover:from-orange-700 hover:to-red-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ⏹️ Terminer le jeu
+            {{ t('admin.dashboard.endGame') }}
           </button>
           <button
             @click="deleteGame"
             :disabled="loading"
             class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-red-600 to-pink-600 text-white font-medium rounded-lg hover:from-red-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🗑️ Supprimer la partie
+            {{ t('admin.dashboard.deleteGame') }}
           </button>
         </div>
       </div>
@@ -159,7 +159,7 @@
         class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 class="text-xl sm:text-2xl font-bold">Questions</h3>
+          <h3 class="text-xl sm:text-2xl font-bold">{{ t('admin.nav.questions') }}</h3>
           <svg class="w-12 h-12 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -169,9 +169,9 @@
             />
           </svg>
         </div>
-        <p class="text-purple-100">Ajoutez, modifiez ou supprimez des questions</p>
+        <p class="text-purple-100">{{ t('admin.dashboard.manageQuestionsDesc') }}</p>
         <div class="mt-4 flex items-center text-sm font-medium">
-          Gérer les questions
+          {{ t('admin.dashboard.manageQuestions') }}
           <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -198,9 +198,9 @@
             />
           </svg>
         </div>
-        <p class="text-blue-100">Consultez le classement des joueurs</p>
+        <p class="text-blue-100">{{ t('admin.dashboard.viewLeaderboardDesc') }}</p>
         <div class="mt-4 flex items-center text-sm font-medium">
-          Voir le classement
+          {{ t('admin.dashboard.viewLeaderboard') }}
           <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -227,8 +227,13 @@
 import axios from 'axios'
 import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import { useI18n } from '@/composables/useI18n'
 
 export default {
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data() {
     return {
       gameState: {
@@ -243,7 +248,7 @@ export default {
       message: '',
       error: '',
       socket: null,
-      copyButtonText: 'Copier le code',
+      copyButtonText: '',
       connectedPlayers: []
     }
   },
@@ -294,7 +299,7 @@ export default {
     
     this.socket.on('game:ended', () => {
       this.loadGameState()
-      this.message = 'Le jeu est terminé'
+      this.message = this.t('admin.dashboard.gameEnded')
       setTimeout(() => this.message = '', 5000)
     })
     
@@ -360,13 +365,13 @@ export default {
     async startGame() {
       // Vérifier qu'il y a des questions avant de démarrer
       if (this.totalQuestions === 0) {
-        this.error = 'Aucune question disponible. Veuillez ajouter des questions avant de démarrer le jeu.'
+        this.error = this.t('admin.dashboard.noQuestions')
         return
       }
 
       // Valider le temps par question
       if (!this.questionDuration || this.questionDuration < 5 || this.questionDuration > 300) {
-        this.error = 'Le temps par question doit être entre 5 et 300 secondes.'
+        this.error = this.t('admin.dashboard.timeMinMax')
         return
       }
       
@@ -378,7 +383,7 @@ export default {
         await axios.post(API_URLS.game.start, {
           questionDuration: this.questionDuration
         })
-        this.message = `Jeu démarré avec succès ! (${this.questionDuration}s par question)`
+        this.message = `${this.t('admin.dashboard.startGame')} - ${this.questionDuration}s ${this.t('admin.dashboard.timePerQuestion')}`
         await this.loadGameState()
         await this.loadQuestionsCount()
         setTimeout(() => this.message = '', 3000)
@@ -398,18 +403,18 @@ export default {
         if (res.data.finished) {
           this.message = 'Le jeu est terminé !'
         } else {
-          this.message = 'Question suivante affichée'
+          this.message = this.t('admin.dashboard.nextQuestionShown')
         }
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erreur lors du passage à la question suivante'
+        this.error = err.response?.data?.error || this.t('admin.dashboard.nextQuestionError')
       } finally {
         this.loading = false
       }
     },
     async endGame() {
-      if (!confirm('Êtes-vous sûr de vouloir terminer le jeu ?')) {
+      if (!confirm(this.t('admin.dashboard.confirmEndGame'))) {
         return
       }
       
@@ -419,7 +424,7 @@ export default {
       
       try {
         await axios.post(API_URLS.game.end)
-        this.message = 'Jeu terminé avec succès !'
+        this.message = this.t('admin.dashboard.gameEnded')
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
@@ -439,7 +444,7 @@ export default {
       
       try {
         await axios.delete(API_URLS.game.delete)
-        this.message = 'Partie supprimée avec succès !'
+        this.message = this.t('admin.dashboard.gameDeleted')
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
@@ -470,11 +475,11 @@ export default {
       }
     },
     shareOnWhatsApp() {
-      const text = encodeURIComponent(`Rejoignez ma partie de quiz! Code: ${this.gameCode}`)
+      const text = encodeURIComponent(`${this.t('admin.dashboard.shareCode')} Code: ${this.gameCode}`)
       window.open(`https://wa.me/?text=${text}`, '_blank', 'width=600,height=400')
     },
     shareOnTelegram() {
-      const text = encodeURIComponent(`Rejoignez ma partie de quiz! Code: ${this.gameCode}`)
+      const text = encodeURIComponent(`${this.t('admin.dashboard.shareCode')} Code: ${this.gameCode}`)
       const url = encodeURIComponent(window.location.origin)
       window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank', 'width=600,height=400')
     }

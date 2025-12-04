@@ -4,15 +4,15 @@
       class="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200"
     >
       <div class="text-center">
-        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Connexion Admin</h2>
-        <p class="text-sm text-gray-600">Accédez au panneau d'administration</p>
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">{{ t('admin.login.title') }}</h2>
+        <p class="text-sm text-gray-600">{{ t('admin.login.subtitle') }}</p>
       </div>
 
       <form @submit.prevent="login" class="mt-8 space-y-6">
         <div class="space-y-4">
           <div>
             <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
-              Nom d'utilisateur
+              {{ t('admin.login.username') }}
             </label>
             <input
               id="username"
@@ -20,13 +20,13 @@
               type="text"
               required
               class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              placeholder="Entrez votre nom d'utilisateur"
+              :placeholder="t('admin.login.usernamePlaceholder')"
             />
           </div>
 
           <div>
             <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-              Mot de passe
+              {{ t('admin.login.password') }}
             </label>
             <input
               id="password"
@@ -34,7 +34,7 @@
               type="password"
               required
               class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-              placeholder="Entrez votre mot de passe"
+              :placeholder="t('admin.login.passwordPlaceholder')"
             />
           </div>
         </div>
@@ -59,7 +59,7 @@
               />
             </svg>
           </span>
-          Se connecter
+          {{ t('admin.login.submit') }}
         </button>
       </form>
     </div>
@@ -67,7 +67,13 @@
 </template>
 
 <script>
+import { useI18n } from '@/composables/useI18n'
+
 export default {
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  },
   data() {
     return {
       username: '',
@@ -82,7 +88,7 @@ export default {
         localStorage.setItem('admin', '1')
         this.$router.push('/admin/dashboard')
       } else {
-        this.error = 'Identifiants invalides'
+        this.error = this.t('admin.login.invalidCredentials')
       }
     },
   },

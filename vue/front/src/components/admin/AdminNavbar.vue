@@ -17,14 +17,14 @@
             class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-white/20 transition-all"
             active-class="bg-white/30 font-bold"
           >
-            Dashboard
+            {{ t('admin.nav.dashboard') }}
           </router-link>
           <router-link
             to="/admin/questions"
             class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-white/20 transition-all"
             active-class="bg-white/30 font-bold"
           >
-            Questions
+            {{ t('admin.nav.questions') }}
           </router-link>
           
           <!-- Language Selector -->
@@ -62,7 +62,7 @@
             @click="logout"
             class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-red-600/30 transition-all"
           >
-            Déconnexion
+            {{ t('admin.nav.logout') }}
           </button>
         </div>
       </div>
@@ -77,7 +77,7 @@ import { useI18n } from '@/composables/useI18n'
 export default {
   name: 'AdminNavbar',
   setup() {
-    const { language, changeLanguage, availableLanguages } = useI18n()
+    const { language, changeLanguage, t, availableLanguages } = useI18n()
     const showLanguageMenu = ref(false)
     const languageMenuRef = ref(null)
     
@@ -117,6 +117,7 @@ export default {
     return {
       language,
       changeLanguage,
+      t,
       availableLanguages,
       showLanguageMenu,
       getLanguageName,
