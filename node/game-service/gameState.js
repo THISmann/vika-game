@@ -208,18 +208,22 @@ module.exports = {
       if (!state.answers[playerId]) {
         state.answers[playerId] = {};
       }
+      
+      // Sauvegarder la réponse originale (on normalisera lors de la comparaison)
       state.answers[playerId][questionId] = answer;
       await state.save();
       
       // Vérifier que la réponse a bien été sauvegardée
       const savedState = await GameState.getCurrent();
       const savedAnswer = savedState.answers?.[playerId]?.[questionId];
-      console.log(`💾 Saved answer for player ${playerId}, question ${questionId}: "${answer}"`);
-      console.log(`✅ Verified saved answer: "${savedAnswer}"`);
+      console.log(`💾 Saved answer for player ${playerId}, question ${questionId}:`);
+      console.log(`   Original: "${answer}" (type: ${typeof answer}, length: ${String(answer).length})`);
+      console.log(`   Saved: "${savedAnswer}" (type: ${typeof savedAnswer}, length: ${String(savedAnswer).length})`);
+      console.log(`   Match: ${answer === savedAnswer ? '✅' : '❌'}`);
       
       return toPlainObject(state);
     } catch (error) {
-      console.error("Error saving answer:", error);
+      console.error("❌ Error saving answer:", error);
       throw error;
     }
   },

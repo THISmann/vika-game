@@ -32,6 +32,30 @@ async function initializePlayerScore(playerId, playerName) {
   }
 }
 
+// Fonction de normalisation robuste des réponses
+function normalizeAnswer(answer) {
+  if (answer === null || answer === undefined) {
+    return '';
+  }
+  
+  // Convertir en string
+  let normalized = String(answer);
+  
+  // Supprimer les espaces avant/après
+  normalized = normalized.trim();
+  
+  // Supprimer les espaces multiples
+  normalized = normalized.replace(/\s+/g, ' ');
+  
+  // Supprimer les caractères invisibles (zero-width space, etc.)
+  normalized = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  
+  // Normaliser les caractères Unicode (é → e, etc.)
+  normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
+  return normalized;
+}
+
 // Update player score + save playerName
 async function updateScore(playerId, playerName, delta) {
   try {
@@ -95,10 +119,12 @@ exports.answerQuestion = async (req, res) => {
       const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
       player = playersRes.data.find(p => p.id === playerId);
       if (!player) {
+        console.error(`❌ Player ${playerId} not found in auth service`);
         return res.status(404).json({ error: "Player not found" });
       }
+      console.log(`✅ Player found: ${player.name} (${playerId})`);
     } catch (err) {
-      console.error("Error fetching player:", err);
+      console.error("❌ Error fetching player:", err);
       return res.status(500).json({ error: "Erreur lors de la récupération du joueur" });
     }
 
@@ -115,21 +141,24 @@ exports.answerQuestion = async (req, res) => {
       return res.status(500).json({ error: "Erreur lors de la récupération de la question" });
     }
 
-    // Normaliser les réponses pour la comparaison (trim + casse)
-    const normalizedAnswer = String(answer).trim();
-    const normalizedCorrect = String(question.answer).trim();
+    // Normaliser les réponses pour la comparaison
+    const normalizedAnswer = normalizeAnswer(answer);
+    const normalizedCorrect = normalizeAnswer(question.answer);
     const isCorrect = normalizedAnswer === normalizedCorrect;
     
-    // Log pour le débogage
-    console.log(`🔍 Answer comparison in answerQuestion:`, {
-      rawAnswer: answer,
-      rawCorrect: question.answer,
-      normalizedAnswer: normalizedAnswer,
-      normalizedCorrect: normalizedCorrect,
-      isEqual: isCorrect
-    });
+    // Log détaillé pour le débogage
+    console.log(`\n🔍 ========== ANSWER QUESTION ==========`);
+    console.log(`📋 Player: ${player.name} (${playerId})`);
+    console.log(`📋 Question ID: ${questionId}`);
+    console.log(`📋 Raw answer from player: "${answer}" (type: ${typeof answer}, length: ${String(answer).length})`);
+    console.log(`📋 Raw correct answer: "${question.answer}" (type: ${typeof question.answer}, length: ${String(question.answer).length})`);
+    console.log(`📋 Normalized answer: "${normalizedAnswer}" (length: ${normalizedAnswer.length})`);
+    console.log(`📋 Normalized correct: "${normalizedCorrect}" (length: ${normalizedCorrect.length})`);
+    console.log(`📋 Is correct: ${isCorrect}`, isCorrect ? '✅' : '❌');
+    console.log(`========================================\n`);
 
-    // Sauvegarder la réponse (mais ne pas mettre à jour le score maintenant)
+    // Sauvegarder la réponse normalisée pour éviter les problèmes de comparaison plus tard
+    // On sauvegarde la réponse originale mais on normalise aussi pour la comparaison
     await gameState.saveAnswer(playerId, questionId, answer);
 
     res.json({
@@ -151,16 +180,33 @@ exports.answerQuestion = async (req, res) => {
 
 exports.getScore = async (req, res) => {
   try {
-    const score = await Score.findOne({ playerId: req.params.playerId });
-    res.json(score ? score.toObject() : { playerId: req.params.playerId, playerName: null, score: 0 });
+    const { playerId } = req.params;
+    console.log(`📊 Getting score for player: ${playerId}`);
+    
+    const score = await Score.findOne({ playerId });
+    
+    if (score) {
+      const scoreObj = score.toObject();
+      console.log(`✅ Score found: ${scoreObj.playerName} = ${scoreObj.score}`);
+      res.json(scoreObj);
+    } else {
+      console.log(`ℹ️ No score found for player ${playerId}, returning default (0)`);
+      res.json({ 
+        playerId: playerId, 
+        playerName: null, 
+        score: 0 
+      });
+    }
   } catch (error) {
-    console.error("Error getting score:", error);
+    console.error("❌ Error getting score:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
 exports.leaderboard = async (req, res) => {
   try {
+    console.log(`\n📊 ========== LEADERBOARD REQUEST ==========`);
+    
     const scores = await Score.find({}).lean();
     
     console.log(`📊 Leaderboard query: found ${scores ? scores.length : 0} scores in database`);
@@ -182,12 +228,14 @@ exports.leaderboard = async (req, res) => {
             };
           });
           console.log(`✅ Leaderboard: returning ${mappedScores.length} connected players with score 0`);
+          console.log(`========================================\n`);
           return res.json(mappedScores);
         }
       } catch (err) {
         console.error("❌ Error fetching connected players for leaderboard:", err);
       }
       console.log("ℹ️ No scores and no connected players - returning empty array");
+      console.log(`========================================\n`);
       return res.json([]);
     }
     
@@ -195,13 +243,19 @@ exports.leaderboard = async (req, res) => {
     const sortedScores = scores.sort((a, b) => (b.score || 0) - (a.score || 0));
     
     // Mapper les scores pour s'assurer que les champs sont corrects
-    const mappedScores = sortedScores.map(score => ({
-      playerId: score.playerId || score._id?.toString() || 'unknown',
-      playerName: score.playerName || score.name || 'Joueur anonyme',
-      score: score.score || 0
-    }));
+    const mappedScores = sortedScores.map(score => {
+      const mapped = {
+        playerId: score.playerId || score._id?.toString() || 'unknown',
+        playerName: score.playerName || score.name || 'Joueur anonyme',
+        score: score.score || 0
+      };
+      console.log(`   📋 Score entry: ${mapped.playerName} (${mapped.playerId}) = ${mapped.score}`);
+      return mapped;
+    });
     
-    console.log(`✅ Leaderboard: returning ${mappedScores.length} scores:`, mappedScores.map(s => `${s.playerName}: ${s.score}`).join(', '));
+    console.log(`✅ Leaderboard: returning ${mappedScores.length} scores`);
+    console.log(`   Top 3: ${mappedScores.slice(0, 3).map(s => `${s.playerName}: ${s.score}`).join(', ')}`);
+    console.log(`========================================\n`);
     
     res.json(mappedScores);
   } catch (error) {
@@ -688,13 +742,13 @@ async function calculateQuestionResults(questionId, questions) {
     const answer = answers[playerId][questionId];
     const correctAnswer = question.answer;
     
-    // Normaliser les réponses pour la comparaison (trim + casse)
-    const normalizedAnswer = String(answer).trim();
-    const normalizedCorrect = String(correctAnswer).trim();
+    // Normaliser les réponses pour la comparaison (fonction robuste)
+    const normalizedAnswer = normalizeAnswer(answer);
+    const normalizedCorrect = normalizeAnswer(correctAnswer);
     const isCorrect = normalizedAnswer === normalizedCorrect;
     
     // Logs détaillés pour le débogage
-    console.log(`   📝 Answer comparison details:`, {
+    console.log(`\n   📝 Answer comparison details:`, {
       rawAnswer: answer,
       rawCorrect: correctAnswer,
       normalizedAnswer: normalizedAnswer,
@@ -703,7 +757,9 @@ async function calculateQuestionResults(questionId, questions) {
       correctType: typeof correctAnswer,
       answerLength: normalizedAnswer.length,
       correctLength: normalizedCorrect.length,
-      isEqual: isCorrect
+      isEqual: isCorrect,
+      answerCharCodes: normalizedAnswer.split('').map(c => c.charCodeAt(0)).join(','),
+      correctCharCodes: normalizedCorrect.split('').map(c => c.charCodeAt(0)).join(',')
     });
     
     console.log(`\n🔍 Processing player ${playerId}:`);
