@@ -15,8 +15,7 @@ const isProduction = process.env.NODE_ENV === 'production' || process.env.KUBERN
 // Configuration WebSocket selon l'environnement
 let wsUrl = GAME_WS_URL;
 if (isProduction) {
-  // En production, utiliser le chemin /socket.io via le proxy
-  wsUrl = GAME_WS_URL.replace(/\/$/, ''); // Enlever le slash final si présent
+  wsUrl = GAME_WS_URL.replace(/\/$/, '');
   console.log('🌐 Production mode - WebSocket URL:', wsUrl);
 } else {
   console.log('🏠 Development mode - WebSocket URL:', wsUrl);
@@ -35,65 +34,77 @@ const gameSocket = io(wsUrl, {
   forceNew: false
 });
 
+// Store user sessions: chatId -> { gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion }
+const userSessions = new Map();
+
 // Get token from environment variable (from GitHub Secrets in production)
-const token = process.env.TELEGRAM_BOT_TOKEN;
+let token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
   console.error('❌ TELEGRAM_BOT_TOKEN is required!');
   console.error('   Set it as an environment variable or in .env file');
   process.exit(1);
 }
 
+// Nettoyer le token (supprimer les espaces, retours à la ligne, etc.)
+token = token.trim().replace(/[\r\n]/g, '');
+
 // Vérifier que le token a le bon format (doit contenir un ':')
 if (!token.includes(':')) {
   console.error('❌ TELEGRAM_BOT_TOKEN format invalide!');
   console.error('   Le token doit être au format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
+  console.error(`   Token reçu (longueur: ${token.length}): ${token.substring(0, 20)}...`);
+  process.exit(1);
+}
+
+// Vérifier le format exact (nombre:chaîne)
+const tokenParts = token.split(':');
+if (tokenParts.length !== 2 || !/^\d+$/.test(tokenParts[0]) || tokenParts[1].length < 10) {
+  console.error('❌ TELEGRAM_BOT_TOKEN format invalide!');
+  console.error('   Format attendu: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
+  console.error(`   Token reçu: ${tokenParts[0]}:${tokenParts[1].substring(0, 10)}...`);
   process.exit(1);
 }
 
 // Logger le début du token pour debug (sans exposer le token complet)
-const tokenPrefix = token.split(':')[0];
-console.log(`🔐 Telegram Bot Token configuré (ID: ${tokenPrefix}...)`);
+const tokenPrefix = tokenParts[0];
+const tokenLength = token.length;
+console.log(`🔐 Telegram Bot Token configuré (ID: ${tokenPrefix}..., longueur: ${tokenLength})`);
 
-const bot = new TelegramBot(token, { 
-  polling: {
-    interval: 1000,
-    autoStart: true,
-    params: {
-      timeout: 10
+// Tester le token avant de créer le bot
+async function testToken() {
+  try {
+    const testUrl = `https://api.telegram.org/bot${token}/getMe`;
+    console.log('🧪 Test du token avec l\'API Telegram...');
+    const response = await axios.get(testUrl, { timeout: 10000 });
+    
+    if (response.data && response.data.ok) {
+      const botInfo = response.data.result;
+      console.log(`✅ Token valide! Bot: @${botInfo.username} (${botInfo.first_name})`);
+      return true;
+    } else {
+      console.error('❌ Token invalide. Réponse API:', response.data);
+      return false;
     }
+  } catch (error) {
+    console.error('❌ Erreur lors du test du token:', error.message);
+    if (error.response) {
+      console.error('   Status:', error.response.status);
+      console.error('   Data:', JSON.stringify(error.response.data));
+      if (error.response.status === 401) {
+        console.error('   ⚠️  Le token est invalide ou a été révoqué');
+      } else if (error.response.status === 404) {
+        console.error('   ⚠️  Le bot n\'existe plus ou le token est incorrect');
+      }
+    }
+    return false;
   }
-});
-
-// Gestion des erreurs de polling
-bot.on('polling_error', (error) => {
-  console.error('❌ Erreur de polling Telegram:', error.message);
-  
-  // Si c'est une erreur 404, le token est probablement invalide
-  if (error.code === 'ETELEGRAM' && error.message.includes('404')) {
-    console.error('⚠️  Le token Telegram semble invalide ou le bot a été supprimé.');
-    console.error('   Vérifiez que:');
-    console.error('   1. Le token est correct dans le secret Kubernetes');
-    console.error('   2. Le bot existe toujours sur Telegram (@BotFather)');
-    console.error('   3. Le token n\'a pas expiré');
-  }
-  
-  // Ne pas arrêter le processus, continuer à essayer de se reconnecter
-});
-
-bot.on('error', (error) => {
-  console.error('❌ Erreur Telegram Bot:', error.message);
-});
-
-// Store user sessions: chatId -> { gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion }
-const userSessions = new Map();
+}
 
 // Helper: Construire l'URL complète pour les appels API
 function getApiUrl(endpoint) {
   if (isProduction && endpoint.startsWith('/api/')) {
-    // En production, utiliser les chemins relatifs (via Nginx proxy)
     return endpoint;
   }
-  // En développement, utiliser les URLs complètes
   if (endpoint.startsWith('/auth/')) {
     return `${AUTH_SERVICE_URL}${endpoint}`;
   }
@@ -184,7 +195,7 @@ async function getAllQuestions() {
 }
 
 // Helper: Envoyer une question au joueur
-async function sendQuestion(chatId, question, questionIndex, totalQuestions, duration) {
+async function sendQuestion(bot, chatId, question, questionIndex, totalQuestions, duration) {
   if (!question) {
     return bot.sendMessage(chatId, '❌ Aucune question disponible.');
   }
@@ -207,7 +218,7 @@ async function sendQuestion(chatId, question, questionIndex, totalQuestions, dur
 }
 
 // Helper: Envoyer le classement final
-async function sendFinalLeaderboard(chatId, session) {
+async function sendFinalLeaderboard(bot, chatId, session) {
   try {
     const leaderboard = await getLeaderboard();
     const playerEntry = leaderboard.find(entry => entry.playerId === session.playerId);
@@ -240,379 +251,413 @@ async function sendFinalLeaderboard(chatId, session) {
   }
 }
 
-// ==================== COMMANDES BOT ====================
-
-// Commande /start - Demander le code du jeu
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  
-  // Réinitialiser la session
-  userSessions.delete(chatId);
-  
-  const welcomeMessage = `🎮 *Bienvenue sur IntelectGame Bot !*\n\nPour commencer, j'ai besoin du code de la partie.\n\n📝 *Envoyez-moi le code du jeu* (6 caractères)\n\nExemple: \`ABC123\``;
-  
-  await bot.sendMessage(chatId, welcomeMessage, {
-    parse_mode: 'Markdown',
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '📖 Aide', callback_data: 'help' }]
-      ]
+// Fonction principale pour initialiser le bot
+async function initializeBot() {
+  // Créer le bot
+  const bot = new TelegramBot(token, { 
+    polling: {
+      interval: 1000,
+      autoStart: true,
+      params: {
+        timeout: 10
+      }
     }
   });
-});
 
-// Commande /help
-bot.onText(/\/help/, (msg) => {
-  const chatId = msg.chat.id;
-  const helpMessage = `📖 *Aide IntelectGame Bot*\n\n1️⃣ Envoyez le code de la partie (6 caractères)\n2️⃣ Inscrivez-vous avec votre nom\n3️⃣ Attendez que l'admin démarre la partie\n4️⃣ Répondez aux questions avec les boutons\n5️⃣ Consultez le classement à la fin\n\n*Commandes disponibles:*\n/start - Recommencer\n/status - Voir votre statut\n/help - Afficher cette aide`;
-  bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
-});
-
-// Commande /status
-bot.onText(/\/status/, (msg) => {
-  const chatId = msg.chat.id;
-  const session = userSessions.get(chatId);
-
-  if (!session || !session.gameCode) {
-    return bot.sendMessage(chatId, '❌ Aucune partie active.\n\nUtilisez /start pour commencer.');
-  }
-
-  let statusMessage = `📊 *Votre statut :*\n\n`;
-  statusMessage += `🎮 Code partie: *${session.gameCode}*\n`;
-  
-  if (session.playerName) {
-    statusMessage += `👤 Nom: *${session.playerName}*\n`;
-  } else {
-    statusMessage += `👤 Nom: Non enregistré\n`;
-  }
-
-  if (session.gameStarted) {
-    statusMessage += `🟢 Statut: *En cours*\n`;
-    if (session.questions && session.questions.length > 0) {
-      statusMessage += `📝 Question: ${(session.currentQuestionIndex || 0) + 1}/${session.questions.length}\n`;
+  // Gestion des erreurs de polling
+  bot.on('polling_error', (error) => {
+    console.error('❌ Erreur de polling Telegram:', error.message);
+    
+    if (error.code === 'ETELEGRAM' && error.message.includes('404')) {
+      console.error('⚠️  Le token Telegram semble invalide ou le bot a été supprimé.');
+      console.error('   Vérifiez que:');
+      console.error('   1. Le token est correct dans le secret Kubernetes');
+      console.error('   2. Le bot existe toujours sur Telegram (@BotFather)');
+      console.error('   3. Le token n\'a pas expiré');
     }
-  } else {
-    statusMessage += `🟡 Statut: *En attente*\n`;
-    statusMessage += `⏳ Attendez que l'admin démarre la partie...\n`;
-  }
+  });
 
-  bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
-});
+  bot.on('error', (error) => {
+    console.error('❌ Erreur Telegram Bot:', error.message);
+  });
 
-// Gestion des messages texte (code du jeu ou nom du joueur)
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text?.trim();
+  // ==================== COMMANDES BOT ====================
 
-  // Ignorer les commandes
-  if (text?.startsWith('/')) {
-    return;
-  }
-
-  const session = userSessions.get(chatId) || {};
-
-  // Si pas de code de jeu, traiter comme code
-  if (!session.gameCode) {
-    if (!text || text.length !== 6) {
-      return bot.sendMessage(chatId, '❌ Le code doit contenir exactement 6 caractères.\n\nExemple: \`ABC123\`', {
-        parse_mode: 'Markdown'
-      });
-    }
-
-    const gameCode = text.toUpperCase();
-    const verification = await verifyGameCode(gameCode);
-
-    if (!verification || !verification.valid) {
-      return bot.sendMessage(chatId, '❌ Code invalide. Vérifiez le code et réessayez.');
-    }
-
-    if (verification.isStarted) {
-      return bot.sendMessage(chatId, '⚠️ Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.');
-    }
-
-    // Code valide, sauvegarder dans la session
-    session.gameCode = gameCode;
-    session.gameStarted = false;
-    userSessions.set(chatId, session);
-
-    const keyboard = {
-      inline_keyboard: [
-        [{ text: '📝 S\'inscrire maintenant', callback_data: 'register_prompt' }],
-        [{ text: '📊 Statut', callback_data: 'status' }]
-      ]
-    };
-
-    await bot.sendMessage(chatId, `✅ *Code accepté !*\n\n🎮 Partie: *${gameCode}*\n\n⏳ La partie n'a pas encore démarré.\n\n📝 *Envoyez-moi votre nom* pour vous inscrire.\n\nExemple: \`Jean\` ou \`Marie\``, {
+  // Commande /start - Demander le code du jeu
+  bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    
+    // Réinitialiser la session
+    userSessions.delete(chatId);
+    
+    const welcomeMessage = `🎮 *Bienvenue sur IntelectGame Bot !*\n\nPour commencer, j'ai besoin du code de la partie.\n\n📝 *Envoyez-moi le code du jeu* (6 caractères)\n\nExemple: \`ABC123\``;
+    
+    await bot.sendMessage(chatId, welcomeMessage, {
       parse_mode: 'Markdown',
-      reply_markup: keyboard
-    });
-    return;
-  }
-
-  // Si code existe mais pas de joueur, traiter comme nom
-  if (!session.playerId) {
-    if (!text || text.length < 2) {
-      return bot.sendMessage(chatId, '❌ Le nom doit contenir au moins 2 caractères.');
-    }
-
-    try {
-      const playerData = await registerPlayer(text);
-      session.playerId = playerData.id;
-      session.playerName = playerData.name;
-      session.gameStarted = false;
-      session.currentQuestionIndex = null;
-      session.questions = [];
-      session.hasAnsweredCurrentQuestion = false;
-      userSessions.set(chatId, session);
-
-      // Enregistrer le joueur via WebSocket
-      if (gameSocket.connected) {
-        gameSocket.emit('register', session.playerId);
-        console.log(`✅ Player ${session.playerName} (${session.playerId}) registered via WebSocket`);
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📖 Aide', callback_data: 'help' }]
+        ]
       }
-
-      await bot.sendMessage(chatId, `✅ *Inscription réussie !*\n\n👤 Nom: *${session.playerName}*\n🎮 Partie: *${session.gameCode}*\n\n⏳ *Attendez que l'admin démarre la partie...*\n\nJe vous enverrai les questions automatiquement dès que la partie commencera ! 🚀`, {
-        parse_mode: 'Markdown'
-      });
-    } catch (err) {
-      await bot.sendMessage(chatId, `❌ ${err.message}`);
-    }
-    return;
-  }
-
-  // Si tout est configuré, ignorer les messages texte
-  await bot.sendMessage(chatId, 'ℹ️ Utilisez les boutons pour répondre aux questions.\n\n/status - Voir votre statut');
-});
-
-// Gestion des callback queries (boutons)
-bot.on('callback_query', async (query) => {
-  const chatId = query.message.chat.id;
-  const data = query.data;
-  const messageId = query.message.message_id;
-
-  // Acknowledge callback
-  await bot.answerCallbackQuery(query.id);
-
-  // Help button
-  if (data === 'help') {
-    return bot.sendMessage(chatId, `📖 *Aide IntelectGame Bot*\n\n1️⃣ Envoyez le code de la partie\n2️⃣ Inscrivez-vous avec votre nom\n3️⃣ Attendez que l'admin démarre la partie\n4️⃣ Répondez aux questions avec les boutons\n5️⃣ Consultez le classement à la fin`, {
-      parse_mode: 'Markdown'
     });
-  }
+  });
 
-  // Status button
-  if (data === 'status') {
+  // Commande /help
+  bot.onText(/\/help/, (msg) => {
+    const chatId = msg.chat.id;
+    const helpMessage = `📖 *Aide IntelectGame Bot*\n\n1️⃣ Envoyez le code de la partie (6 caractères)\n2️⃣ Inscrivez-vous avec votre nom\n3️⃣ Attendez que l'admin démarre la partie\n4️⃣ Répondez aux questions avec les boutons\n5️⃣ Consultez le classement à la fin\n\n*Commandes disponibles:*\n/start - Recommencer\n/status - Voir votre statut\n/help - Afficher cette aide`;
+    bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+  });
+
+  // Commande /status
+  bot.onText(/\/status/, (msg) => {
+    const chatId = msg.chat.id;
     const session = userSessions.get(chatId);
+
     if (!session || !session.gameCode) {
-      return bot.sendMessage(chatId, '❌ Aucune partie active. Utilisez /start pour commencer.');
+      return bot.sendMessage(chatId, '❌ Aucune partie active.\n\nUtilisez /start pour commencer.');
     }
-    let statusMessage = `📊 *Votre statut :*\n\n🎮 Code: *${session.gameCode}*\n`;
+
+    let statusMessage = `📊 *Votre statut :*\n\n`;
+    statusMessage += `🎮 Code partie: *${session.gameCode}*\n`;
+    
     if (session.playerName) {
       statusMessage += `👤 Nom: *${session.playerName}*\n`;
-    }
-    statusMessage += session.gameStarted ? '🟢 *En cours*' : '🟡 *En attente*';
-    return bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
-  }
-
-  // Register prompt
-  if (data === 'register_prompt') {
-    return bot.sendMessage(chatId, '📝 *Pour vous inscrire, envoyez-moi votre nom*\n\nExemple: \`Jean\` ou \`Marie\`\n\nLe nom doit contenir au moins 2 caractères.', {
-      parse_mode: 'Markdown'
-    });
-  }
-
-  // Answer button: answer_<questionId>_<choiceIndex>
-  if (data.startsWith('answer_')) {
-    const session = userSessions.get(chatId);
-    if (!session || !session.playerId || !session.gameStarted) {
-      return bot.sendMessage(chatId, '❌ Vous devez être inscrit et la partie doit être démarrée.');
+    } else {
+      statusMessage += `👤 Nom: Non enregistré\n`;
     }
 
-    if (session.hasAnsweredCurrentQuestion) {
-      return bot.answerCallbackQuery(query.id, {
-        text: 'Vous avez déjà répondu à cette question',
-        show_alert: false
-      });
-    }
-
-    const parts = data.split('_');
-    const questionId = parts[1];
-    const choiceIndex = parseInt(parts[2]);
-
-    const currentQuestion = session.questions?.find(q => q.id === questionId);
-    if (!currentQuestion) {
-      return bot.sendMessage(chatId, '❌ Question introuvable.');
-    }
-
-    const selectedChoice = currentQuestion.choices[choiceIndex];
-    if (!selectedChoice) {
-      return bot.sendMessage(chatId, '❌ Choix invalide.');
-    }
-
-    try {
-      const result = await submitAnswer(session.playerId, questionId, selectedChoice);
-      
-      session.hasAnsweredCurrentQuestion = true;
-      userSessions.set(chatId, session);
-
-      // Mettre à jour le message pour montrer la réponse sélectionnée
-      const disabledKeyboard = {
-        inline_keyboard: currentQuestion.choices.map((choice, i) => [
-          {
-            text: `${String.fromCharCode(65 + i)}. ${choice}${i === choiceIndex ? ' ✅' : ''}`,
-            callback_data: `answered_${questionId}_${i}`
-          }
-        ])
-      };
-
-      try {
-        const editText = query.message.text + '\n\n✅ Réponse enregistrée !';
-        await bot.editMessageText(editText, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: 'Markdown',
-          reply_markup: disabledKeyboard
-        });
-      } catch (editErr) {
-        // Ignorer les erreurs d'édition
+    if (session.gameStarted) {
+      statusMessage += `🟢 Statut: *En cours*\n`;
+      if (session.questions && session.questions.length > 0) {
+        statusMessage += `📝 Question: ${(session.currentQuestionIndex || 0) + 1}/${session.questions.length}\n`;
       }
-
-      await bot.sendMessage(chatId, '✅ *Réponse enregistrée !*\n\n⏳ En attente de la question suivante...', {
-        parse_mode: 'Markdown'
-      });
-    } catch (err) {
-      await bot.sendMessage(chatId, `❌ ${err.message}`);
+    } else {
+      statusMessage += `🟡 Statut: *En attente*\n`;
+      statusMessage += `⏳ Attendez que l'admin démarre la partie...\n`;
     }
-  }
-});
 
-// ==================== WEBSOCKET EVENTS ====================
+    bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
+  });
 
-// Connexion WebSocket
-gameSocket.on('connect', () => {
-  console.log('✅ Telegram bot connected to game WebSocket');
-  
-  // Réenregistrer tous les joueurs actifs
-  for (const [chatId, session] of userSessions.entries()) {
-    if (session.playerId) {
-      gameSocket.emit('register', session.playerId);
-      console.log(`🔄 Re-registered player ${session.playerName} (${session.playerId})`);
+  // Gestion des messages texte (code du jeu ou nom du joueur)
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text?.trim();
+
+    // Ignorer les commandes
+    if (text?.startsWith('/')) {
+      return;
     }
-  }
-});
 
-gameSocket.on('disconnect', (reason) => {
-  console.log('⚠️ Telegram bot disconnected from WebSocket. Reason:', reason);
-});
+    const session = userSessions.get(chatId) || {};
 
-gameSocket.on('connect_error', (error) => {
-  console.error('❌ WebSocket connection error:', error.message);
-});
-
-// Événement: Jeu démarré
-gameSocket.on('game:started', async (data) => {
-  console.log('🚀 Game started event received:', data);
-  
-  // Mettre à jour toutes les sessions pour ce code
-  for (const [chatId, session] of userSessions.entries()) {
-    if (session.playerId && !session.gameStarted) {
-      session.gameStarted = true;
-      session.hasAnsweredCurrentQuestion = false;
-      userSessions.set(chatId, session);
-      
-      await bot.sendMessage(chatId, `🚀 *La partie a commencé !*\n\n⏳ La première question arrive bientôt...`, {
-        parse_mode: 'Markdown'
-      });
-    }
-  }
-});
-
-// Événement: Nouvelle question
-gameSocket.on('question:next', async (data) => {
-  console.log('📝 Question next event received:', data);
-  
-  const { question, questionIndex, totalQuestions, startTime, duration } = data;
-  
-  if (!question || !question.id) {
-    console.error('Invalid question data:', data);
-    return;
-  }
-
-  // Charger toutes les questions si nécessaire
-  const allQuestions = await getAllQuestions();
-  
-  // Trouver la question complète
-  const fullQuestion = allQuestions.find(q => q.id === question.id);
-  if (!fullQuestion) {
-    console.error('Question not found:', question.id);
-    return;
-  }
-
-  // Mettre à jour toutes les sessions actives
-  for (const [chatId, session] of userSessions.entries()) {
-    if (session.playerId && session.gameStarted) {
-      // Charger les questions si pas encore chargées
-      if (!session.questions || session.questions.length === 0) {
-        session.questions = allQuestions;
-      }
-      
-      session.currentQuestionIndex = questionIndex;
-      session.hasAnsweredCurrentQuestion = false;
-      userSessions.set(chatId, session);
-      
-      // Envoyer la question
-      await sendQuestion(chatId, fullQuestion, questionIndex, totalQuestions, duration / 1000);
-    }
-  }
-});
-
-// Événement: Jeu terminé
-gameSocket.on('game:ended', async (data) => {
-  console.log('🏁 Game ended event received:', data);
-  
-  for (const [chatId, session] of userSessions.entries()) {
-    if (session.playerId && session.gameStarted) {
-      session.gameStarted = false;
-      userSessions.set(chatId, session);
-      
-      // Envoyer le classement final
-      await sendFinalLeaderboard(chatId, session);
-    }
-  }
-});
-
-// Événement: Mise à jour du classement
-gameSocket.on('leaderboard:update', async (leaderboard) => {
-  console.log('📊 Leaderboard update received:', leaderboard.length, 'players');
-  
-  // Optionnel: Envoyer des mises à jour périodiques du classement
-  // Pour l'instant, on ne fait rien (le classement final sera envoyé à la fin)
-});
-
-// Polling pour vérifier l'état du jeu (fallback si WebSocket échoue)
-setInterval(async () => {
-  for (const [chatId, session] of userSessions.entries()) {
-    if (!session.playerId || session.gameStarted) {
-      continue; // Skip si pas de joueur ou jeu déjà démarré (WebSocket gère)
-    }
-    
-    try {
-      const gameState = await getGameState();
-      if (gameState && gameState.isStarted && !session.gameStarted) {
-        session.gameStarted = true;
-        userSessions.set(chatId, session);
-        await bot.sendMessage(chatId, `🚀 *La partie a commencé !*\n\n⏳ Les questions arrivent bientôt...`, {
+    // Si pas de code de jeu, traiter comme code
+    if (!session.gameCode) {
+      if (!text || text.length !== 6) {
+        return bot.sendMessage(chatId, '❌ Le code doit contenir exactement 6 caractères.\n\nExemple: \`ABC123\`', {
           parse_mode: 'Markdown'
         });
       }
-    } catch (err) {
-      // Ignorer les erreurs de polling
-    }
-  }
-}, 5000); // Vérifier toutes les 5 secondes
 
-console.log('🤖 Telegram bot is running...');
-console.log(`📡 WebSocket URL: ${wsUrl}`);
-console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
-console.log(`🔗 Quiz Service: ${QUIZ_SERVICE_URL}`);
-console.log(`🔗 Game Service: ${GAME_SERVICE_URL}`);
+      const gameCode = text.toUpperCase();
+      const verification = await verifyGameCode(gameCode);
+
+      if (!verification || !verification.valid) {
+        return bot.sendMessage(chatId, '❌ Code invalide. Vérifiez le code et réessayez.');
+      }
+
+      if (verification.isStarted) {
+        return bot.sendMessage(chatId, '⚠️ Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.');
+      }
+
+      // Code valide, sauvegarder dans la session
+      session.gameCode = gameCode;
+      session.gameStarted = false;
+      userSessions.set(chatId, session);
+
+      const keyboard = {
+        inline_keyboard: [
+          [{ text: '📝 S\'inscrire maintenant', callback_data: 'register_prompt' }],
+          [{ text: '📊 Statut', callback_data: 'status' }]
+        ]
+      };
+
+      await bot.sendMessage(chatId, `✅ *Code accepté !*\n\n🎮 Partie: *${gameCode}*\n\n⏳ La partie n'a pas encore démarré.\n\n📝 *Envoyez-moi votre nom* pour vous inscrire.\n\nExemple: \`Jean\` ou \`Marie\``, {
+        parse_mode: 'Markdown',
+        reply_markup: keyboard
+      });
+      return;
+    }
+
+    // Si code existe mais pas de joueur, traiter comme nom
+    if (!session.playerId) {
+      if (!text || text.length < 2) {
+        return bot.sendMessage(chatId, '❌ Le nom doit contenir au moins 2 caractères.');
+      }
+
+      try {
+        const playerData = await registerPlayer(text);
+        session.playerId = playerData.id;
+        session.playerName = playerData.name;
+        session.gameStarted = false;
+        session.currentQuestionIndex = null;
+        session.questions = [];
+        session.hasAnsweredCurrentQuestion = false;
+        userSessions.set(chatId, session);
+
+        // Enregistrer le joueur via WebSocket
+        if (gameSocket.connected) {
+          gameSocket.emit('register', session.playerId);
+          console.log(`✅ Player ${session.playerName} (${session.playerId}) registered via WebSocket`);
+        }
+
+        await bot.sendMessage(chatId, `✅ *Inscription réussie !*\n\n👤 Nom: *${session.playerName}*\n🎮 Partie: *${session.gameCode}*\n\n⏳ *Attendez que l'admin démarre la partie...*\n\nJe vous enverrai les questions automatiquement dès que la partie commencera ! 🚀`, {
+          parse_mode: 'Markdown'
+        });
+      } catch (err) {
+        await bot.sendMessage(chatId, `❌ ${err.message}`);
+      }
+      return;
+    }
+
+    // Si tout est configuré, ignorer les messages texte
+    await bot.sendMessage(chatId, 'ℹ️ Utilisez les boutons pour répondre aux questions.\n\n/status - Voir votre statut');
+  });
+
+  // Gestion des callback queries (boutons)
+  bot.on('callback_query', async (query) => {
+    const chatId = query.message.chat.id;
+    const data = query.data;
+    const messageId = query.message.message_id;
+
+    // Acknowledge callback
+    await bot.answerCallbackQuery(query.id);
+
+    // Help button
+    if (data === 'help') {
+      return bot.sendMessage(chatId, `📖 *Aide IntelectGame Bot*\n\n1️⃣ Envoyez le code de la partie\n2️⃣ Inscrivez-vous avec votre nom\n3️⃣ Attendez que l'admin démarre la partie\n4️⃣ Répondez aux questions avec les boutons\n5️⃣ Consultez le classement à la fin`, {
+        parse_mode: 'Markdown'
+      });
+    }
+
+    // Status button
+    if (data === 'status') {
+      const session = userSessions.get(chatId);
+      if (!session || !session.gameCode) {
+        return bot.sendMessage(chatId, '❌ Aucune partie active. Utilisez /start pour commencer.');
+      }
+      let statusMessage = `📊 *Votre statut :*\n\n🎮 Code: *${session.gameCode}*\n`;
+      if (session.playerName) {
+        statusMessage += `👤 Nom: *${session.playerName}*\n`;
+      }
+      statusMessage += session.gameStarted ? '🟢 *En cours*' : '🟡 *En attente*';
+      return bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
+    }
+
+    // Register prompt
+    if (data === 'register_prompt') {
+      return bot.sendMessage(chatId, '📝 *Pour vous inscrire, envoyez-moi votre nom*\n\nExemple: \`Jean\` ou \`Marie\`\n\nLe nom doit contenir au moins 2 caractères.', {
+        parse_mode: 'Markdown'
+      });
+    }
+
+    // Answer button: answer_<questionId>_<choiceIndex>
+    if (data.startsWith('answer_')) {
+      const session = userSessions.get(chatId);
+      if (!session || !session.playerId || !session.gameStarted) {
+        return bot.sendMessage(chatId, '❌ Vous devez être inscrit et la partie doit être démarrée.');
+      }
+
+      if (session.hasAnsweredCurrentQuestion) {
+        return bot.answerCallbackQuery(query.id, {
+          text: 'Vous avez déjà répondu à cette question',
+          show_alert: false
+        });
+      }
+
+      const parts = data.split('_');
+      const questionId = parts[1];
+      const choiceIndex = parseInt(parts[2]);
+
+      const currentQuestion = session.questions?.find(q => q.id === questionId);
+      if (!currentQuestion) {
+        return bot.sendMessage(chatId, '❌ Question introuvable.');
+      }
+
+      const selectedChoice = currentQuestion.choices[choiceIndex];
+      if (!selectedChoice) {
+        return bot.sendMessage(chatId, '❌ Choix invalide.');
+      }
+
+      try {
+        const result = await submitAnswer(session.playerId, questionId, selectedChoice);
+        
+        session.hasAnsweredCurrentQuestion = true;
+        userSessions.set(chatId, session);
+
+        // Mettre à jour le message pour montrer la réponse sélectionnée
+        const disabledKeyboard = {
+          inline_keyboard: currentQuestion.choices.map((choice, i) => [
+            {
+              text: `${String.fromCharCode(65 + i)}. ${choice}${i === choiceIndex ? ' ✅' : ''}`,
+              callback_data: `answered_${questionId}_${i}`
+            }
+          ])
+        };
+
+        try {
+          const editText = query.message.text + '\n\n✅ Réponse enregistrée !';
+          await bot.editMessageText(editText, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown',
+            reply_markup: disabledKeyboard
+          });
+        } catch (editErr) {
+          // Ignorer les erreurs d'édition
+        }
+
+        await bot.sendMessage(chatId, '✅ *Réponse enregistrée !*\n\n⏳ En attente de la question suivante...', {
+          parse_mode: 'Markdown'
+        });
+      } catch (err) {
+        await bot.sendMessage(chatId, `❌ ${err.message}`);
+      }
+    }
+  });
+
+  // ==================== WEBSOCKET EVENTS ====================
+
+  // Connexion WebSocket
+  gameSocket.on('connect', () => {
+    console.log('✅ Telegram bot connected to game WebSocket');
+    
+    // Réenregistrer tous les joueurs actifs
+    for (const [chatId, session] of userSessions.entries()) {
+      if (session.playerId) {
+        gameSocket.emit('register', session.playerId);
+        console.log(`🔄 Re-registered player ${session.playerName} (${session.playerId})`);
+      }
+    }
+  });
+
+  gameSocket.on('disconnect', (reason) => {
+    console.log('⚠️ Telegram bot disconnected from WebSocket. Reason:', reason);
+  });
+
+  gameSocket.on('connect_error', (error) => {
+    console.error('❌ WebSocket connection error:', error.message);
+  });
+
+  // Événement: Jeu démarré
+  gameSocket.on('game:started', async (data) => {
+    console.log('🚀 Game started event received:', data);
+    
+    for (const [chatId, session] of userSessions.entries()) {
+      if (session.playerId && !session.gameStarted) {
+        session.gameStarted = true;
+        session.hasAnsweredCurrentQuestion = false;
+        userSessions.set(chatId, session);
+        
+        await bot.sendMessage(chatId, `🚀 *La partie a commencé !*\n\n⏳ La première question arrive bientôt...`, {
+          parse_mode: 'Markdown'
+        });
+      }
+    }
+  });
+
+  // Événement: Nouvelle question
+  gameSocket.on('question:next', async (data) => {
+    console.log('📝 Question next event received:', data);
+    
+    const { question, questionIndex, totalQuestions, startTime, duration } = data;
+    
+    if (!question || !question.id) {
+      console.error('Invalid question data:', data);
+      return;
+    }
+
+    const allQuestions = await getAllQuestions();
+    const fullQuestion = allQuestions.find(q => q.id === question.id);
+    if (!fullQuestion) {
+      console.error('Question not found:', question.id);
+      return;
+    }
+
+    for (const [chatId, session] of userSessions.entries()) {
+      if (session.playerId && session.gameStarted) {
+        if (!session.questions || session.questions.length === 0) {
+          session.questions = allQuestions;
+        }
+        
+        session.currentQuestionIndex = questionIndex;
+        session.hasAnsweredCurrentQuestion = false;
+        userSessions.set(chatId, session);
+        
+        await sendQuestion(bot, chatId, fullQuestion, questionIndex, totalQuestions, duration / 1000);
+      }
+    }
+  });
+
+  // Événement: Jeu terminé
+  gameSocket.on('game:ended', async (data) => {
+    console.log('🏁 Game ended event received:', data);
+    
+    for (const [chatId, session] of userSessions.entries()) {
+      if (session.playerId && session.gameStarted) {
+        session.gameStarted = false;
+        userSessions.set(chatId, session);
+        
+        await sendFinalLeaderboard(bot, chatId, session);
+      }
+    }
+  });
+
+  // Événement: Mise à jour du classement
+  gameSocket.on('leaderboard:update', async (leaderboard) => {
+    console.log('📊 Leaderboard update received:', leaderboard.length, 'players');
+  });
+
+  // Polling pour vérifier l'état du jeu (fallback si WebSocket échoue)
+  setInterval(async () => {
+    for (const [chatId, session] of userSessions.entries()) {
+      if (!session.playerId || session.gameStarted) {
+        continue;
+      }
+      
+      try {
+        const gameState = await getGameState();
+        if (gameState && gameState.isStarted && !session.gameStarted) {
+          session.gameStarted = true;
+          userSessions.set(chatId, session);
+          await bot.sendMessage(chatId, `🚀 *La partie a commencé !*\n\n⏳ Les questions arrivent bientôt...`, {
+            parse_mode: 'Markdown'
+          });
+        }
+      } catch (err) {
+        // Ignorer les erreurs de polling
+      }
+    }
+  }, 5000);
+
+  console.log('🤖 Telegram bot is running...');
+  console.log(`📡 WebSocket URL: ${wsUrl}`);
+  console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
+  console.log(`🔗 Quiz Service: ${QUIZ_SERVICE_URL}`);
+  console.log(`🔗 Game Service: ${GAME_SERVICE_URL}`);
+}
+
+// Tester le token avant de continuer
+testToken().then(isValid => {
+  if (!isValid) {
+    console.error('❌ Le token Telegram est invalide. Arrêt du bot.');
+    process.exit(1);
+  }
+  
+  // Initialiser le bot seulement si le token est valide
+  initializeBot();
+}).catch(err => {
+  console.error('❌ Erreur lors de la vérification du token:', err);
+  process.exit(1);
+});
