@@ -785,7 +785,11 @@ async function calculateQuestionResults(questionId, questions) {
     console.warn(`   1. No players have answered yet`);
     console.warn(`   2. Answers were not saved correctly`);
     console.warn(`   3. Answers were cleared somehow`);
-    return;
+    console.warn(`   4. The pod restarted and answers were lost`);
+    console.warn(`   Current connected players: ${state.connectedPlayers?.length || 0}`);
+    console.warn(`   Connected player IDs: ${JSON.stringify(state.connectedPlayers || [])}`);
+    // Ne pas retourner ici, continuer pour sauvegarder les résultats vides
+    // return;
   }
 
   // Calculer les résultats pour chaque joueur
