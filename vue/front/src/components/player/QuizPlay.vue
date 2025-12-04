@@ -1,15 +1,15 @@
 <template>
-  <div class="min-h-screen max-w-4xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
+  <div class="min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6">
     <!-- Waiting for game to start -->
     <div
       v-if="!gameStarted && !gameEnded"
-      class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-5 sm:p-6 md:p-8 lg:p-12 text-center min-h-[60vh] flex flex-col items-center justify-center"
+      class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-100 p-6 sm:p-8 md:p-10 lg:p-12 text-center min-h-[70vh] flex flex-col items-center justify-center"
     >
       <div
-        class="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-3 sm:border-4 border-blue-600 mb-4 sm:mb-6"
+        class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-blue-600 mb-5 sm:mb-6 md:mb-8"
       ></div>
-      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-4 px-2">⏳ En attente du début du jeu</h2>
-      <p class="text-sm sm:text-base md:text-lg text-gray-600 px-4">
+      <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 sm:mb-4 md:mb-5 px-3">⏳ En attente du début du jeu</h2>
+      <p class="text-base sm:text-lg md:text-xl text-gray-600 px-4 max-w-md">
         L'administrateur va bientôt démarrer le jeu...
       </p>
     </div>
@@ -17,25 +17,30 @@
     <!-- Loading State -->
     <div
       v-else-if="loading && !current"
-      class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-8 sm:p-10 md:p-12 text-center min-h-[60vh] flex flex-col items-center justify-center"
+      class="bg-gradient-to-br from-white to-purple-50 rounded-3xl shadow-2xl border-2 border-purple-100 p-8 sm:p-10 md:p-12 text-center min-h-[70vh] flex flex-col items-center justify-center"
     >
       <div
-        class="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 border-3 sm:border-4 border-blue-600 mb-4 sm:mb-6"
+        class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-purple-600 mb-5 sm:mb-6 md:mb-8"
       ></div>
-      <p class="text-sm sm:text-base md:text-lg text-gray-600">Chargement...</p>
+      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">Chargement...</p>
     </div>
 
     <!-- Quiz Question -->
     <div v-else-if="current && !gameEnded" class="space-y-3 sm:space-y-4 md:space-y-6 pb-4 sm:pb-6">
       <!-- Timer -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-3 sm:p-4 md:p-5 sticky top-0 z-10 backdrop-blur-sm bg-white/95">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-          <span class="text-xs sm:text-sm md:text-base font-semibold text-gray-700">
+      <div class="bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6 sticky top-0 z-10 backdrop-blur-md bg-white/98 mb-3 sm:mb-4">
+        <div class="flex items-center justify-between mb-3 sm:mb-4">
+          <span class="text-sm sm:text-base md:text-lg font-bold text-gray-800">
             Question {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
           </span>
           <div class="flex items-center space-x-2 sm:space-x-3">
             <div
-              class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-4 sm:border-[5px] flex items-center justify-center font-bold text-lg sm:text-xl md:text-2xl shadow-lg"
+              class="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 sm:border-[6px] flex items-center justify-center font-extrabold text-xl sm:text-2xl md:text-3xl shadow-xl ring-4 ring-opacity-20"
+              :class="{
+                'border-green-500 text-green-600 ring-green-500': timeLeft > 10,
+                'border-yellow-500 text-yellow-600 ring-yellow-500': timeLeft <= 10 && timeLeft > 5,
+                'border-red-500 text-red-600 ring-red-500 animate-pulse': timeLeft <= 5,
+              }"
               :class="{
                 'border-green-500 text-green-600': timeLeft > 10,
                 'border-yellow-500 text-yellow-600': timeLeft <= 10 && timeLeft > 5,
@@ -46,9 +51,9 @@
             </div>
           </div>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 md:h-3 shadow-inner">
+        <div class="w-full bg-gray-200 rounded-full h-3 sm:h-3.5 md:h-4 shadow-inner">
           <div
-            class="h-2 sm:h-2.5 md:h-3 rounded-full transition-all duration-1000 shadow-sm"
+            class="h-3 sm:h-3.5 md:h-4 rounded-full transition-all duration-1000 shadow-md"
             :class="{
               'bg-green-500': timeLeft > 10,
               'bg-yellow-500': timeLeft <= 10 && timeLeft > 5,
@@ -60,33 +65,33 @@
       </div>
 
       <!-- Question Card -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-4 sm:p-5 md:p-6 lg:p-8">
-        <div class="text-center mb-4 sm:mb-5 md:mb-6 lg:mb-8">
+      <div class="bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl border-2 border-indigo-100 p-5 sm:p-6 md:p-7 lg:p-9">
+        <div class="text-center mb-5 sm:mb-6 md:mb-7 lg:mb-9">
           <div
-            class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4 md:mb-5 shadow-lg"
+            class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 mb-4 sm:mb-5 md:mb-6 shadow-2xl ring-4 ring-purple-200"
           >
-            <svg class="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                stroke-width="2"
+                stroke-width="2.5"
                 d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
           </div>
-          <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-5 px-2 sm:px-4 leading-tight break-words">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-5 md:mb-6 px-3 sm:px-4 leading-tight break-words">
             {{ current.question }}
           </h2>
         </div>
 
         <!-- Choices -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
           <button
             v-for="(choice, index) in current.choices"
             :key="choice"
             @click="answer(choice)"
             :disabled="answering || hasAnswered"
-            class="group relative p-4 sm:p-5 md:p-6 lg:p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-3 sm:border-[3px] rounded-xl sm:rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[60px] sm:min-h-[70px] md:min-h-[80px] shadow-md hover:shadow-lg"
+            class="group relative p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-white to-gray-50 border-4 sm:border-[4px] rounded-2xl sm:rounded-3xl transition-all transform hover:scale-[1.03] active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[70px] sm:min-h-[80px] md:min-h-[90px] shadow-lg hover:shadow-2xl"
             style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;"
             :class="{
               'border-gray-200 hover:border-blue-500 hover:shadow-lg': !hasAnswered,
@@ -94,17 +99,17 @@
               'border-gray-300': hasAnswered && choice !== selectedAnswer,
             }"
           >
-            <div class="flex items-center justify-between gap-2 sm:gap-3 w-full">
-              <span class="text-base sm:text-lg md:text-xl font-semibold text-gray-900 break-words text-left flex-1 leading-snug">{{ choice }}</span>
+            <div class="flex items-center justify-between gap-3 sm:gap-4 w-full">
+              <span class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words text-left flex-1 leading-snug">{{ choice }}</span>
               <div
-                class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border-3 sm:border-[3px] flex items-center justify-center transition-colors flex-shrink-0 shadow-sm"
+                class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white border-4 sm:border-[4px] flex items-center justify-center transition-colors flex-shrink-0 shadow-lg ring-2 ring-gray-200"
                 :class="{
                   'border-gray-300 group-hover:border-blue-500': !hasAnswered,
                   'border-green-500': hasAnswered && choice === selectedAnswer,
                   'border-gray-300': hasAnswered && choice !== selectedAnswer,
                 }"
               >
-                <span class="text-sm sm:text-base md:text-lg font-bold text-gray-700">{{
+                <span class="text-base sm:text-lg md:text-xl font-extrabold text-gray-800">{{
                   String.fromCharCode(65 + index)
                 }}</span>
               </div>
@@ -112,19 +117,19 @@
           </button>
         </div>
 
-        <div v-if="hasAnswered" class="mt-4 sm:mt-5 md:mt-6 text-center p-3 sm:p-4 bg-green-50 border-2 border-green-200 rounded-xl">
-          <p class="text-sm sm:text-base md:text-lg font-medium text-green-700">✓ Réponse enregistrée. En attente de la question suivante...</p>
+        <div v-if="hasAnswered" class="mt-5 sm:mt-6 md:mt-7 text-center p-4 sm:p-5 md:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-3 sm:border-[3px] border-green-300 rounded-2xl shadow-lg">
+          <p class="text-base sm:text-lg md:text-xl font-bold text-green-800">✓ Réponse enregistrée. En attente de la question suivante...</p>
         </div>
       </div>
 
       <!-- Player Info -->
-      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-3 sm:p-4 md:p-5">
+      <div class="bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-xl border-2 border-blue-200 p-4 sm:p-5 md:p-6">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2 sm:space-x-3">
+          <div class="flex items-center space-x-3 sm:space-x-4">
             <div
-              class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md"
+              class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg ring-4 ring-blue-200"
             >
-              <span class="text-white font-bold text-sm sm:text-base md:text-lg">{{
+              <span class="text-white font-extrabold text-base sm:text-lg md:text-xl">{{
                 playerName ? playerName.charAt(0).toUpperCase() : '?'
               }}</span>
             </div>
@@ -179,15 +184,15 @@
       </div>
 
       <div class="mt-8">
-        <router-link
-          to="/player/leaderboard"
-          class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
-        >
-          Voir le classement
-          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </router-link>
+      <router-link
+        to="/player/leaderboard"
+        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105"
+      >
+        Voir le classement
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </router-link>
       </div>
     </div>
 
@@ -583,7 +588,7 @@ export default {
         if (err.response?.status === 400) {
           this.error = err.response.data.error || "Erreur lors de l'envoi de la réponse"
         } else {
-          this.error = "Erreur lors de l'envoi de la réponse"
+        this.error = "Erreur lors de l'envoi de la réponse"
         }
       } finally {
         this.answering = false

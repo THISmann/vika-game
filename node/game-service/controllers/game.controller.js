@@ -18,10 +18,12 @@ async function updateScore(playerId, playerName, delta) {
 
   // Always keep name updated (in case player changed his name)
     score.playerName = playerName;
-    score.score += delta;
+    score.score = (score.score || 0) + delta;
 
     await score.save();
-    return score.toObject();
+    const scoreObj = score.toObject();
+    console.log(`💾 Score saved: ${playerName} (${playerId}) = ${scoreObj.score} (delta: ${delta})`);
+    return scoreObj;
   } catch (error) {
     console.error("Error updating score:", error);
     throw error;
@@ -117,24 +119,20 @@ exports.getScore = async (req, res) => {
 
 exports.leaderboard = async (req, res) => {
   try {
-    const state = await gameState.getState();
-    const scores = await Score.find({});
+    const scores = await Score.find({}).lean();
     
-    // Filtrer par session de jeu en cours
-    // Si le jeu est en cours, on retourne seulement les scores de la session actuelle
-    // Sinon, on retourne tous les scores (pour l'historique)
-    let sessionScores = scores.map(s => s.toObject());
-    
-    if (state.isStarted && state.gameSessionId) {
-      // Pour cette version, on retourne tous les scores car ils sont réinitialisés à chaque nouvelle partie
-      // Dans une version future, on pourrait filtrer par gameSessionId si on stocke cette info dans les scores
-      sessionScores = scores.map(s => s.toObject());
+    // Si aucun score n'existe, retourner un tableau vide
+    if (!scores || scores.length === 0) {
+      console.log("No scores found in database");
+      return res.json([]);
     }
     
     // Trier par score décroissant
-    sessionScores = sessionScores.sort((a, b) => b.score - a.score);
+    const sortedScores = scores.sort((a, b) => (b.score || 0) - (a.score || 0));
     
-    res.json(sessionScores);
+    console.log(`✅ Leaderboard: returning ${sortedScores.length} scores`);
+    
+    res.json(sortedScores);
   } catch (error) {
     console.error("Error getting leaderboard:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -463,11 +461,16 @@ exports.nextQuestion = async (req, res) => {
 
 async function calculateQuestionResults(questionId, questions) {
   const question = questions.find(q => q.id === questionId);
-  if (!question) return;
+  if (!question) {
+    console.log(`⚠️ Question ${questionId} not found in questions list`);
+    return;
+  }
 
   const state = await gameState.getState();
   const answers = state.answers || {};
   const playerResults = [];
+
+  console.log(`📊 Calculating results for question ${questionId}, ${Object.keys(answers).length} players have answers`);
 
   // Calculer les résultats pour chaque joueur
   for (const playerId in answers) {
@@ -480,10 +483,13 @@ async function calculateQuestionResults(questionId, questions) {
         const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
         const player = players.data.find(p => p.id === playerId);
         if (player) {
-          await updateScore(playerId, player.name, isCorrect ? 1 : 0);
+          const updatedScore = await updateScore(playerId, player.name, isCorrect ? 1 : 0);
+          console.log(`✅ Updated score for ${player.name}: ${updatedScore.score} (${isCorrect ? '+' : ''}${isCorrect ? 1 : 0})`);
+        } else {
+          console.warn(`⚠️ Player ${playerId} not found in auth service`);
         }
       } catch (err) {
-        console.error("Error updating score:", err);
+        console.error(`❌ Error updating score for player ${playerId}:`, err);
       }
 
       playerResults.push({
@@ -496,6 +502,7 @@ async function calculateQuestionResults(questionId, questions) {
 
   // Sauvegarder les résultats
   await gameState.saveQuestionResult(questionId, question.answer, playerResults);
+  console.log(`✅ Saved results for question ${questionId}: ${playerResults.length} players`);
 }
 
 exports.endGame = async (req, res) => {

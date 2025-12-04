@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-3 sm:py-4 md:py-6 lg:py-8 px-3 sm:px-4 md:px-6">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-2 sm:py-3 md:py-4 lg:py-6 px-2 sm:px-3 md:px-4 lg:px-6">
     <!-- Étape 1: Entrer le code -->
     <div v-if="step === 1" class="max-w-md w-full">
-      <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 p-5 sm:p-6 md:p-8">
-        <div class="text-center mb-6 sm:mb-8">
-          <div class="mx-auto flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-3 sm:mb-4 md:mb-6 animate-pulse shadow-lg">
-            <svg class="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-6 sm:p-7 md:p-8 lg:p-10">
+        <div class="text-center mb-6 sm:mb-7 md:mb-8">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 mb-4 sm:mb-5 md:mb-6 animate-pulse shadow-2xl ring-4 ring-blue-200">
+            <svg class="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -14,13 +14,13 @@
               />
             </svg>
           </div>
-          <h2 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 mb-2 sm:mb-3 px-2">Entrer le code de la partie</h2>
-          <p class="text-xs sm:text-sm md:text-base text-gray-600 px-2">Demandez le code à l'administrateur</p>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 sm:mb-4 px-3">Entrer le code de la partie</h2>
+          <p class="text-sm sm:text-base md:text-lg text-gray-600 px-3">Demandez le code à l'administrateur</p>
         </div>
 
-        <div class="space-y-4 sm:space-y-5 md:space-y-6">
+        <div class="space-y-5 sm:space-y-6 md:space-y-7">
           <div>
-            <label for="game-code" class="block text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3">
+            <label for="game-code" class="block text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
               Code de la partie
             </label>
             <input
@@ -30,7 +30,7 @@
               required
               maxlength="6"
               autofocus
-              class="appearance-none relative block w-full px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 border-3 sm:border-[3px] border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-2xl sm:text-3xl md:text-4xl font-mono tracking-widest uppercase bg-gray-50 shadow-inner"
+              class="appearance-none relative block w-full px-5 sm:px-6 md:px-7 py-5 sm:py-6 md:py-7 border-4 sm:border-[4px] border-gray-300 placeholder-gray-400 text-gray-900 rounded-2xl sm:rounded-3xl focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all text-center text-3xl sm:text-4xl md:text-5xl font-mono tracking-widest uppercase bg-white shadow-lg focus:shadow-xl"
               placeholder="ABC123"
               @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
             />
@@ -46,7 +46,7 @@
             @click.prevent="verifyGameCode"
             @touchstart.prevent.stop="verifyGameCode"
             @mousedown.prevent
-            class="group relative w-full flex justify-center py-4 sm:py-5 md:py-6 px-4 border border-transparent text-base sm:text-lg md:text-xl font-semibold rounded-xl sm:rounded-2xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px]"
+            class="group relative w-full flex justify-center py-5 sm:py-6 md:py-7 px-4 border border-transparent text-lg sm:text-xl md:text-2xl font-extrabold rounded-2xl sm:rounded-3xl text-white bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.03] active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl min-h-[64px] sm:min-h-[72px] md:min-h-[80px]"
             style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;"
           >
             <span v-if="verifyingCode" class="absolute left-0 inset-y-0 flex items-center pl-4">
@@ -85,7 +85,7 @@
           </div>
           <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Choisissez votre nom</h2>
           <p class="text-xs sm:text-sm text-gray-600">Comment voulez-vous être appelé ?</p>
-        </div>
+      </div>
 
         <form @submit.prevent="registerPlayer" class="space-y-4 sm:space-y-6">
         <div>
@@ -314,8 +314,8 @@ export default {
             if (wasRegistered) {
               console.log('🔄 Player was already registered, allowing reconnection')
               // Ne pas afficher l'erreur, juste rediriger vers le quiz
-              setTimeout(() => {
-                this.$router.push('/player/quiz')
+        setTimeout(() => {
+          this.$router.push('/player/quiz')
               }, 100)
             } else {
               this.error = 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
