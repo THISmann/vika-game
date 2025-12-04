@@ -115,7 +115,19 @@ exports.answerQuestion = async (req, res) => {
       return res.status(500).json({ error: "Erreur lors de la récupération de la question" });
     }
 
-    const isCorrect = question.answer === answer;
+    // Normaliser les réponses pour la comparaison (trim + casse)
+    const normalizedAnswer = String(answer).trim();
+    const normalizedCorrect = String(question.answer).trim();
+    const isCorrect = normalizedAnswer === normalizedCorrect;
+    
+    // Log pour le débogage
+    console.log(`🔍 Answer comparison in answerQuestion:`, {
+      rawAnswer: answer,
+      rawCorrect: question.answer,
+      normalizedAnswer: normalizedAnswer,
+      normalizedCorrect: normalizedCorrect,
+      isEqual: isCorrect
+    });
 
     // Sauvegarder la réponse (mais ne pas mettre à jour le score maintenant)
     await gameState.saveAnswer(playerId, questionId, answer);
@@ -675,7 +687,24 @@ async function calculateQuestionResults(questionId, questions) {
     
     const answer = answers[playerId][questionId];
     const correctAnswer = question.answer;
-    const isCorrect = answer === correctAnswer;
+    
+    // Normaliser les réponses pour la comparaison (trim + casse)
+    const normalizedAnswer = String(answer).trim();
+    const normalizedCorrect = String(correctAnswer).trim();
+    const isCorrect = normalizedAnswer === normalizedCorrect;
+    
+    // Logs détaillés pour le débogage
+    console.log(`   📝 Answer comparison details:`, {
+      rawAnswer: answer,
+      rawCorrect: correctAnswer,
+      normalizedAnswer: normalizedAnswer,
+      normalizedCorrect: normalizedCorrect,
+      answerType: typeof answer,
+      correctType: typeof correctAnswer,
+      answerLength: normalizedAnswer.length,
+      correctLength: normalizedCorrect.length,
+      isEqual: isCorrect
+    });
     
     console.log(`\n🔍 Processing player ${playerId}:`);
     console.log(`   Answer given: "${answer}"`);
