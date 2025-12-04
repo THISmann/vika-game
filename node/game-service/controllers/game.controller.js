@@ -43,18 +43,19 @@ async function updateScore(playerId, playerName, delta) {
         playerName,
         score: 0
       });
-  }
+    }
 
-  // Always keep name updated (in case player changed his name)
+    // Always keep name updated (in case player changed his name)
     score.playerName = playerName;
-    score.score = (score.score || 0) + delta;
+    const oldScore = score.score || 0;
+    score.score = oldScore + delta;
 
     await score.save();
     const scoreObj = score.toObject();
-    console.log(`💾 Score saved: ${playerName} (${playerId}) = ${scoreObj.score} (delta: ${delta})`);
+    console.log(`💾 Score updated: ${playerName} (${playerId}) = ${oldScore} + ${delta} = ${scoreObj.score}`);
     return scoreObj;
   } catch (error) {
-    console.error("Error updating score:", error);
+    console.error("❌ Error updating score:", error);
     throw error;
   }
 }
@@ -271,32 +272,83 @@ exports.getConnectedPlayers = async (req, res) => {
   try {
     const playerIds = await gameState.getConnectedPlayers();
     
+    console.log(`📋 Getting connected players: ${playerIds.length} player IDs`);
+    
     // Récupérer les noms des joueurs depuis auth-service
     const axios = require('axios');
     const services = require('../config/services');
     
     const players = [];
-    for (const playerId of playerIds) {
-      try {
-        const playerRes = await axios.get(`${services.AUTH_SERVICE}/auth/players/${playerId}`);
-        if (playerRes.data) {
+    
+    // Récupérer tous les joueurs en une seule fois
+    try {
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      console.log(`📋 Fetched ${playersRes.data.length} players from auth-service`);
+      
+      for (const playerId of playerIds) {
+        const player = playersRes.data.find(p => p.id === playerId);
+        if (player) {
           players.push({
             id: playerId,
-            name: playerRes.data.name || 'Joueur anonyme'
+            name: player.name || 'Joueur anonyme'
+          });
+          console.log(`✅ Found player: ${player.name} (${playerId})`);
+        } else {
+          // Si le joueur n'existe pas dans auth-service, essayer de le récupérer depuis les scores
+          try {
+            const score = await Score.findOne({ playerId });
+            if (score && score.playerName) {
+              players.push({
+                id: playerId,
+                name: score.playerName
+              });
+              console.log(`✅ Found player in scores: ${score.playerName} (${playerId})`);
+            } else {
+              players.push({
+                id: playerId,
+                name: 'Joueur anonyme'
+              });
+              console.warn(`⚠️ Player ${playerId} not found in auth-service or scores`);
+            }
+          } catch (scoreErr) {
+            players.push({
+              id: playerId,
+              name: 'Joueur anonyme'
+            });
+            console.warn(`⚠️ Player ${playerId} not found, using default name`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("❌ Error fetching players from auth-service:", err);
+      // En cas d'erreur, essayer de récupérer depuis les scores
+      for (const playerId of playerIds) {
+        try {
+          const score = await Score.findOne({ playerId });
+          if (score && score.playerName) {
+            players.push({
+              id: playerId,
+              name: score.playerName
+            });
+          } else {
+            players.push({
+              id: playerId,
+              name: 'Joueur anonyme'
+            });
+          }
+        } catch (scoreErr) {
+          players.push({
+            id: playerId,
+            name: 'Joueur anonyme'
           });
         }
-      } catch (err) {
-        // Si le joueur n'existe pas, l'ajouter quand même avec un nom par défaut
-        players.push({
-          id: playerId,
-          name: 'Joueur anonyme'
-        });
       }
     }
     
+    console.log(`✅ Returning ${players.length} connected players:`, players.map(p => p.name).join(', '));
     res.json({ players, count: players.length });
   } catch (error) {
-    console.error("Error getting connected players:", error);
+    console.error("❌ Error getting connected players:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -583,17 +635,32 @@ async function calculateQuestionResults(questionId, questions) {
   for (const playerId in answers) {
     if (answers[playerId] && answers[playerId][questionId]) {
       const answer = answers[playerId][questionId];
-      const isCorrect = answer === question.answer;
+      const correctAnswer = question.answer;
+      const isCorrect = answer === correctAnswer;
+      
+      console.log(`🔍 Player ${playerId}: answer="${answer}", correct="${correctAnswer}", isCorrect=${isCorrect}`);
       
       // Mettre à jour le score seulement maintenant
       try {
         const players = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
         const player = players.data.find(p => p.id === playerId);
         if (player) {
-          const updatedScore = await updateScore(playerId, player.name, isCorrect ? 1 : 0);
-          console.log(`✅ Updated score for ${player.name}: ${updatedScore.score} (${isCorrect ? '+' : ''}${isCorrect ? 1 : 0})`);
+          const delta = isCorrect ? 1 : 0;
+          const updatedScore = await updateScore(playerId, player.name, delta);
+          console.log(`✅ Updated score for ${player.name}: ${updatedScore.score} (${isCorrect ? '+' : ''}${delta})`);
         } else {
           console.warn(`⚠️ Player ${playerId} not found in auth service`);
+          // Essayer de mettre à jour quand même avec le nom depuis les scores
+          try {
+            const existingScore = await Score.findOne({ playerId });
+            if (existingScore) {
+              const delta = isCorrect ? 1 : 0;
+              const updatedScore = await updateScore(playerId, existingScore.playerName, delta);
+              console.log(`✅ Updated score using existing name: ${updatedScore.playerName}: ${updatedScore.score}`);
+            }
+          } catch (scoreErr) {
+            console.error(`❌ Error updating score for player ${playerId}:`, scoreErr);
+          }
         }
       } catch (err) {
         console.error(`❌ Error updating score for player ${playerId}:`, err);
