@@ -273,18 +273,15 @@ async function sendFinalLeaderboard(bot, chatId, session) {
   }
 }
 
-// Fonction principale pour initialiser le bot
+  // Fonction principale pour initialiser le bot
 async function initializeBot() {
-  // Créer le bot
+  // Créer le bot avec polling désactivé au démarrage
+  // On l'activera manuellement après avoir enregistré tous les handlers
   const bot = new TelegramBot(token, { 
-    polling: {
-      interval: 1000,
-      autoStart: true,
-      params: {
-        timeout: 10
-      }
-    }
+    polling: false  // Désactiver le polling automatique
   });
+  
+  console.log('🤖 Bot créé, enregistrement des handlers...');
 
   // Gestion des erreurs de polling
   bot.on('polling_error', (error) => {
@@ -296,6 +293,12 @@ async function initializeBot() {
       console.error('   1. Le token est correct dans le secret Kubernetes');
       console.error('   2. Le bot existe toujours sur Telegram (@BotFather)');
       console.error('   3. Le token n\'a pas expiré');
+    } else if (error.code === 'ETELEGRAM' && error.message.includes('409')) {
+      console.error('⚠️  Erreur 409: Une autre instance du bot tourne déjà.');
+      console.error('   Solution: Vérifiez qu\'il n\'y a qu\'un seul pod telegram-bot en cours d\'exécution.');
+      console.error('   Commande: kubectl get pods -n intelectgame | grep telegram-bot');
+      // Ne pas arrêter le processus, juste logger l'erreur
+      // Le bot continuera à essayer de se reconnecter
     }
   });
 
@@ -486,34 +489,82 @@ async function initializeBot() {
     const chatId = query.message.chat.id;
     const data = query.data;
     const messageId = query.message.message_id;
+    
+    console.log(`📱 Callback reçu: ${data} de chatId: ${chatId}`);
+    
+    const session = userSessions.get(chatId) || {};
+    const lang = session.language || 'en';
 
-    // Acknowledge callback
-    await bot.answerCallbackQuery(query.id);
+    // Acknowledge callback immédiatement
+    try {
+      await bot.answerCallbackQuery(query.id);
+    } catch (err) {
+      console.error('Erreur lors de answerCallbackQuery:', err.message);
+    }
+
+    // Language selection
+    if (data.startsWith('lang_')) {
+      const selectedLang = data.replace('lang_', '');
+      console.log(`🌐 Langue sélectionnée: ${selectedLang} pour chatId: ${chatId}`);
+      
+      session.language = selectedLang;
+      userSessions.set(chatId, session);
+      
+      const langMessage = t(selectedLang, 'languageSelected');
+      try {
+        await bot.sendMessage(chatId, langMessage, {
+          parse_mode: 'Markdown'
+        });
+        console.log(`✅ Message de langue envoyé pour chatId: ${chatId}`);
+      } catch (err) {
+        console.error(`❌ Erreur lors de l'envoi du message de langue:`, err.message);
+      }
+      return;
+    }
+
+    // New game button
+    if (data === 'new_game') {
+      // Réinitialiser la session
+      userSessions.delete(chatId);
+      const welcomeMessage = t(lang, 'welcome');
+      await bot.sendMessage(chatId, welcomeMessage, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '🇬🇧 English', callback_data: 'lang_en' },
+              { text: '🇷🇺 Русский', callback_data: 'lang_ru' }
+            ]
+          ]
+        }
+      });
+      return;
+    }
 
     // Help button
     if (data === 'help') {
-      return bot.sendMessage(chatId, `📖 *Aide IntelectGame Bot*\n\n1️⃣ Envoyez le code de la partie\n2️⃣ Inscrivez-vous avec votre nom\n3️⃣ Attendez que l'admin démarre la partie\n4️⃣ Répondez aux questions avec les boutons\n5️⃣ Consultez le classement à la fin`, {
+      return bot.sendMessage(chatId, t(lang, 'help'), {
         parse_mode: 'Markdown'
       });
     }
 
     // Status button
     if (data === 'status') {
-      const session = userSessions.get(chatId);
       if (!session || !session.gameCode) {
-        return bot.sendMessage(chatId, '❌ Aucune partie active. Utilisez /start pour commencer.');
+        return bot.sendMessage(chatId, t(lang, 'noActiveGame'), { parse_mode: 'Markdown' });
       }
-      let statusMessage = `📊 *Votre statut :*\n\n🎮 Code: *${session.gameCode}*\n`;
+      let statusMessage = t(lang, 'statusHeader');
+      statusMessage += t(lang, 'statusGameCode', { gameCode: session.gameCode });
       if (session.playerName) {
-        statusMessage += `👤 Nom: *${session.playerName}*\n`;
+        statusMessage += t(lang, 'statusName', { name: session.playerName });
       }
-      statusMessage += session.gameStarted ? '🟢 *En cours*' : '🟡 *En attente*';
+      statusMessage += session.gameStarted ? t(lang, 'statusInProgress') : t(lang, 'statusWaiting');
       return bot.sendMessage(chatId, statusMessage, { parse_mode: 'Markdown' });
     }
 
     // Register prompt
     if (data === 'register_prompt') {
-      return bot.sendMessage(chatId, '📝 *Pour vous inscrire, envoyez-moi votre nom*\n\nExemple: \`Jean\` ou \`Marie\`\n\nLe nom doit contenir au moins 2 caractères.', {
+      return bot.sendMessage(chatId, t(lang, 'namePrompt'), {
         parse_mode: 'Markdown'
       });
     }
@@ -705,6 +756,25 @@ async function initializeBot() {
   console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
   console.log(`🔗 Quiz Service: ${QUIZ_SERVICE_URL}`);
   console.log(`🔗 Game Service: ${GAME_SERVICE_URL}`);
+  
+  // Démarrer le polling APRÈS avoir enregistré tous les handlers
+  console.log('🔄 Démarrage du polling...');
+  bot.startPolling({
+    interval: 1000,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }).then(() => {
+    console.log('✅ Polling démarré avec succès');
+  }).catch((err) => {
+    console.error('❌ Erreur lors du démarrage du polling:', err.message);
+    // Si erreur 409, c'est qu'une autre instance tourne déjà
+    if (err.message && err.message.includes('409')) {
+      console.error('⚠️  Une autre instance du bot tourne déjà. Arrêt de cette instance.');
+      process.exit(1);
+    }
+  });
 }
 
 // Tester le token avant de continuer
