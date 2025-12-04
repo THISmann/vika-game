@@ -201,29 +201,48 @@ module.exports = {
   
   saveAnswer: async (playerId, questionId, answer) => {
     try {
+      console.log(`\n💾 ========== SAVE ANSWER ==========`);
+      console.log(`💾 Player: ${playerId}`);
+      console.log(`💾 Question: ${questionId}`);
+      console.log(`💾 Answer: "${answer}"`);
+      
       const state = await GameState.getCurrent();
+      console.log(`💾 Current state before save:`, {
+        hasAnswers: !!state.answers,
+        answersType: typeof state.answers,
+        answersKeys: state.answers ? Object.keys(state.answers) : []
+      });
+      
       if (!state.answers) {
+        console.log(`💾 Creating new answers object`);
         state.answers = {};
       }
       if (!state.answers[playerId]) {
+        console.log(`💾 Creating new answers object for player ${playerId}`);
         state.answers[playerId] = {};
       }
       
       // Sauvegarder la réponse originale (on normalisera lors de la comparaison)
       state.answers[playerId][questionId] = answer;
+      console.log(`💾 Answer set in state object`);
+      
       await state.save();
+      console.log(`💾 State saved to MongoDB`);
       
       // Vérifier que la réponse a bien été sauvegardée
       const savedState = await GameState.getCurrent();
       const savedAnswer = savedState.answers?.[playerId]?.[questionId];
-      console.log(`💾 Saved answer for player ${playerId}, question ${questionId}:`);
+      console.log(`💾 Verification after save:`);
       console.log(`   Original: "${answer}" (type: ${typeof answer}, length: ${String(answer).length})`);
       console.log(`   Saved: "${savedAnswer}" (type: ${typeof savedAnswer}, length: ${String(savedAnswer).length})`);
       console.log(`   Match: ${answer === savedAnswer ? '✅' : '❌'}`);
+      console.log(`   All answers in state:`, JSON.stringify(savedState.answers, null, 2));
+      console.log(`========================================\n`);
       
       return toPlainObject(state);
     } catch (error) {
       console.error("❌ Error saving answer:", error);
+      console.error("❌ Error stack:", error.stack);
       throw error;
     }
   },

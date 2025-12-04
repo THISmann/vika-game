@@ -763,6 +763,7 @@ async function calculateQuestionResults(questionId, questions) {
   // Récupérer l'état frais depuis MongoDB
   const state = await gameState.getState();
   console.log(`📋 Game state retrieved. isStarted: ${state.isStarted}, currentQuestionId: ${state.currentQuestionId}`);
+  console.log(`📋 Connected players: ${JSON.stringify(state.connectedPlayers || [])}`);
   
   const answers = state.answers || {};
   const playerResults = [];
@@ -771,6 +772,22 @@ async function calculateQuestionResults(questionId, questions) {
   console.log(`📋 State answers object type: ${typeof answers}`);
   console.log(`📋 State answers object:`, JSON.stringify(answers, null, 2));
   console.log(`📋 Number of players with answers: ${Object.keys(answers).length}`);
+  console.log(`📋 Players with answers: ${Object.keys(answers).join(', ')}`);
+  
+  // Vérifier si les réponses sont bien dans l'objet
+  if (answers && typeof answers === 'object') {
+    for (const pid in answers) {
+      console.log(`📋 Player ${pid} answers:`, JSON.stringify(answers[pid], null, 2));
+      if (answers[pid] && answers[pid][questionId]) {
+        console.log(`✅ Found answer for player ${pid}, question ${questionId}: "${answers[pid][questionId]}"`);
+      } else {
+        console.log(`❌ No answer found for player ${pid}, question ${questionId}`);
+        if (answers[pid]) {
+          console.log(`   Available question IDs for this player: ${Object.keys(answers[pid]).join(', ')}`);
+        }
+      }
+    }
+  }
   
   // Vérifier si answers est bien un objet
   if (typeof answers !== 'object' || answers === null) {
