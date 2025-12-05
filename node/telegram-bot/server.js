@@ -35,7 +35,7 @@ const gameSocket = io(wsUrl, {
   forceNew: false
 });
 
-// Store user sessions: chatId -> { language, gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion }
+// Store user sessions: chatId -> { language, gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion, lastSentQuestionId }
 const userSessions = new Map();
 
 // Get token from environment variable (from GitHub Secrets in production)
@@ -707,6 +707,12 @@ async function initializeBot() {
           // Envoyer la question à tous les joueurs enregistrés
           for (const [chatId, session] of userSessions.entries()) {
             if (session.playerId) {
+              // Vérifier si cette question a déjà été envoyée
+              if (session.lastSentQuestionId === gameState.currentQuestionId) {
+                console.log(`⏭️  Question ${gameState.currentQuestionId} already sent to ${session.playerName}, skipping`);
+                continue;
+              }
+              
               const lang = session.language || 'en';
               if (!session.gameStarted) {
                 session.gameStarted = true;
@@ -716,6 +722,7 @@ async function initializeBot() {
               }
               session.currentQuestionIndex = gameState.currentQuestionIndex || 0;
               session.hasAnsweredCurrentQuestion = false;
+              session.lastSentQuestionId = gameState.currentQuestionId; // Marquer comme envoyée
               userSessions.set(chatId, session);
               
               try {
@@ -731,6 +738,9 @@ async function initializeBot() {
                 console.log(`✅ Sent current question to ${session.playerName} (${session.playerId})`);
               } catch (err) {
                 console.error(`❌ Error sending question to ${session.playerName}:`, err.message);
+                // En cas d'erreur, réinitialiser le flag pour permettre un nouvel essai
+                session.lastSentQuestionId = null;
+                userSessions.set(chatId, session);
               }
             }
           }
@@ -794,12 +804,20 @@ async function initializeBot() {
     console.log(`📊 Total sessions: ${userSessions.size}`);
 
     let sentCount = 0;
+    let skippedCount = 0;
     for (const [chatId, session] of userSessions.entries()) {
       console.log(`   Checking session for chatId ${chatId}: playerId=${session.playerId}, gameStarted=${session.gameStarted}`);
       
       // Envoyer la question à TOUS les joueurs enregistrés, même si gameStarted est false
       // car ils peuvent s'être inscrits après le démarrage du jeu
       if (session.playerId) {
+        // Vérifier si cette question a déjà été envoyée
+        if (session.lastSentQuestionId === question.id) {
+          console.log(`   ⏭️  Question ${question.id} already sent to ${session.playerName}, skipping`);
+          skippedCount++;
+          continue;
+        }
+        
         const lang = session.language || 'en';
         
         // Mettre à jour gameStarted si ce n'est pas déjà fait
@@ -814,6 +832,7 @@ async function initializeBot() {
         
         session.currentQuestionIndex = questionIndex;
         session.hasAnsweredCurrentQuestion = false;
+        session.lastSentQuestionId = question.id; // Marquer comme envoyée
         userSessions.set(chatId, session);
         
         try {
@@ -822,13 +841,16 @@ async function initializeBot() {
           console.log(`   ✅ Question sent to ${session.playerName} (${session.playerId})`);
         } catch (err) {
           console.error(`   ❌ Error sending question to ${session.playerName}:`, err.message);
+          // En cas d'erreur, réinitialiser le flag pour permettre un nouvel essai
+          session.lastSentQuestionId = null;
+          userSessions.set(chatId, session);
         }
       } else {
         console.log(`   ⏭️  Skipping session ${chatId}: no playerId`);
       }
     }
     
-    console.log(`📝 Question sent to ${sentCount} player(s)`);
+    console.log(`📝 Question sent to ${sentCount} player(s), skipped ${skippedCount} (already sent)`);
   });
 
   // Événement: Jeu terminé
@@ -861,6 +883,12 @@ async function initializeBot() {
           // Vérifier si les joueurs ont déjà reçu cette question
           for (const [chatId, session] of userSessions.entries()) {
             if (session.playerId) {
+              // Vérifier si cette question a déjà été envoyée
+              if (session.lastSentQuestionId === gameState.currentQuestionId) {
+                // Question déjà envoyée, pas besoin de vérifier plus
+                continue;
+              }
+              
               // Si le joueur n'a pas encore reçu la question actuelle
               if (!session.currentQuestionIndex || 
                   session.currentQuestionIndex !== gameState.currentQuestionIndex ||
@@ -883,6 +911,7 @@ async function initializeBot() {
                   }
                   session.currentQuestionIndex = gameState.currentQuestionIndex || 0;
                   session.hasAnsweredCurrentQuestion = false;
+                  session.lastSentQuestionId = gameState.currentQuestionId; // Marquer comme envoyée
                   userSessions.set(chatId, session);
                   
                   try {
@@ -898,6 +927,9 @@ async function initializeBot() {
                     console.log(`✅ Sent missing question to ${session.playerName} via polling`);
                   } catch (err) {
                     console.error(`❌ Error sending question via polling:`, err.message);
+                    // En cas d'erreur, réinitialiser le flag pour permettre un nouvel essai
+                    session.lastSentQuestionId = null;
+                    userSessions.set(chatId, session);
                   }
                 }
               }
