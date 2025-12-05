@@ -56,11 +56,10 @@ metadata:
   name: grafana
   namespace: intelectgame
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
   - port: 3000
     targetPort: 3000
-    nodePort: 30300
     name: http
   selector:
     app: grafana
