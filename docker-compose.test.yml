@@ -1,0 +1,197 @@
+version: "3.8"
+
+# Docker Compose pour le développement local
+# Usage: docker-compose -f docker-compose.test.yml up -d
+# Tous les microservices seront disponibles pour le développement
+
+services:
+  # MongoDB pour les tests
+  mongodb:
+    image: mongo:7.0
+    container_name: intelectgame-mongodb-test
+    ports:
+      - "27018:27017"  # Port différent pour éviter conflit
+    environment:
+      - MONGO_INITDB_DATABASE=intelectgame_test
+    volumes:
+      - mongodb-test-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Redis pour les tests (si nécessaire)
+  redis:
+    image: redis:7-alpine
+    container_name: intelectgame-redis-test
+    ports:
+      - "6380:6379"  # Port différent pour éviter conflit
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./node/auth-service
+      dockerfile: Dockerfile
+    container_name: intelectgame-auth-test
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame_test
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./node/auth-service:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: npm start
+
+  # Quiz Service
+  quiz-service:
+    build:
+      context: ./node/quiz-service
+      dockerfile: Dockerfile
+    container_name: intelectgame-quiz-test
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame_test
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./node/quiz-service:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: npm start
+
+  # Game Service
+  game-service:
+    build:
+      context: ./node/game-service
+      dockerfile: Dockerfile
+    container_name: intelectgame-game-test
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame_test
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - QUIZ_SERVICE_URL=http://quiz-service:3002
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      quiz-service:
+        condition: service_healthy
+    volumes:
+      - ./node/game-service:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: npm start
+
+  # Telegram Bot
+  telegram-bot:
+    build:
+      context: ./node/telegram-bot
+      dockerfile: Dockerfile
+    container_name: intelectgame-telegram-bot-test
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-test-token}
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame_test
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - QUIZ_SERVICE_URL=http://quiz-service:3002
+      - GAME_SERVICE_URL=http://game-service:3003
+      - GAME_WS_URL=http://game-service:3003
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      quiz-service:
+        condition: service_healthy
+      game-service:
+        condition: service_healthy
+    volumes:
+      - ./node/telegram-bot:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    # Telegram bot n'a pas d'endpoint /test, donc pas de healthcheck
+    # Il démarre et reste actif pour recevoir les messages Telegram
+    command: npm start
+
+  # Frontend
+  frontend:
+    build:
+      context: ./vue
+      dockerfile: Dockerfile
+    container_name: intelectgame-frontend-test
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_AUTH_SERVICE_URL=http://localhost:3001
+      - VITE_QUIZ_SERVICE_URL=http://localhost:3002
+      - VITE_GAME_SERVICE_URL=http://localhost:3003
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      quiz-service:
+        condition: service_healthy
+      game-service:
+        condition: service_healthy
+      telegram-bot:
+        condition: service_started
+    volumes:
+      - ./vue/front:/app
+      - /app/node_modules
+    networks:
+      - test-network
+    command: npm run dev
+
+volumes:
+  mongodb-test-data:
+
+networks:
+  test-network:
+    driver: bridge
+
