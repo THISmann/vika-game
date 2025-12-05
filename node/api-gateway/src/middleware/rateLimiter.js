@@ -12,6 +12,10 @@ const createRateLimiter = (windowMs, max) => {
       message: 'Too many requests from this IP, please try again after a minute',
     },
     headers: true, // Envoyer les headers X-RateLimit-*
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    // Trust proxy pour Kubernetes/load balancer
+    trustProxy: true,
   });
 };
 
