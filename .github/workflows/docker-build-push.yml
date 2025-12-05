@@ -5,12 +5,14 @@ on:
     branches:
       - main
       - master
+      - deploy-rollback-20251205
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
       - master
+      - deploy-rollback-20251205
   workflow_dispatch:
 
 env:

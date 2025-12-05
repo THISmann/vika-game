@@ -137,6 +137,51 @@ data:
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_read_timeout 86400;
             }
+            
+            # Grafana Monitoring
+            # Redirection de /grafana vers /grafana/
+            location = /grafana {
+                return 301 /grafana/;
+            }
+            
+            # Route principale Grafana
+            location /grafana/ {
+                # Utiliser le nom de service court (Kubernetes résout automatiquement dans le même namespace)
+                # Le resolver DNS de nginx résoudra ce nom au moment de la requête
+                set $grafana "grafana.intelectgame.svc.cluster.local:3000";
+                
+                # Supprimer le préfixe /grafana/ avant de passer à Grafana
+                # Important: utiliser rewrite avec break pour arrêter le traitement
+                rewrite ^/grafana/(.*)$ /$1 break;
+                
+                # Proxy vers Grafana (avec résolution DNS dynamique)
+                # Note: nginx résout $grafana au moment de la requête grâce au resolver
+                proxy_pass http://$grafana;
+                proxy_http_version 1.1;
+                
+                # Headers standards
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header X-Forwarded-Host $host;
+                proxy_set_header X-Forwarded-Prefix /grafana;
+                
+                # WebSocket support (pour les live updates)
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $connection_upgrade;
+                
+                # Timeouts
+                proxy_read_timeout 300;
+                proxy_connect_timeout 60;
+                proxy_send_timeout 300;
+                
+                # Important pour les assets statiques
+                proxy_buffering off;
+                
+                # Désactiver la compression pour éviter les problèmes avec les assets
+                proxy_set_header Accept-Encoding "";
+            }
         }
     }
 ---
