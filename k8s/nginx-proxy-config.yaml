@@ -146,11 +146,16 @@ data:
             
             # Route principale Grafana
             location /grafana/ {
+                # Utiliser le nom de service court (Kubernetes résout automatiquement dans le même namespace)
+                # Le resolver DNS de nginx résoudra ce nom au moment de la requête
                 set $grafana "grafana.intelectgame.svc.cluster.local:3000";
-                # Supprimer le préfixe /grafana/ avant de passer à Grafana
-                rewrite ^/grafana/(.*)$ /$1 break;
-                rewrite ^/grafana/?$ / break;
                 
+                # Supprimer le préfixe /grafana/ avant de passer à Grafana
+                # Important: utiliser rewrite avec break pour arrêter le traitement
+                rewrite ^/grafana/(.*)$ /$1 break;
+                
+                # Proxy vers Grafana (avec résolution DNS dynamique)
+                # Note: nginx résout $grafana au moment de la requête grâce au resolver
                 proxy_pass http://$grafana;
                 proxy_http_version 1.1;
                 
@@ -173,6 +178,9 @@ data:
                 
                 # Important pour les assets statiques
                 proxy_buffering off;
+                
+                # Désactiver la compression pour éviter les problèmes avec les assets
+                proxy_set_header Accept-Encoding "";
             }
         }
     }
