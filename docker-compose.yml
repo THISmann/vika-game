@@ -18,6 +18,23 @@ services:
     networks:
       - app-network
 
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: intelectgame-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   # Auth Service
   auth:
     build: ./node/auth-service
@@ -30,8 +47,12 @@ services:
       - NODE_ENV=development
       - PORT=3001
       - MONGODB_URI=mongodb://mongodb:27017/intelectgame
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -48,8 +69,12 @@ services:
       - NODE_ENV=development
       - PORT=3002
       - MONGODB_URI=mongodb://mongodb:27017/intelectgame
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - app-network
@@ -68,8 +93,12 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/intelectgame
       - AUTH_SERVICE_URL=http://auth:3001
       - QUIZ_SERVICE_URL=http://quiz:3002
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       auth:
         condition: service_started
@@ -157,6 +186,7 @@ services:
 
 volumes:
   mongodb-data:
+  redis-data:
 
 networks:
   app-network:

@@ -2,6 +2,15 @@ const axios = require("axios");
 const gameState = require("../gameState");
 const services = require("../config/services");
 const Score = require("../models/Score");
+const cache = require("../../shared/cache-utils");
+
+// Clés de cache
+const CACHE_KEYS = {
+  LEADERBOARD: cache.PREFIXES.LEADERBOARD + 'current',
+  GAME_STATE: cache.PREFIXES.GAME + 'state',
+  SCORE: (playerId) => cache.PREFIXES.SCORE + `player:${playerId}`,
+  CONNECTED_PLAYERS: cache.PREFIXES.GAME + 'connected-players'
+};
 
 // Initialize score for a player (create if doesn't exist, keep if exists)
 async function initializePlayerScore(playerId, playerName) {
@@ -90,6 +99,12 @@ async function updateScore(playerId, playerName, delta) {
     }
 
     console.log(`💾 Score updated: ${playerName} (${playerId}) = ${score.score}`);
+    
+    // Invalider le cache du score et du leaderboard
+    await cache.del(CACHE_KEYS.SCORE(playerId));
+    await cache.del(CACHE_KEYS.LEADERBOARD);
+    
+    console.log(`💾 Cache invalidated for player ${playerId} and leaderboard`);
     console.log(`========================================\n`);
     return score.toObject();
   } catch (error) {
@@ -210,19 +225,35 @@ exports.getScore = async (req, res) => {
     const { playerId } = req.params;
     console.log(`📊 Getting score for player: ${playerId}`);
     
+    // Essayer de récupérer depuis le cache
+    const cached = await cache.get(CACHE_KEYS.SCORE(playerId));
+    if (cached) {
+      console.log(`✅ Score served from cache: ${cached.playerName} = ${cached.score}`);
+      return res.json(cached);
+    }
+    
     const score = await Score.findOne({ playerId });
     
     if (score) {
       const scoreObj = score.toObject();
       console.log(`✅ Score found: ${scoreObj.playerName} = ${scoreObj.score}`);
+      
+      // Mettre en cache
+      await cache.set(CACHE_KEYS.SCORE(playerId), scoreObj, cache.TTL.SCORE);
+      
       res.json(scoreObj);
     } else {
       console.log(`ℹ️ No score found for player ${playerId}, returning default (0)`);
-      res.json({ 
+      const defaultScore = { 
         playerId: playerId, 
         playerName: null, 
         score: 0 
-      });
+      };
+      
+      // Mettre en cache même le score par défaut
+      await cache.set(CACHE_KEYS.SCORE(playerId), defaultScore, cache.TTL.SCORE);
+      
+      res.json(defaultScore);
     }
   } catch (error) {
     console.error("❌ Error getting score:", error);
@@ -233,6 +264,14 @@ exports.getScore = async (req, res) => {
 exports.leaderboard = async (req, res) => {
   try {
     console.log(`\n📊 ========== LEADERBOARD REQUEST ==========`);
+    
+    // Essayer de récupérer depuis le cache
+    const cached = await cache.get(CACHE_KEYS.LEADERBOARD);
+    if (cached) {
+      console.log('✅ Leaderboard served from cache');
+      console.log(`========================================\n`);
+      return res.json(cached);
+    }
     
     const scores = await Score.find({}).lean();
     
@@ -256,6 +295,10 @@ exports.leaderboard = async (req, res) => {
           });
           console.log(`✅ Leaderboard: returning ${mappedScores.length} connected players with score 0`);
           console.log(`========================================\n`);
+          
+          // Mettre en cache
+          await cache.set(CACHE_KEYS.LEADERBOARD, mappedScores, cache.TTL.LEADERBOARD);
+          
           return res.json(mappedScores);
         }
       } catch (err) {
@@ -283,6 +326,9 @@ exports.leaderboard = async (req, res) => {
     console.log(`✅ Leaderboard: returning ${mappedScores.length} scores`);
     console.log(`   Top 3: ${mappedScores.slice(0, 3).map(s => `${s.playerName}: ${s.score}`).join(', ')}`);
     console.log(`========================================\n`);
+    
+    // Mettre en cache
+    await cache.set(CACHE_KEYS.LEADERBOARD, mappedScores, cache.TTL.LEADERBOARD);
     
     res.json(mappedScores);
   } catch (error) {

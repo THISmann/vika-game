@@ -15,7 +15,8 @@ data:
 
     http {
         # Résolveur DNS pour la résolution dynamique des services Kubernetes
-        resolver kube-dns.kube-system.svc.cluster.local valid=10s;
+        # Utiliser CoreDNS (standard dans Kubernetes moderne) ou kube-dns
+        resolver 10.96.0.10 valid=10s;
         
         # Map pour gérer l'upgrade WebSocket
         map $http_upgrade $connection_upgrade {
@@ -61,7 +62,8 @@ data:
             
             # Game Service (HTTP) - Route principale avec rewrite
             location /api/game {
-                set $game "game-service.intelectgame.svc.cluster.local:3003";
+                # Utiliser le nom de service court (plus fiable dans Kubernetes)
+                set $game "game-service:3003";
                 # Rewrite pour transformer /api/game/xxx en /game/xxx
                 rewrite ^/api/game/(.*)$ /game/$1 break;
                 rewrite ^/api/game$ /game break;

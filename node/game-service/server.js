@@ -11,6 +11,7 @@ const connectDB = require("./config/database");
 const axios = require("axios");
 const services = require("./config/services");
 const Score = require("./models/Score");
+const redisClient = require("../shared/redis-client");
 
 // Enable CORS for all routes
 app.use(cors());
@@ -19,6 +20,11 @@ app.use(express.json());
 
 // Connect to MongoDB
 connectDB();
+
+// Connect to Redis (non-blocking)
+redisClient.connect().catch(err => {
+  console.warn('⚠️ Redis connection failed, continuing without cache:', err.message);
+});
 
 // Create server
 const server = http.createServer(app);
@@ -216,8 +222,9 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
 }
 
 const PORT = 3003;
-server.listen(PORT, () =>
-  console.log("Game service (ws) running on port " + PORT)
-);
+server.listen(PORT, () => {
+  console.log("Game service (ws) running on port " + PORT);
+  console.log("📦 Redis cache: " + (process.env.REDIS_HOST ? "Enabled" : "Disabled"));
+});
 
 module.exports = { io, emitScoreUpdate, playersSockets };
