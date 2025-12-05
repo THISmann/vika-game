@@ -162,6 +162,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Extract metadata for api-gateway
+        id: meta-api-gateway
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/gamev2-api-gateway
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-,enable=${{ !github.event.pull_request }}
+            type=sha,prefix=pr${{ github.event.pull_request.number }}-,enable=${{ github.event_name == 'pull_request' }}
+            type=raw,value=latest,enable={{is_default_branch}}
+          context: workflow
+
+      - name: Build and push api-gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/api-gateway
+          file: ./node/api-gateway/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-api-gateway.outputs.tags }}
+          labels: ${{ steps.meta-api-gateway.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
@@ -172,6 +198,7 @@ jobs:
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-quiz-service\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-game-service\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-telegram-bot\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-api-gateway\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-frontend\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View on DockerHub: https://hub.docker.com/u/${{ env.DOCKER_USERNAME }}" >> $GITHUB_STEP_SUMMARY
