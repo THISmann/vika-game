@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
-const { Server } = require('socket.io');
 const gatewayRoutes = require('./src/routes/gateway.routes');
 const logger = require('./src/middleware/logger');
 const errorHandler = require('./src/middleware/errorHandler');
@@ -37,27 +36,9 @@ app.use('/', gatewayRoutes); // Les routes proxifiées n'utilisent pas express.j
 // Middleware de gestion des erreurs (doit être en dernier)
 app.use(errorHandler);
 
-// Configuration WebSocket pour le game-service
-// L'API Gateway peut aussi proxy les WebSockets
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  },
-  path: '/socket.io'
-});
-
-// Proxy WebSocket vers game-service (optionnel)
-// Pour une implémentation complète, utiliser socket.io-redis ou un service dédié
-io.on('connection', (socket) => {
-  console.log('🔌 WebSocket client connected via API Gateway:', socket.id);
-  
-  // Ici, vous pouvez ajouter une logique de proxy WebSocket
-  // Pour l'instant, on laisse le client se connecter directement au game-service
-  socket.on('disconnect', () => {
-    console.log('🔌 WebSocket client disconnected:', socket.id);
-  });
-});
+// Note: Les WebSockets (Socket.io) passent directement vers game-service
+// L'API Gateway ne proxy pas les WebSockets pour simplifier l'architecture
+// Les clients se connectent directement à game-service:3003 pour les WebSockets
 
 const PORT = process.env.PORT || 3000;
 
