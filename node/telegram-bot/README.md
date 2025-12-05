@@ -29,13 +29,41 @@ Le bot permet aux utilisateurs de :
 
 ## Configuration
 
-Créer un fichier `.env` :
+### Pour Docker Compose
+
+**Option 1 : Utiliser le script automatique (Recommandé)**
+```bash
+./scripts/setup-telegram-token.sh
+```
+
+**Option 2 : Créer manuellement le fichier `.env`**
+```bash
+# Créer le fichier .env dans node/telegram-bot/
+cat > node/telegram-bot/.env << EOF
+TELEGRAM_BOT_TOKEN=votre_token_ici
+AUTH_SERVICE_URL=http://auth:3001
+QUIZ_SERVICE_URL=http://quiz:3002
+GAME_SERVICE_URL=http://game:3003
+GAME_WS_URL=http://game:3003
+EOF
+```
+
+**Option 3 : Variable d'environnement système**
+```bash
+export TELEGRAM_BOT_TOKEN="votre_token_ici"
+docker-compose up -d telegram-bot
+```
+
+### Pour développement local (sans Docker)
+
+Créer un fichier `.env` dans `node/telegram-bot/` :
 
 ```env
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 AUTH_SERVICE_URL=http://localhost:3001
 QUIZ_SERVICE_URL=http://localhost:3002
 GAME_SERVICE_URL=http://localhost:3003
+GAME_WS_URL=http://localhost:3003
 ```
 
 ## Créer un bot Telegram

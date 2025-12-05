@@ -71,7 +71,7 @@
           </div>
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold text-indigo-600">
-              {{ gameState.currentQuestionIndex + 1 }}/{{ totalQuestions }}
+              {{ (gameState.currentQuestionIndex ?? -1) + 1 }}/{{ totalQuestions || 0 }}
             </div>
             <div class="text-xs sm:text-sm text-gray-600 mt-1">{{ t('admin.dashboard.currentQuestion') }}</div>
           </div>
@@ -324,9 +324,13 @@ export default {
       try {
         const res = await axios.get(API_URLS.game.state)
         this.gameState = res.data
+        // S'assurer que currentQuestionIndex est un nombre
+        if (this.gameState.currentQuestionIndex === undefined || this.gameState.currentQuestionIndex === null) {
+          this.gameState.currentQuestionIndex = -1
+        }
         this.gameCode = res.data.gameCode || null
       } catch (err) {
-        console.error('Error loading game state:', err)
+        console.error('❌ Erreur lors du chargement de l\'état du jeu:', err)
       }
     },
     async loadGameCode() {
@@ -340,9 +344,21 @@ export default {
     async loadQuestionsCount() {
       try {
         const res = await axios.get(API_URLS.quiz.all)
-        this.totalQuestions = res.data.length
+        console.log('📊 Questions reçues pour le comptage:', res.data)
+        // S'assurer que res.data est un tableau
+        let questionsArray = []
+        if (Array.isArray(res.data)) {
+          questionsArray = res.data
+        } else if (res.data && Array.isArray(res.data.questions)) {
+          questionsArray = res.data.questions
+        } else if (res.data && Array.isArray(res.data.data)) {
+          questionsArray = res.data.data
+        }
+        this.totalQuestions = questionsArray.length
+        console.log('✅ Nombre total de questions:', this.totalQuestions)
       } catch (err) {
-        console.error('Error loading questions count:', err)
+        console.error('❌ Erreur lors du chargement du nombre de questions:', err)
+        this.totalQuestions = 0
       }
     },
     async loadConnectedPlayersCount() {

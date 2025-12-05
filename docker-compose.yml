@@ -1,7 +1,26 @@
-version: "3.8"
 services:
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: intelectgame-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=intelectgame
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Auth Service
   auth:
     build: ./node/auth-service
+    container_name: intelectgame-auth
     volumes:
       - ./node/auth-service/data:/app/data
     ports:
@@ -9,9 +28,17 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
 
+  # Quiz Service
   quiz:
     build: ./node/quiz-service
+    container_name: intelectgame-quiz
     volumes:
       - ./node/quiz-service/data:/app/data
     ports:
@@ -19,9 +46,17 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3002
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
 
+  # Game Service
   game:
     build: ./node/game-service
+    container_name: intelectgame-game
     volumes:
       - ./node/game-service/data:/app/data
     ports:
@@ -29,35 +64,99 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3003
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame
       - AUTH_SERVICE_URL=http://auth:3001
       - QUIZ_SERVICE_URL=http://quiz:3002
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      quiz:
+        condition: service_started
+    networks:
+      - app-network
 
+  # Telegram Bot
   telegram-bot:
     build: ./node/telegram-bot
+    container_name: intelectgame-telegram-bot
     ports:
       - "3004:3004"
     depends_on:
-      - auth
-      - quiz
-      - game
+      mongodb:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      quiz:
+        condition: service_started
+      game:
+        condition: service_started
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - NODE_ENV=development
+      - PORT=3004
+      - MONGODB_URI=mongodb://mongodb:27017/intelectgame
       - AUTH_SERVICE_URL=http://auth:3001
       - QUIZ_SERVICE_URL=http://quiz:3002
       - GAME_SERVICE_URL=http://game:3003
       - GAME_WS_URL=http://game:3003
+      # TELEGRAM_BOT_TOKEN sera chargé depuis env_file (.env)
+      # Si vous voulez utiliser une variable d'environnement système, décommentez la ligne suivante :
+      # - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     env_file:
+      # Charger le token depuis le fichier .env
       - ./node/telegram-bot/.env
+    networks:
+      - app-network
 
-  frontend:
-    build: ./vue
+  # API Gateway
+  api-gateway:
+    build: ./node/api-gateway
+    container_name: intelectgame-api-gateway
     ports:
-      - "5173:5173"
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DOCKER_ENV=true
+      - AUTH_SERVICE_URL=http://auth:3001
+      - QUIZ_SERVICE_URL=http://quiz:3002
+      - GAME_SERVICE_URL=http://game:3003
+      - TELEGRAM_SERVICE_URL=http://telegram-bot:3004
     depends_on:
       - auth
       - quiz
       - game
-    environment:
-      - VITE_AUTH_SERVICE_URL=http://localhost:3001
-      - VITE_QUIZ_SERVICE_URL=http://localhost:3002
-      - VITE_GAME_SERVICE_URL=http://localhost:3003
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend
+  frontend:
+    build:
+      context: ./vue
+      args:
+        - VITE_AUTH_SERVICE_URL=http://localhost:3000
+        - VITE_QUIZ_SERVICE_URL=http://localhost:3000
+        - VITE_GAME_SERVICE_URL=http://localhost:3000
+    container_name: intelectgame-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
+      - auth
+      - quiz
+      - game
+    networks:
+      - app-network
+
+volumes:
+  mongodb-data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -295,15 +295,20 @@ exports.getGameState = async (req, res) => {
   try {
     const state = await gameState.getState();
     const connectedCount = await gameState.getConnectedPlayersCount();
+    // S'assurer que currentQuestionIndex est toujours un nombre
+    const currentQuestionIndex = (state.currentQuestionIndex !== undefined && state.currentQuestionIndex !== null) 
+      ? state.currentQuestionIndex 
+      : -1;
+    
     res.json({
-      isStarted: state.isStarted,
-      currentQuestionIndex: state.currentQuestionIndex,
-      currentQuestionId: state.currentQuestionId,
-      questionStartTime: state.questionStartTime,
-      questionDuration: state.questionDuration,
-      connectedPlayersCount: connectedCount,
-      gameSessionId: state.gameSessionId,
-      gameCode: state.gameCode
+      isStarted: state.isStarted || false,
+      currentQuestionIndex: currentQuestionIndex,
+      currentQuestionId: state.currentQuestionId || null,
+      questionStartTime: state.questionStartTime || null,
+      questionDuration: state.questionDuration || 30000,
+      connectedPlayersCount: connectedCount || 0,
+      gameSessionId: state.gameSessionId || null,
+      gameCode: state.gameCode || null
     });
   } catch (error) {
     console.error("Error getting game state:", error);
