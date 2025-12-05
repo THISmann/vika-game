@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const scoreSchema = new mongoose.Schema({
   playerId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   playerName: {
     type: String,
@@ -20,7 +19,7 @@ const scoreSchema = new mongoose.Schema({
   collection: 'scores'
 });
 
-// Ensure playerId is unique
+// Ensure playerId is unique (index défini ici pour éviter le duplicate)
 scoreSchema.index({ playerId: 1 }, { unique: true });
 
 const Score = mongoose.model('Score', scoreSchema);

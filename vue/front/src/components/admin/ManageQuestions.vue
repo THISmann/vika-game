@@ -172,10 +172,23 @@ export default {
       try {
         this.loading = true
         const res = await axios.get(API_URLS.quiz.all)
-        this.questions = res.data
+        console.log('📋 Questions reçues:', res.data)
+        // S'assurer que res.data est un tableau
+        if (Array.isArray(res.data)) {
+          this.questions = res.data
+        } else if (res.data && Array.isArray(res.data.questions)) {
+          this.questions = res.data.questions
+        } else if (res.data && Array.isArray(res.data.data)) {
+          this.questions = res.data.data
+        } else {
+          console.warn('⚠️ Format de réponse inattendu:', res.data)
+          this.questions = []
+        }
+        console.log('✅ Questions chargées:', this.questions.length)
       } catch (err) {
         this.error = this.t('admin.questions.loadError')
-        console.error(err)
+        console.error('❌ Erreur lors du chargement des questions:', err)
+        this.questions = []
       } finally {
         this.loading = false
       }

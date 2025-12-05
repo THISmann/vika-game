@@ -1,0 +1,462 @@
+{
+  "info": {
+    "name": "IntelectGame API",
+    "description": "Collection complète pour tester l'API IntelectGame",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Service",
+      "item": [
+        {
+          "name": "Test Auth Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/auth/test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["auth", "test"]
+            }
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/auth/admin/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["auth", "admin", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register Player",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/auth/players/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["auth", "players", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get All Players",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/auth/players",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["auth", "players"]
+            }
+          }
+        },
+        {
+          "name": "Get Player by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/auth/players/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["auth", "players", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "p1733456789123"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quiz Service",
+      "item": [
+        {
+          "name": "Test Quiz Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/quiz/test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", "test"]
+            }
+          }
+        },
+        {
+          "name": "Add Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Quelle est la capitale de la France ?\",\n  \"choices\": [\"Paris\", \"Londres\", \"Berlin\", \"Madrid\"],\n  \"answer\": \"Paris\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/quiz/create",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get All Questions (without answers)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/quiz/all",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", "all"]
+            }
+          }
+        },
+        {
+          "name": "Get All Questions (with answers)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/quiz/full",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", "full"]
+            }
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"Quelle est la capitale de l'Espagne ?\",\n  \"choices\": [\"Paris\", \"Londres\", \"Berlin\", \"Madrid\"],\n  \"answer\": \"Madrid\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/quiz/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "q1733456789123"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/quiz/:id",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["quiz", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "q1733456789123"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Game Service",
+      "item": [
+        {
+          "name": "Test Game Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/test",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "test"]
+            }
+          }
+        },
+        {
+          "name": "Get Game State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/state",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "state"]
+            }
+          }
+        },
+        {
+          "name": "Get Game Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/code",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "code"]
+            }
+          }
+        },
+        {
+          "name": "Verify Game Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"ABC123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3003/game/verify-code",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "verify-code"]
+            }
+          }
+        },
+        {
+          "name": "Get Connected Players Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/players/count",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "players", "count"]
+            }
+          }
+        },
+        {
+          "name": "Get Connected Players",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/players",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "players"]
+            }
+          }
+        },
+        {
+          "name": "Start Game",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionDuration\": 30\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3003/game/start",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "start"]
+            }
+          }
+        },
+        {
+          "name": "Next Question",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/next",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "next"]
+            }
+          }
+        },
+        {
+          "name": "End Game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/end",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "end"]
+            }
+          }
+        },
+        {
+          "name": "Answer Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"p1733456789123\",\n  \"questionId\": \"q1733456789123\",\n  \"answer\": \"Paris\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3003/game/answer",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "answer"]
+            }
+          }
+        },
+        {
+          "name": "Get Player Score",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/score/:playerId",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "score", ":playerId"],
+              "variable": [
+                {
+                  "key": "playerId",
+                  "value": "p1733456789123"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/leaderboard",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "leaderboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Question Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/results",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "results"]
+            }
+          }
+        },
+        {
+          "name": "Delete Game",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3003/game/delete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3003",
+              "path": ["game", "delete"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
