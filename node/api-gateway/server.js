@@ -24,12 +24,33 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
+// Health check endpoint (avant rate limiting pour éviter les blocages)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'api-gateway',
+    timestamp: new Date().toISOString(),
+    services: {
+      auth: SERVICES.auth,
+      quiz: SERVICES.quiz,
+      game: SERVICES.game,
+      telegram: SERVICES.telegram
+    }
+  });
+});
+
 // Rate limiting (100 requêtes par minute par IP)
-app.use(rateLimiter(60000, 100));
+// Exclure /health du rate limiting
+const limiter = rateLimiter(60000, 100);
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    return next(); // Skip rate limiting for health checks
+  }
+  limiter(req, res, next);
+});
 
 // Routes
 // Appliquer express.json() uniquement aux routes qui en ont besoin et qui ne sont pas proxifiées
-app.use('/health', express.json(), gatewayRoutes);
 app.use('/test', express.json(), gatewayRoutes);
 app.use('/', gatewayRoutes); // Les routes proxifiées n'utilisent pas express.json() ici
 

@@ -61,21 +61,6 @@ const createServiceProxy = (target, pathPrefix = '') => {
   });
 };
 
-// Route de santé pour l'API Gateway
-router.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'api-gateway',
-    timestamp: new Date().toISOString(),
-    services: {
-      auth: SERVICES.auth,
-      quiz: SERVICES.quiz,
-      game: SERVICES.game,
-      telegram: SERVICES.telegram
-    }
-  });
-});
-
 // Route de test
 router.get('/test', (req, res) => {
   res.json({ message: 'API Gateway is working!' });
