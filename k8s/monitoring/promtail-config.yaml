@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: intelectgame
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 9095
+    
+    positions:
+      filename: /tmp/positions.yaml
+    
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    
+    scrape_configs:
+      # Scrape les logs de tous les pods dans le namespace
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - intelectgame
+        
+        relabel_configs:
+          # Garder seulement les pods qui ont des logs
+          - source_labels:
+              - __meta_kubernetes_pod_phase
+            regex: (Succeeded|Failed)
+            action: drop
+          
+          # Extraire le namespace
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          
+          # Extraire le nom du pod
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod
+          
+          # Extraire le nom du conteneur
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container
+          
+          # Extraire le nom de l'app
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: app
+          
+          # Extraire le nom du deployment
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            target_label: deployment
+          
+          # Définir le chemin des logs
+          - action: replace
+            replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+          
+          # Ajouter le label job
+          - replacement: kubernetes-pods
+            target_label: job
+
