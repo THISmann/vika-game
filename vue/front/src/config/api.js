@@ -111,24 +111,41 @@ export const API_URLS = {
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`,
   },
   quiz: {
+    // En production, API_CONFIG.QUIZ_SERVICE est déjà /api/quiz
+    // Nginx route /api/quiz/* vers quiz-service/quiz/*
+    // Donc on doit ajouter /quiz/all pour obtenir /api/quiz/quiz/all → quiz-service/quiz/all
+    // MAIS en production, on veut /api/quiz/all → quiz-service/quiz/all
+    // Solution: En production, API_CONFIG.QUIZ_SERVICE est /api/quiz, donc on ajoute juste /all
     all: useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/all`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/all`,
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/all`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/all`,
     questions: useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/questions`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/questions`, // Alias pour /all
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/questions`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/questions`, // Alias pour /all
     full: useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/full`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/full`,
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/full`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/full`,
     create: useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/create`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/create`,
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/create`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/create`,
     update: (id) => useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/${id}`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
     delete: (id) => useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`
-      : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/${id}`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
   },
   game: {
     answer: useApiGateway
