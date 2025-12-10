@@ -9,10 +9,21 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001'
  */
 const authenticateAdmin = async (req, res, next) => {
   try {
+    // Logs de diagnostic
+    console.log('🔐 ========== AUTHENTICATION REQUEST ==========')
+    console.log('🔐 Method:', req.method)
+    console.log('🔐 Path:', req.path)
+    console.log('🔐 Headers:', JSON.stringify(req.headers, null, 2))
+    console.log('🔐 Authorization header:', req.headers.authorization ? 'PRESENT' : 'MISSING')
+    if (req.headers.authorization) {
+      console.log('🔐 Authorization value:', req.headers.authorization.substring(0, 30) + '...')
+    }
+    
     // Récupérer le token depuis le header Authorization
     const authHeader = req.headers.authorization
 
     if (!authHeader) {
+      console.log('❌ No authorization header provided')
       return res.status(401).json({ 
         error: 'Authentication required',
         message: 'No authorization header provided'

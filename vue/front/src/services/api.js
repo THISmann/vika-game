@@ -22,14 +22,13 @@ apiClient.interceptors.request.use(
     // Si un token existe, l'ajouter au header Authorization
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      // Log pour débogage (seulement en développement)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token)
-      }
+      // Log pour débogage (toujours actif pour diagnostiquer les problèmes)
+      console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token, 'Token length:', token.length)
     } else {
-      // Log si pas de token (seulement pour les routes admin)
+      // Log si pas de token (toujours actif pour diagnostiquer)
       if (config.url && (config.url.includes('/quiz/') || config.url.includes('/game/'))) {
         console.warn('⚠️ No auth token found for admin request:', config.url)
+        console.warn('⚠️ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken'))
       }
     }
     
