@@ -27,8 +27,9 @@ data:
             '' close;
         }
         
-        # Map pour préserver le header Authorization
-        map $http_authorization $auth_header {
+        # Map pour préserver le header Authorization (utilisé comme fallback)
+        # Note: On utilise directement $http_authorization dans proxy_set_header
+        map $http_authorization $auth_header_preserved {
             default $http_authorization;
             '' '';
         }
@@ -60,8 +61,8 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
                 
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
-                # Utiliser la map $auth_header qui préserve le header s'il existe
-                proxy_set_header Authorization $auth_header;
+                # Utiliser directement $http_authorization car underscores_in_headers est activé
+                proxy_set_header Authorization $http_authorization;
                 # Transmettre tous les headers de la requête originale
                 proxy_pass_request_headers on;
             }
@@ -103,13 +104,13 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
                 
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
-                # Nginx convertit les headers HTTP en minuscules avec préfixe $http_
-                # Authorization devient $http_authorization
-                # Utiliser la map $auth_header qui préserve le header s'il existe
-                proxy_set_header Authorization $auth_header;
+                # IMPORTANT: Utiliser directement $http_authorization car underscores_in_headers est activé
+                # Nginx convertit automatiquement "Authorization" en "$http_authorization"
+                # Si le header est présent, il sera transmis; sinon, il sera vide (mais transmis quand même)
+                proxy_set_header Authorization $http_authorization;
                 
-                # Transmettre tous les headers de la requête originale (inclut Authorization)
-                # IMPORTANT: proxy_pass_request_headers doit être activé pour transmettre tous les headers
+                # Transmettre TOUS les headers de la requête originale
+                # Cette directive transmet tous les headers, y compris Authorization
                 proxy_pass_request_headers on;
                 
                 # WebSocket support
