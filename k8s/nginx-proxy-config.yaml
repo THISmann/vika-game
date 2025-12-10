@@ -18,10 +18,19 @@ data:
         # Utiliser CoreDNS (standard dans Kubernetes moderne) ou kube-dns
         resolver 10.96.0.10 valid=10s;
         
+        # Permettre les underscores dans les noms de headers (pour $http_authorization)
+        underscores_in_headers on;
+        
         # Map pour gérer l'upgrade WebSocket
         map $http_upgrade $connection_upgrade {
             default upgrade;
             '' close;
+        }
+        
+        # Map pour préserver le header Authorization
+        map $http_authorization $auth_header {
+            default $http_authorization;
+            '' '';
         }
 
     server {
@@ -51,10 +60,8 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
                 
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
-                # Nginx convertit les headers HTTP en minuscules avec préfixe $http_
-                # Authorization devient $http_authorization
-                # Si le header n'existe pas, $http_authorization sera vide et ne sera pas transmis
-                proxy_set_header Authorization $http_authorization;
+                # Utiliser la map $auth_header qui préserve le header s'il existe
+                proxy_set_header Authorization $auth_header;
                 # Transmettre tous les headers de la requête originale
                 proxy_pass_request_headers on;
             }
@@ -98,10 +105,11 @@ data:
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
                 # Nginx convertit les headers HTTP en minuscules avec préfixe $http_
                 # Authorization devient $http_authorization
-                # Si le header n'existe pas, $http_authorization sera vide et ne sera pas transmis
-                proxy_set_header Authorization $http_authorization;
+                # Utiliser la map $auth_header qui préserve le header s'il existe
+                proxy_set_header Authorization $auth_header;
                 
-                # Transmettre tous les headers de la requête originale
+                # Transmettre tous les headers de la requête originale (inclut Authorization)
+                # IMPORTANT: proxy_pass_request_headers doit être activé pour transmettre tous les headers
                 proxy_pass_request_headers on;
                 
                 # WebSocket support
