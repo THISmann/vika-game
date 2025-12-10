@@ -101,7 +101,13 @@ export const authService = {
    * @returns {Promise} Token d'authentification
    */
   async login(username, password) {
-    const response = await axios.post(`${API_CONFIG.AUTH_SERVICE}/auth/admin/login`, {
+    // Utiliser l'URL complète depuis API_URLS qui gère correctement les chemins
+    // API_URLS.auth.login gère automatiquement les chemins pour production/dev
+    const loginUrl = API_URLS.auth.login
+    
+    console.log('🔑 Attempting login to:', loginUrl)
+    
+    const response = await axios.post(loginUrl, {
       username,
       password
     })
@@ -111,6 +117,7 @@ export const authService = {
       localStorage.setItem('adminToken', response.data.token)
       localStorage.setItem('admin', '1')
       console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...')
+      console.log('✅ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken'))
       return response.data.token
     }
     
