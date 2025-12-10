@@ -658,9 +658,25 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
 exports.startGame = async (req, res) => {
   try {
     console.log(`\n🚀 ========== START GAME REQUEST ==========`);
+    console.log(`🚀 Method: ${req.method}`);
+    console.log(`🚀 Path: ${req.path}`);
+    console.log(`🚀 All headers:`, JSON.stringify(req.headers, null, 2));
     console.log(`🚀 Authorization header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
-    if (req.headers.authorization) {
-      console.log(`🚀 Token preview: ${req.headers.authorization.substring(0, 30)}...`);
+    console.log(`🚀 authorization header (lowercase): ${req.headers.authorization ? 'Present' : 'Missing'}`);
+    
+    // Récupérer le header Authorization (peut être en minuscules ou majuscules)
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    
+    if (authHeader) {
+      console.log(`🚀 Token preview: ${authHeader.substring(0, 50)}...`);
+      console.log(`🚀 Token length: ${authHeader.length}`);
+    } else {
+      console.error("❌ No authorization header found in request");
+      console.error("❌ Available headers:", Object.keys(req.headers));
+      return res.status(401).json({ 
+        error: "Unauthorized",
+        message: "No authentication token provided"
+      });
     }
     
     // Récupérer le temps par question (en secondes) depuis le body, défaut 30 secondes
@@ -671,23 +687,20 @@ exports.startGame = async (req, res) => {
     // Transmettre le token d'authentification depuis la requête originale
     let questions = [];
     try {
-      const authHeader = req.headers.authorization;
       console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
       console.log(`📋 Auth header present: ${!!authHeader}`);
-      if (authHeader) {
-        console.log(`📋 Auth header preview: ${authHeader.substring(0, 30)}...`);
-      }
+      console.log(`📋 Auth header value: ${authHeader.substring(0, 50)}...`);
       
-      if (!authHeader) {
-        console.error("❌ No authorization header in request");
-        return res.status(401).json({ 
-          error: "Unauthorized",
-          message: "No authentication token provided"
-        });
-      }
+      // S'assurer que le header est au format "Bearer <token>"
+      const authHeaderFormatted = authHeader.startsWith('Bearer ') ? authHeader : `Bearer ${authHeader.replace(/^Bearer\s+/i, '')}`;
+      
+      console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`);
       
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
-        headers: { 'Authorization': authHeader },
+        headers: { 
+          'Authorization': authHeaderFormatted,
+          'Content-Type': 'application/json'
+        },
         timeout: 10000 // 10 secondes de timeout
       });
       questions = quiz.data || [];
@@ -696,12 +709,18 @@ exports.startGame = async (req, res) => {
       console.error("❌ Error fetching questions:", quizError.message);
       console.error("❌ Error response:", quizError.response?.data);
       console.error("❌ Error status:", quizError.response?.status);
+      console.error("❌ Error headers:", quizError.response?.headers);
+      console.error("❌ Request config:", {
+        url: quizError.config?.url,
+        headers: quizError.config?.headers
+      });
       
       // Si c'est une erreur 401, le token n'est pas valide
       if (quizError.response?.status === 401) {
         return res.status(401).json({ 
           error: "Unauthorized",
-          message: "Invalid or missing authentication token for quiz service"
+          message: "Invalid or missing authentication token for quiz service",
+          details: process.env.NODE_ENV === 'development' ? quizError.response?.data : undefined
         });
       }
       
@@ -841,12 +860,30 @@ exports.nextQuestion = async (req, res) => {
     // Transmettre le token d'authentification depuis la requête originale
     let questions = [];
     try {
-      const authHeader = req.headers.authorization;
+      // Récupérer le header Authorization (peut être en minuscules ou majuscules)
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      
       console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
       console.log(`📋 Auth header present: ${!!authHeader}`);
       
+      if (!authHeader) {
+        console.error("❌ No authorization header in request");
+        return res.status(401).json({ 
+          error: "Unauthorized",
+          message: "No authentication token provided"
+        });
+      }
+      
+      // S'assurer que le header est au format "Bearer <token>"
+      const authHeaderFormatted = authHeader.startsWith('Bearer ') ? authHeader : `Bearer ${authHeader.replace(/^Bearer\s+/i, '')}`;
+      
+      console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`);
+      
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
-        headers: authHeader ? { 'Authorization': authHeader } : {},
+        headers: { 
+          'Authorization': authHeaderFormatted,
+          'Content-Type': 'application/json'
+        },
         timeout: 10000 // 10 secondes de timeout
       });
       questions = quiz.data || [];
@@ -855,12 +892,17 @@ exports.nextQuestion = async (req, res) => {
       console.error("❌ Error fetching questions:", quizError.message);
       console.error("❌ Error response:", quizError.response?.data);
       console.error("❌ Error status:", quizError.response?.status);
+      console.error("❌ Request config:", {
+        url: quizError.config?.url,
+        headers: quizError.config?.headers
+      });
       
       // Si c'est une erreur 401, le token n'est pas valide
       if (quizError.response?.status === 401) {
         return res.status(401).json({ 
           error: "Unauthorized",
-          message: "Invalid or missing authentication token for quiz service"
+          message: "Invalid or missing authentication token for quiz service",
+          details: process.env.NODE_ENV === 'development' ? quizError.response?.data : undefined
         });
       }
       
