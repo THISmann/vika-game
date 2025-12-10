@@ -43,12 +43,19 @@ data:
                 set $auth "auth-service.intelectgame.svc.cluster.local:3001";
                 rewrite ^/api/auth/(.*)$ /auth/$1 break;
                 proxy_pass http://$auth;
+                
+                # Headers standards
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
+                # Nginx convertit les headers HTTP en minuscules avec préfixe $http_
+                # Authorization devient $http_authorization
+                # Si le header n'existe pas, $http_authorization sera vide et ne sera pas transmis
                 proxy_set_header Authorization $http_authorization;
+                # Transmettre tous les headers de la requête originale
                 proxy_pass_request_headers on;
             }
             
@@ -57,12 +64,18 @@ data:
                 set $quiz "quiz-service.intelectgame.svc.cluster.local:3002";
                 rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
                 proxy_pass http://$quiz;
+                
+                # Headers standards
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
-                proxy_set_header Authorization $http_authorization;
+                if ($http_authorization) {
+                    proxy_set_header Authorization $http_authorization;
+                }
+                # Transmettre tous les headers de la requête originale
                 proxy_pass_request_headers on;
             }
             
@@ -74,12 +87,18 @@ data:
                 rewrite ^/api/game/(.*)$ /game/$1 break;
                 rewrite ^/api/game$ /game break;
                 proxy_pass http://$game;
+                
+                # Headers standards
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                
                 # CRITIQUE: Transmettre le header Authorization pour l'authentification
-                proxy_set_header Authorization $http_authorization;
+                if ($http_authorization) {
+                    proxy_set_header Authorization $http_authorization;
+                }
+                # Transmettre tous les headers de la requête originale
                 proxy_pass_request_headers on;
                 
                 # WebSocket support
