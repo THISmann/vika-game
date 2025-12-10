@@ -200,10 +200,13 @@ async function getGameState() {
   }
 }
 
-// Helper: Obtenir toutes les questions
+// Helper: Obtenir toutes les questions (public, sans réponses)
+// Note: Cette fonction est utilisée dans checkGameStateAndSendQuestions et le polling
+// Pour question:next, on utilise directement les données de l'événement
 async function getAllQuestions() {
   try {
-    const url = getApiUrl('/quiz/full');
+    // Utiliser /quiz/all (public) au lieu de /quiz/full (admin)
+    const url = getApiUrl('/quiz/all');
     const res = await axios.get(url);
     return res.data || [];
   } catch (err) {
@@ -791,17 +794,21 @@ async function initializeBot() {
     }
 
     console.log(`📝 Processing question ${question.id} for all registered players...`);
+    console.log(`✅ Question from event: ${question.question}`);
+    console.log(`📊 Total sessions: ${userSessions.size}`);
 
-    const allQuestions = await getAllQuestions();
-    const fullQuestion = allQuestions.find(q => q.id === question.id);
-    if (!fullQuestion) {
-      console.error(`❌ Question not found: ${question.id}`);
-      console.error(`   Available questions: ${allQuestions.map(q => q.id).join(', ')}`);
+    // Utiliser directement la question de l'événement (contient déjà id, question, choices)
+    // Plus besoin d'appeler /quiz/full qui nécessite l'authentification admin
+    const fullQuestion = {
+      id: question.id,
+      question: question.question,
+      choices: question.choices || []
+    };
+
+    if (!fullQuestion.question || !fullQuestion.choices || fullQuestion.choices.length === 0) {
+      console.error(`❌ Invalid question data in event:`, fullQuestion);
       return;
     }
-
-    console.log(`✅ Found question: ${fullQuestion.question}`);
-    console.log(`📊 Total sessions: ${userSessions.size}`);
 
     let sentCount = 0;
     let skippedCount = 0;
@@ -826,8 +833,16 @@ async function initializeBot() {
           console.log(`   ⚠️  Setting gameStarted=true for player ${session.playerName} (${session.playerId})`);
         }
         
-        if (!session.questions || session.questions.length === 0) {
-          session.questions = allQuestions;
+        // Stocker la question actuelle dans la session pour les réponses
+        if (!session.questions) {
+          session.questions = [];
+        }
+        // Ajouter ou mettre à jour la question actuelle
+        const existingQuestionIndex = session.questions.findIndex(q => q.id === question.id);
+        if (existingQuestionIndex >= 0) {
+          session.questions[existingQuestionIndex] = fullQuestion;
+        } else {
+          session.questions.push(fullQuestion);
         }
         
         session.currentQuestionIndex = questionIndex;
@@ -902,7 +917,16 @@ async function initializeBot() {
                   session.gameStarted = true;
                 }
                 
-                const allQuestions = await getAllQuestions();
+                // Utiliser /quiz/all (public) au lieu de /quiz/full (admin)
+                let allQuestions = [];
+                try {
+                  const url = getApiUrl('/quiz/all');
+                  const res = await axios.get(url);
+                  allQuestions = res.data || [];
+                } catch (err) {
+                  console.error('Error getting questions from /quiz/all:', err.message);
+                }
+                
                 const currentQuestion = allQuestions.find(q => q.id === gameState.currentQuestionId);
                 
                 if (currentQuestion) {
