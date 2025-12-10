@@ -88,3 +88,5 @@ log('  String(answer).trim() === String(correct).trim()', 'green');
 log('Ou pour ignorer la casse:', 'yellow');
 log('  String(answer).toLowerCase().trim() === String(correct).toLowerCase().trim()', 'green');
 
+
+

@@ -37,6 +37,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/game/, ''),
         ws: true, // WebSocket support
       },
+      // Proxy pour WebSocket direct (socket.io)
+      '/socket.io': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+        ws: true, // WebSocket support
+      },
     },
   },
 })

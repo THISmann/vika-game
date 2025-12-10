@@ -1,0 +1,25 @@
+{
+  "name": "gamev2-test-scripts",
+  "version": "1.0.0",
+  "description": "Test scripts for IntelectGame WebSocket and API testing",
+  "type": "commonjs",
+  "scripts": {
+    "test:websocket": "node test-websocket.js",
+    "test:websocket:complete": "node test-socket-complete.js",
+    "install:test-deps": "npm install socket.io-client axios",
+    "test:all": "./scripts/test-all-services.sh",
+    "test:all:coverage": "./scripts/test-all-services.sh --coverage",
+    "test:integration": "jest --config=jest.integration.config.js tests/integration",
+    "test:integration:watch": "jest --config=jest.integration.config.js --watch tests/integration"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.1",
+    "axios": "^1.13.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "author": "etienne",
+  "license": "ISC"
+}

@@ -344,3 +344,5 @@ async function testCompleteFlow() {
 // Exécuter le test
 testCompleteFlow();
 
+
+

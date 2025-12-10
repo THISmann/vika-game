@@ -48,7 +48,8 @@
 
         <button
           type="submit"
-          class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          :disabled="loading"
+          class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span class="absolute left-0 inset-y-0 flex items-center pl-3">
             <svg class="h-5 w-5 text-purple-300" fill="currentColor" viewBox="0 0 20 20">
@@ -79,16 +80,37 @@ export default {
       username: '',
       password: '',
       error: '',
+      loading: false,
     }
   },
   methods: {
-    login() {
+    async login() {
       this.error = ''
-      if (this.username === 'admin' && this.password === 'admin') {
-        localStorage.setItem('admin', '1')
-        this.$router.push('/admin/dashboard')
-      } else {
-        this.error = this.t('admin.login.invalidCredentials')
+      this.loading = true
+      
+      try {
+        const { authService } = await import('@/services/api')
+        const token = await authService.login(this.username, this.password)
+        
+        // Attendre un peu pour que le localStorage soit bien mis à jour
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Vérifier que le token est bien stocké avant de rediriger
+        const storedToken = localStorage.getItem('adminToken')
+        if (!storedToken) {
+          throw new Error('Token not stored after login')
+        }
+        
+        console.log('✅ Login successful, redirecting to dashboard')
+        
+        // Rediriger vers la route demandée ou le dashboard
+        const redirect = this.$route.query.redirect || '/admin/dashboard'
+        this.$router.push(redirect)
+      } catch (err) {
+        console.error('Login error:', err)
+        this.error = err.response?.data?.error || this.t('admin.login.invalidCredentials')
+      } finally {
+        this.loading = false
       }
     },
   },

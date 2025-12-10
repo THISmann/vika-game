@@ -21,12 +21,14 @@ spec:
         ports:
         - containerPort: 5173
         env:
+        # En production avec API Gateway, utiliser les chemins relatifs
+        # Le frontend sera servi via Nginx qui proxy vers l'API Gateway
         - name: VITE_AUTH_SERVICE_URL
-          value: "http://auth-service:3001"
+          value: "/api/auth"
         - name: VITE_QUIZ_SERVICE_URL
-          value: "http://quiz-service:3002"
+          value: "/api/quiz"
         - name: VITE_GAME_SERVICE_URL
-          value: "http://game-service:3003"
+          value: "/api/game"
 ---
 apiVersion: v1
 kind: Service

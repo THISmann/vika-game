@@ -1,7 +1,36 @@
 // Client Redis réutilisable pour tous les microservices
 // Usage: const redis = require('./shared/redis-client');
 
-const redis = require('redis');
+// Try to find redis in various locations
+let redis;
+try {
+  // First try the standard require (works if redis is in node_modules of the calling service)
+  redis = require('redis');
+} catch (e) {
+  // If that fails, try to find it in sibling services
+  const path = require('path');
+  const fs = require('fs');
+  const possiblePaths = [
+    path.resolve(__dirname, '../game-service/node_modules/redis'),
+    path.resolve(__dirname, '../quiz-service/node_modules/redis'),
+    path.resolve(__dirname, '../auth-service/node_modules/redis')
+  ];
+  
+  for (const redisPath of possiblePaths) {
+    if (fs.existsSync(redisPath)) {
+      try {
+        redis = require(redisPath);
+        break;
+      } catch (err) {
+        // Continue to next path
+      }
+    }
+  }
+  
+  if (!redis) {
+    throw new Error('Cannot find redis module. Please install it in one of the services.');
+  }
+}
 
 let client = null;
 let isConnected = false;

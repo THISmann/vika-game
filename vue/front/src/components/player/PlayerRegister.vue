@@ -274,16 +274,68 @@ export default {
         this.socket = socketService.getSocket()
         const componentId = 'PlayerRegister'
         
-        // Enregistrer le joueur via le service
-        socketService.registerPlayer(res.data.id)
+        console.log('📝 Player registered via API, playerId:', res.data.id)
+        console.log('📝 Socket state:', {
+          connected: this.socket.connected,
+          disconnected: this.socket.disconnected,
+          id: this.socket.id,
+          url: API_URLS.ws.game
+        })
         
-        // Attendre que la connexion soit établie si nécessaire
-        if (!this.socket.connected) {
-          this.socket.once('connect', () => {
-            console.log('✅ WebSocket connected, registering player:', res.data.id)
+        // Fonction pour enregistrer le joueur de manière fiable
+        const registerPlayerOnSocket = async () => {
+          // Si le socket est connecté, enregistrer immédiatement
+          if (this.socket.connected) {
+            console.log('✅ Socket connected, registering player:', res.data.id)
             socketService.registerPlayer(res.data.id)
+            return true
+          }
+          
+          // Si le socket n'est pas connecté, attendre la connexion
+          console.log('⏳ Socket not connected, waiting for connection...')
+          
+          return new Promise((resolve) => {
+            // Si le socket est déjà en train de se connecter, attendre
+            if (this.socket.connecting) {
+              console.log('⏳ Socket is connecting, waiting...')
+              this.socket.once('connect', () => {
+                console.log('✅ WebSocket connected after wait, registering player:', res.data.id)
+                socketService.registerPlayer(res.data.id)
+                resolve(true)
+              })
+              // Timeout de sécurité
+              setTimeout(() => {
+                console.warn('⚠️ Connection timeout, trying to register anyway...')
+                socketService.registerPlayer(res.data.id)
+                resolve(false)
+              }, 10000)
+              return
+            }
+            
+            // Si le socket est déconnecté, le reconnecter
+            if (this.socket.disconnected) {
+              console.log('🔄 Socket disconnected, reconnecting...')
+              this.socket.connect()
+            }
+            
+            // Attendre la connexion
+            this.socket.once('connect', () => {
+              console.log('✅ WebSocket connected, registering player:', res.data.id)
+              socketService.registerPlayer(res.data.id)
+              resolve(true)
+            })
+            
+            // Timeout de sécurité
+            setTimeout(() => {
+              console.warn('⚠️ Connection timeout after 10s, trying to register anyway...')
+              socketService.registerPlayer(res.data.id)
+              resolve(false)
+            }, 10000)
           })
         }
+        
+        // Enregistrer le joueur
+        await registerPlayerOnSocket()
 
         // Écouter le démarrage du jeu
         socketService.on('game:started', (data) => {

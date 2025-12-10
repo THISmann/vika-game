@@ -252,16 +252,53 @@ export default {
     this.socket = socketService.getSocket()
     const componentId = 'QuizPlay'
     
-    // Enregistrer le joueur via le service (ne créera pas de nouvelle connexion)
-    socketService.registerPlayer(this.playerId)
-    
-    // Attendre que la connexion soit établie si nécessaire
-    if (!this.socket.connected) {
-      this.socket.once('connect', () => {
-        console.log('✅ WebSocket connected, registering player:', this.playerId)
-        socketService.registerPlayer(this.playerId)
-      })
+    // S'assurer que le socket est connecté et que le joueur est enregistré
+    const ensurePlayerRegistered = async () => {
+      // Attendre que la connexion soit établie
+      if (!this.socket.connected) {
+        console.log('⏳ Socket not connected, waiting for connection...')
+        await new Promise((resolve) => {
+          if (this.socket.connected) {
+            resolve()
+          } else {
+            this.socket.once('connect', () => {
+              console.log('✅ WebSocket connected, ready to register player')
+              resolve()
+            })
+            // Timeout après 5 secondes
+            setTimeout(() => {
+              console.warn('⚠️ Socket connection timeout, continuing anyway...')
+              resolve()
+            }, 5000)
+          }
+        })
+      }
+      
+      // Enregistrer le joueur
+      console.log('📝 Registering player:', this.playerId)
+      socketService.registerPlayer(this.playerId)
+      
+      // Attendre un peu pour que l'enregistrement soit traité
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Vérifier l'état du jeu immédiatement après l'enregistrement
+      console.log('🔄 Checking game state after registration...')
+      await this.loadGameState()
+      
+      // Si le jeu a déjà démarré, charger la question immédiatement
+      if (this.gameStarted && !this.current) {
+        console.log('🎮 Game already started, loading current question...')
+        await this.loadCurrentQuestion()
+        if (this.current) {
+          this.startTimer()
+        }
+      }
     }
+    
+    // Exécuter l'enregistrement
+    ensurePlayerRegistered().catch(err => {
+      console.error('❌ Error ensuring player registration:', err)
+    })
     
     this.socket.on('connect', () => {
       console.log('✅ WebSocket connected in QuizPlay:', this.socket.id)
@@ -289,8 +326,11 @@ export default {
       }
     }, componentId)
 
-    socketService.on('game:started', async (data) => {
+    // Écouter l'événement game:started via socketService ET directement sur le socket
+    // Double écoute pour s'assurer de ne pas manquer l'événement
+    const handleGameStartedEvent = async (data) => {
       console.log('🎮 Game started event received in QuizPlay:', data)
+      console.log('🎮 Socket connected:', this.socket.connected, 'Socket ID:', this.socket.id)
       this.gameStarted = true
       this.loading = false
       // NE PAS arrêter le polling ici - il continuera pour charger la question et détecter les suivantes
@@ -304,12 +344,17 @@ export default {
         if (this.current) {
           console.log('✅ Question loaded after game:started event')
           this.startTimer()
+        } else {
+          console.warn('⚠️ Game started but no question loaded, polling will retry...')
         }
       } catch (err) {
         console.error('❌ Error loading game state after game:started:', err)
         // Le polling continuera et réessayera
       }
-    }, componentId)
+    }
+    
+    socketService.on('game:started', handleGameStartedEvent, componentId)
+    this.socket.on('game:started', handleGameStartedEvent)
     
     // Écouter tous les événements pour déboguer (si disponible)
     if (this.socket.onAny) {
@@ -323,23 +368,20 @@ export default {
       await this.loadResults()
     })
 
+    // Écouter l'événement question:next via socketService
     socketService.on('question:next', (data) => {
-      console.log('❓ Question next received in QuizPlay:', data)
-      this.current = data.question
-      this.currentQuestionIndex = data.questionIndex
-      this.totalQuestions = data.totalQuestions
-      this.questionStartTime = data.startTime
-      this.questionDuration = data.duration
-      this.hasAnswered = false
-      this.selectedAnswer = null
-      this.gameStarted = true
-      this.loading = false
-      // NE PAS arrêter le polling - il continuera pour détecter les questions suivantes
-      this.startTimer()
-      console.log('✅ Question displayed, timer started')
+      console.log('❓ Question next received in QuizPlay (via socketService):', data)
+      this.handleQuestionNext(data)
     }, componentId)
+    
+    // AUSSI écouter directement sur le socket pour s'assurer de ne pas manquer l'événement
+    this.socket.on('question:next', (data) => {
+      console.log('❓ Question next received in QuizPlay (direct socket):', data)
+      this.handleQuestionNext(data)
+    })
 
-    // Charger l'état du jeu immédiatement
+    // Charger l'état du jeu immédiatement (en plus de celui dans ensurePlayerRegistered)
+    // Cela garantit qu'on a l'état le plus récent même si ensurePlayerRegistered a déjà chargé
     await this.loadGameState()
     
     // Si le jeu a déjà commencé, forcer le chargement de la question si elle n'est pas déjà chargée
@@ -351,6 +393,10 @@ export default {
         console.log('🔄 Still no question, retrying loadCurrentQuestion()...')
         await new Promise(resolve => setTimeout(resolve, 500)) // Attendre 500ms
         await this.loadCurrentQuestion()
+      }
+      if (this.current) {
+        console.log('✅ Question loaded after retry, starting timer')
+        this.startTimer()
       }
     }
     
@@ -426,7 +472,7 @@ export default {
         console.error('❌ Error polling game state:', err)
         // Ne pas arrêter le polling en cas d'erreur, continuer à essayer
       }
-    }, 1000) // Vérifier toutes les 1 seconde (plus fréquent pour une meilleure réactivité)
+    }, 3000) // Vérifier toutes les 3 secondes (réduit pour éviter le rate limiting, WebSocket est prioritaire)
   },
   beforeUnmount() {
     if (this.timerInterval) {
@@ -440,6 +486,48 @@ export default {
     // Ne pas déconnecter le socket car il est partagé
   },
   methods: {
+    async handleGameStarted(data) {
+      console.log('🎮 Handling game started event:', data)
+      this.gameStarted = true
+      this.loading = false
+      // NE PAS arrêter le polling ici - il continuera pour charger la question et détecter les suivantes
+      // Charger l'état du jeu et la question actuelle immédiatement
+      try {
+        await this.loadGameState()
+        if (!this.current) {
+          console.log('🔄 No current question after game:started, loading...')
+          await this.loadCurrentQuestion()
+        }
+        if (this.current) {
+          console.log('✅ Question loaded after game:started event')
+          this.startTimer()
+        } else {
+          console.warn('⚠️ Game started but no question loaded, polling will retry...')
+        }
+      } catch (err) {
+        console.error('❌ Error loading game state after game:started:', err)
+        // Le polling continuera et réessayera
+      }
+    },
+    handleQuestionNext(data) {
+      console.log('❓ Handling question next event:', data)
+      if (!data || !data.question) {
+        console.error('❌ Invalid question:next data:', data)
+        return
+      }
+      this.current = data.question
+      this.currentQuestionIndex = data.questionIndex || 0
+      this.totalQuestions = data.totalQuestions || 0
+      this.questionStartTime = data.startTime
+      this.questionDuration = data.duration || 30000
+      this.hasAnswered = false
+      this.selectedAnswer = null
+      this.gameStarted = true
+      this.loading = false
+      // NE PAS arrêter le polling - il continuera pour détecter les questions suivantes
+      this.startTimer()
+      console.log('✅ Question displayed, timer started')
+    },
     async loadGameState() {
       try {
         const res = await axios.get(API_URLS.game.state)
@@ -447,6 +535,13 @@ export default {
         
         const wasGameStarted = this.gameStarted
         const hadCurrentQuestionId = this.current?.id
+        
+        console.log('📊 loadGameState() - Current state:', {
+          isStarted: state.isStarted,
+          currentQuestionId: state.currentQuestionId,
+          wasGameStarted,
+          hasCurrent: !!this.current
+        })
         
         this.gameStarted = state.isStarted
         this.currentQuestionIndex = state.currentQuestionIndex
@@ -469,10 +564,19 @@ export default {
               hadCurrentId: hadCurrentQuestionId
             })
             await this.loadCurrentQuestion()
+            // Si la question est chargée et que le jeu vient de démarrer, démarrer le timer
+            if (this.current && !wasGameStarted) {
+              console.log('✅ Game just started, question loaded, starting timer')
+              this.startTimer()
+            }
           }
         } else if (state.isStarted && !state.currentQuestionId) {
           // Le jeu a démarré mais pas encore de question (transition)
           console.log('ℹ️ Game started but no current question yet, waiting...')
+          this.loading = false
+        } else if (!state.isStarted) {
+          // Le jeu n'a pas encore démarré
+          console.log('⏳ Game not started yet, waiting...')
           this.loading = false
         }
       } catch (err) {

@@ -1,12 +1,12 @@
 <template>
-  <div class="max-w-4xl mx-auto">
+  <div class="min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6">
     <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
+    <div class="bg-gradient-to-br from-white to-yellow-50 rounded-2xl sm:rounded-3xl shadow-xl border-2 border-yellow-200 p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6">
       <div class="text-center">
         <div
-          class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-4"
+          class="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-3 sm:mb-4 shadow-lg ring-4 ring-yellow-200"
         >
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -15,8 +15,8 @@
             />
           </svg>
         </div>
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ t('leaderboard.title') }}</h1>
-        <p class="text-gray-600">{{ t('leaderboard.subtitle') }}</p>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 px-2">{{ t('leaderboard.title') }}</h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">{{ t('leaderboard.subtitle') }}</p>
       </div>
     </div>
 
@@ -128,18 +128,18 @@
     </div>
 
     <!-- Actions -->
-    <div class="mt-5 sm:mt-6 md:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+    <div class="mt-4 sm:mt-5 md:mt-6 lg:mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
       <router-link
         to="/player/quiz"
-        class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 active:scale-95 text-center shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
-        style="touch-action: manipulation;"
+        class="w-full sm:w-auto px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 active:scale-95 text-center shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
+        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
       >
         {{ t('leaderboard.replay') }}
       </router-link>
       <router-link
         to="/player/register"
-        class="px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-white border-3 sm:border-[3px] border-gray-300 text-gray-700 font-semibold rounded-xl sm:rounded-2xl hover:bg-gray-50 transition-all text-center shadow-md hover:shadow-lg active:scale-95 min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
-        style="touch-action: manipulation;"
+        class="w-full sm:w-auto px-5 sm:px-6 md:px-8 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl bg-white border-3 sm:border-[3px] border-gray-300 text-gray-700 font-semibold rounded-xl sm:rounded-2xl hover:bg-gray-50 transition-all text-center shadow-md hover:shadow-lg active:scale-95 min-h-[56px] sm:min-h-[60px] flex items-center justify-center"
+        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
       >
         {{ t('leaderboard.newPlayer') }}
       </router-link>
@@ -198,17 +198,18 @@ export default {
     }
 
     // --- 2. Connect to Socket.IO
-    // Détecter si on est en production (pas localhost)
+    // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
+    // L'API Gateway ne gère pas les WebSockets
+    // Utiliser API_URLS.ws.game qui pointe toujours vers le game-service directement
+    const wsUrl = API_URLS.ws.game
+    
+    // Détecter si on est en production
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     
-    // En production, utiliser exactement la même URL que la page actuelle (qui passe par le proxy Nginx)
-    let wsUrl
     if (isProduction) {
-      wsUrl = `${window.location.protocol}//${window.location.host}`
-      console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
+      console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
     } else {
-      wsUrl = API_CONFIG.GAME_SERVICE
-      console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
+      console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     }
     
     this.socket = io(wsUrl, {

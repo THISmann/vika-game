@@ -143,11 +143,11 @@ spec:
             configMapKeyRef:
               name: app-config
               key: MONGODB_URI
-        - name: NODE_ENV
+        - name: AUTH_SERVICE_URL
           valueFrom:
             configMapKeyRef:
               name: app-config
-              key: NODE_ENV
+              key: AUTH_SERVICE_URL
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
@@ -158,6 +158,11 @@ spec:
             configMapKeyRef:
               name: app-config
               key: REDIS_PORT
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
         volumeMounts:
         - name: data-volume
           mountPath: /app/data
@@ -214,14 +219,15 @@ spec:
               name: app-config
               key: MONGODB_URI
         - name: AUTH_SERVICE_URL
-          value: "http://auth-service:3001"
-        - name: QUIZ_SERVICE_URL
-          value: "http://quiz-service:3002"
-        - name: NODE_ENV
           valueFrom:
             configMapKeyRef:
               name: app-config
-              key: NODE_ENV
+              key: AUTH_SERVICE_URL
+        - name: QUIZ_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: QUIZ_SERVICE_URL
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
@@ -232,6 +238,11 @@ spec:
             configMapKeyRef:
               name: app-config
               key: REDIS_PORT
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
         volumeMounts:
         - name: data-volume
           mountPath: /app/data
@@ -351,6 +362,8 @@ spec:
         ports:
         - containerPort: 5173
         env:
+        # En production avec API Gateway, utiliser les chemins relatifs
+        # Le frontend sera servi via Nginx qui proxy vers l'API Gateway
         - name: VITE_AUTH_SERVICE_URL
           value: "/api/auth"
         - name: VITE_QUIZ_SERVICE_URL

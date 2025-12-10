@@ -4,6 +4,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const app = express();
 const gameRoutes = require("./routes/game.routes");
+const websocketRoutes = require("./routes/websocket.routes");
 const path = require("path"); 
 const cors = require('cors');
 const gameState = require("./gameState");
@@ -11,12 +12,32 @@ const connectDB = require("./config/database");
 const axios = require("axios");
 const services = require("./config/services");
 const Score = require("./models/Score");
-const redisClient = require("../shared/redis-client");
+const redisClient = require("./shared/redis-client");
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 // Enable CORS for all routes
 app.use(cors());
 
 app.use(express.json());
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Game Service API Documentation',
+  customJs: [
+    'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js'
+  ]
+}));
+
+// Endpoint pour la documentation WebSocket (retourne les infos en JSON)
+app.get('/WEBSOCKET_DOCUMENTATION.md', (req, res) => {
+  res.json({
+    message: 'WebSocket documentation',
+    url: '/game/websocket/info',
+    file: 'node/game-service/WEBSOCKET_DOCUMENTATION.md'
+  });
+});
 
 // Connect to MongoDB
 connectDB();
@@ -66,29 +87,73 @@ app.use("/game", (req, res, next) => {
   next();
 }, gameRoutes);
 
+// WebSocket documentation routes
+app.use("/game", websocketRoutes);
+
 // Player socket map
 const playersSockets = new Map();
 
+// Gérer les erreurs de connexion avant le handshake
+io.engine.on("connection_error", (err) => {
+  console.error("❌ Socket.io connection error:", {
+    remoteAddress: err.req?.socket?.remoteAddress,
+    message: err.message,
+    context: err.context,
+    description: err.description,
+    type: err.type
+  });
+  // Ne pas rejeter la connexion pour les erreurs mineures
+  // Le client va réessayer automatiquement
+});
+
 io.on("connection", (socket) => {
   const clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
-  console.log("✅ WebSocket client connected:", socket.id, "IP:", clientIP, "Total clients on this pod:", io.sockets.sockets.size);
+  const userAgent = socket.handshake.headers['user-agent'] || 'unknown';
+  console.log("✅ WebSocket client connected:", socket.id, "IP:", clientIP, "User-Agent:", userAgent.substring(0, 50), "Total clients on this pod:", io.sockets.sockets.size);
   
   // Logger les erreurs de connexion
   socket.on("error", (error) => {
     console.error("❌ Socket error:", socket.id, error);
+    // Ne pas envoyer d'erreur au client pour éviter les boucles d'erreur
   });
   
   // Logger les tentatives de reconnexion
   socket.on("reconnect_attempt", (attemptNumber) => {
     console.log("🔄 Reconnection attempt:", socket.id, "Attempt:", attemptNumber);
   });
+  
+  // Gérer les erreurs non capturées pour éviter les "server error" génériques
+  socket.on("disconnect", (reason) => {
+    if (reason === "transport close" || reason === "transport error") {
+      console.log("ℹ️ Socket disconnected due to transport issue:", socket.id, reason);
+    }
+  });
 
   socket.on("register", async (playerId) => {
     try {
+      if (!playerId) {
+        console.error("❌ Register called without playerId");
+        socket.emit("error", { 
+          message: "Player ID is required",
+          code: "INVALID_PLAYER_ID"
+        });
+        return;
+      }
+
+      console.log(`\n📝 ========== REGISTER PLAYER ==========`);
+      console.log(`📝 Player ID: ${playerId}`);
+      console.log(`📝 Socket ID: ${socket.id}`);
+      
       const state = await gameState.getState();
+      console.log(`📝 Current state:`, {
+        isStarted: state.isStarted,
+        connectedPlayersCount: state.connectedPlayers?.length || 0,
+        connectedPlayers: state.connectedPlayers || []
+      });
       
       // Vérifier si le joueur est déjà dans la liste des joueurs connectés
       const isAlreadyConnected = state.connectedPlayers && state.connectedPlayers.includes(playerId);
+      console.log(`📝 Is already connected: ${isAlreadyConnected}`);
       
       // Si le jeu a déjà commencé, vérifier si le joueur était déjà enregistré
       // Si le joueur était déjà enregistré, permettre la reconnexion (par exemple après une déconnexion temporaire)
@@ -110,18 +175,29 @@ io.on("connection", (socket) => {
       }
       
       // Enregistrer le socket du joueur
-    playersSockets.set(playerId, socket.id);
-    socket.playerId = playerId;
+      playersSockets.set(playerId, socket.id);
+      socket.playerId = playerId;
+      console.log(`📝 Socket registered for player: ${playerId}`);
       
       // Ajouter le joueur à la liste des connectés seulement s'il n'y est pas déjà
       if (!isAlreadyConnected) {
+        console.log(`📝 Adding player to connectedPlayers list...`);
         await gameState.addConnectedPlayer(playerId);
+        
+        // Vérifier que le joueur a bien été ajouté
+        const updatedState = await gameState.getState();
+        const isNowConnected = updatedState.connectedPlayers && updatedState.connectedPlayers.includes(playerId);
+        console.log(`📝 Player added to connectedPlayers: ${isNowConnected}`);
+        if (!isNowConnected) {
+          console.error(`❌ Failed to add player ${playerId} to connectedPlayers`);
+        }
         
         // Initialiser le score du joueur s'il n'existe pas encore
         try {
           const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
           const player = playersRes.data.find(p => p.id === playerId);
           const playerName = player ? player.name : 'Joueur anonyme';
+          console.log(`📝 Player name from auth-service: ${playerName}`);
           
           let score = await Score.findOne({ playerId });
           if (!score) {
@@ -150,7 +226,9 @@ io.on("connection", (socket) => {
       const connectedCount = await gameState.getConnectedPlayersCount();
       const currentState = await gameState.getState();
       
+      console.log(`📢 Emitting 'players:count' event: count=${connectedCount}, total clients=${io.sockets.sockets.size}`);
       io.emit("players:count", { count: connectedCount });
+      console.log(`✅ 'players:count' event emitted successfully`);
       
       // Envoyer le code de jeu au joueur qui vient de se connecter
       socket.emit("game:code", { gameCode: currentState.gameCode });
@@ -192,10 +270,19 @@ io.on("connection", (socket) => {
         }
       }
       
-      console.log("✅ Player registered:", playerId, "Total:", connectedCount, "Game started:", currentState.isStarted);
+      console.log(`✅ Player registered successfully: ${playerId}, Total: ${connectedCount}, Game started: ${currentState.isStarted}`);
+      console.log(`========================================\n`);
     } catch (error) {
-      console.error("Error registering player:", error);
-      socket.emit("error", { message: "Erreur lors de l'enregistrement" });
+      console.error("❌ Error registering player:", error);
+      console.error("❌ Error stack:", error.stack);
+      // Envoyer une erreur plus détaillée en développement
+      const errorMessage = process.env.NODE_ENV === 'development' 
+        ? `Erreur lors de l'enregistrement: ${error.message}`
+        : "Erreur lors de l'enregistrement";
+      socket.emit("error", { 
+        message: errorMessage,
+        code: "REGISTRATION_ERROR"
+      });
     }
   });
 
@@ -223,6 +310,7 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
 
 const PORT = 3003;
 server.listen(PORT, () => {
+  console.log("📚 Swagger UI available at http://localhost:" + PORT + "/api-docs");
   console.log("Game service (ws) running on port " + PORT);
   console.log("📦 Redis cache: " + (process.env.REDIS_HOST ? "Enabled" : "Disabled"));
 });

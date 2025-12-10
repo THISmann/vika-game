@@ -102,3 +102,5 @@ Le service vérifie que le token est présent au démarrage. Si le token est man
 - ✅ Aucun token n'est stocké dans le code source
 - ✅ Le token peut être géré via des secrets Kubernetes/Docker
 
+
+

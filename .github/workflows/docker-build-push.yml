@@ -54,7 +54,7 @@ jobs:
       - name: Build and push auth-service
         uses: docker/build-push-action@v5
         with:
-          context: ./node/auth-service
+          context: ./node
           file: ./node/auth-service/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-auth.outputs.tags }}
@@ -79,7 +79,7 @@ jobs:
       - name: Build and push quiz-service
         uses: docker/build-push-action@v5
         with:
-          context: ./node/quiz-service
+          context: ./node
           file: ./node/quiz-service/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-quiz.outputs.tags }}
@@ -104,7 +104,7 @@ jobs:
       - name: Build and push game-service
         uses: docker/build-push-action@v5
         with:
-          context: ./node/game-service
+          context: ./node
           file: ./node/game-service/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-game.outputs.tags }}

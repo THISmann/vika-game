@@ -147,6 +147,7 @@
 import axios from 'axios'
 import { API_URLS } from '@/config/api'
 import { useI18n } from '@/composables/useI18n'
+import apiClient, { quizService } from '@/services/api'
 
 export default {
   setup() {
@@ -171,7 +172,8 @@ export default {
     async loadQuestions() {
       try {
         this.loading = true
-        const res = await axios.get(API_URLS.quiz.all)
+        // Utiliser apiClient pour les questions publiques (pas besoin d'auth)
+        const res = await apiClient.get(API_URLS.quiz.all)
         this.questions = res.data
       } catch (err) {
         this.error = this.t('admin.questions.loadError')
@@ -200,7 +202,8 @@ export default {
       }
 
       try {
-        await axios.post(API_URLS.quiz.create, {
+        // Utiliser quizService qui utilise apiClient avec authentification
+        await quizService.createQuestion({
           question: this.question,
           choices,
           answer: this.answer,
@@ -220,7 +223,7 @@ export default {
           this.success = false
         }, 3000)
       } catch (err) {
-        this.error = this.t('admin.questions.addError')
+        this.error = err.response?.data?.error || err.message || this.t('admin.questions.addError')
         console.error(err)
       }
     },
@@ -230,10 +233,11 @@ export default {
       }
 
       try {
-        await axios.delete(API_URLS.quiz.delete(id))
+        // Utiliser quizService qui utilise apiClient avec authentification
+        await quizService.deleteQuestion(id)
         this.questions = this.questions.filter((q) => q.id !== id)
       } catch (err) {
-        this.error = this.t('admin.questions.deleteError')
+        this.error = err.response?.data?.error || err.message || this.t('admin.questions.deleteError')
         console.error(err)
       }
     },

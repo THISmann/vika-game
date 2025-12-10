@@ -112,13 +112,33 @@ module.exports = {
   
   addConnectedPlayer: async (playerId) => {
     try {
+      console.log(`\n➕ ========== ADD CONNECTED PLAYER ==========`);
+      console.log(`➕ Player ID: ${playerId}`);
+      
       const state = await GameState.getCurrent();
+      console.log(`➕ Current connectedPlayers before:`, state.connectedPlayers || []);
+      
+      if (!state.connectedPlayers) {
+        state.connectedPlayers = [];
+      }
+      
       if (!state.connectedPlayers.includes(playerId)) {
         state.connectedPlayers.push(playerId);
         await state.save();
+        console.log(`➕ Player added successfully`);
+      } else {
+        console.log(`➕ Player already in connectedPlayers list`);
       }
+      
+      // Vérifier que le joueur a bien été ajouté
+      const updatedState = await GameState.getCurrent();
+      console.log(`➕ Current connectedPlayers after:`, updatedState.connectedPlayers || []);
+      console.log(`➕ Player is in list: ${updatedState.connectedPlayers?.includes(playerId) || false}`);
+      console.log(`========================================\n`);
     } catch (error) {
-      console.error("Error adding connected player:", error);
+      console.error("❌ Error adding connected player:", error);
+      console.error("❌ Error stack:", error.stack);
+      throw error;
     }
   },
   

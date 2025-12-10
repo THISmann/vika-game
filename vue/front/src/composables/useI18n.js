@@ -62,6 +62,18 @@ const translations = {
     'leaderboard.replay': 'Rejouer',
     'leaderboard.newPlayer': 'Nouveau joueur',
     
+    // PlayerPanel
+    'panel.title': 'Jouer',
+    'panel.subtitle': 'Répondez aux questions',
+    'panel.anonymous': 'Anonyme',
+    'panel.score': 'Score',
+    'panel.loading': 'Chargement...',
+    'panel.loadQuestions': 'Charger les questions',
+    'panel.noQuestions': 'Aucune question disponible. Cliquez sur "Charger les questions" pour commencer.',
+    'panel.loadError': 'Erreur lors du chargement des questions',
+    'panel.playerRequired': 'Joueur requis pour répondre',
+    'panel.answerError': 'Erreur lors de l\'envoi de la réponse',
+    
     // Admin Navbar
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.questions': 'Questions',
@@ -202,6 +214,18 @@ const translations = {
     'leaderboard.replay': 'Play again',
     'leaderboard.newPlayer': 'New player',
     
+    // PlayerPanel
+    'panel.title': 'Play',
+    'panel.subtitle': 'Answer the questions',
+    'panel.anonymous': 'Anonymous',
+    'panel.score': 'Score',
+    'panel.loading': 'Loading...',
+    'panel.loadQuestions': 'Load questions',
+    'panel.noQuestions': 'No questions available. Click "Load questions" to start.',
+    'panel.loadError': 'Error loading questions',
+    'panel.playerRequired': 'Player required to answer',
+    'panel.answerError': 'Error submitting answer',
+    
     // Admin Navbar
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.questions': 'Questions',
@@ -341,6 +365,18 @@ const translations = {
     'leaderboard.pts': 'очков',
     'leaderboard.replay': 'Играть снова',
     'leaderboard.newPlayer': 'Новый игрок',
+    
+    // PlayerPanel
+    'panel.title': 'Играть',
+    'panel.subtitle': 'Ответьте на вопросы',
+    'panel.anonymous': 'Анонимный',
+    'panel.score': 'Счет',
+    'panel.loading': 'Загрузка...',
+    'panel.loadQuestions': 'Загрузить вопросы',
+    'panel.noQuestions': 'Нет доступных вопросов. Нажмите "Загрузить вопросы", чтобы начать.',
+    'panel.loadError': 'Ошибка при загрузке вопросов',
+    'panel.playerRequired': 'Требуется игрок для ответа',
+    'panel.answerError': 'Ошибка при отправке ответа',
     
     // Admin Navbar
     'admin.nav.dashboard': 'Панель управления',

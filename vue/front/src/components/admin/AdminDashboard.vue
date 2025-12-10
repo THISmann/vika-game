@@ -228,6 +228,7 @@ import axios from 'axios'
 import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
 import { useI18n } from '@/composables/useI18n'
+import apiClient, { gameService, quizService } from '@/services/api'
 
 export default {
   setup() {
@@ -257,19 +258,13 @@ export default {
     await this.loadQuestionsCount()
     await this.loadGameCode()
     
-    // Connecter au WebSocket
-    // Détecter si on est en production (pas localhost)
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
+    // L'API Gateway ne gère pas les WebSockets
+    // Utiliser API_URLS.ws.game qui pointe toujours vers le game-service directement
+    const wsUrl = API_URLS.ws.game
     
-    // En production, utiliser exactement la même URL que la page actuelle (qui passe par le proxy Nginx)
-    let wsUrl
-    if (isProduction) {
-      wsUrl = `${window.location.protocol}//${window.location.host}`
-      console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
-    } else {
-      wsUrl = API_CONFIG.GAME_SERVICE
-      console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
-    }
+    // Détecter si on est en production
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     
     console.log('🔌 Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction, 'hostname:', window.location.hostname, 'port:', window.location.port)
     
@@ -277,23 +272,67 @@ export default {
       path: '/socket.io',
       transports: ['polling', 'websocket'],
       reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
       forceNew: false,
-      autoConnect: true
+      autoConnect: true,
+      timeout: 20000
     })
     
     this.socket.on('connect', () => {
       console.log('✅ Admin WebSocket connected:', this.socket.id)
+      this.error = '' // Clear any previous errors
     })
     
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Admin WebSocket connection error:', error)
+      // Ignorer complètement l'erreur "server error" et "xhr poll error" qui sont souvent temporaires
+      // Socket.io va réessayer automatiquement
+      if (error && error.message && (
+        error.message.includes('server error') || 
+        error.message.includes('xhr poll error') ||
+        error.message.includes('poll')
+      )) {
+        // Ne rien logger pour éviter le spam dans la console
+        // La reconnexion automatique va gérer ça
+        return
+      }
+      // Logger seulement les autres erreurs critiques
+      if (error && error.message) {
+        console.error('❌ Admin WebSocket connection error:', error.message)
+      }
+      // Ne pas afficher l'erreur à l'utilisateur pour les erreurs temporaires
+      // Seulement pour les erreurs critiques qui persistent
+      if (error && error.type === 'TransportError' && !error.message.includes('poll')) {
+        this.error = this.t('admin.dashboard.connectionError') || 'Connection error'
+        setTimeout(() => this.error = '', 5000)
+      }
+    })
+    
+    // Handle server error packets (emitted by server after connection)
+    this.socket.on('error', (errorData) => {
+      console.error('❌ Admin WebSocket server error:', errorData)
+      // Ignore GAME_ALREADY_STARTED errors for admin (admin doesn't need to register as player)
+      if (errorData && errorData.code === 'GAME_ALREADY_STARTED') {
+        console.log('ℹ️ Game already started - this is normal for admin')
+        return
+      }
+      // Only show error if it's not a game already started error
+      if (errorData && errorData.message) {
+        this.error = errorData.message
+        setTimeout(() => this.error = '', 5000)
+      }
     })
     
     this.socket.on('players:count', (data) => {
+      console.log('📊 AdminDashboard received players:count event:', data)
       this.gameState.connectedPlayersCount = data.count
+      // Recharger aussi la liste des joueurs pour mettre à jour l'affichage
+      this.loadConnectedPlayers()
     })
     
-    this.socket.on('game:started', () => {
+    this.socket.on('game:started', (data) => {
+      console.log('🎮 AdminDashboard received game:started event:', data)
       this.loadGameState()
     })
     
@@ -307,12 +346,13 @@ export default {
       this.loadGameState()
     })
     
-    // Polling pour l'état du jeu
+    // Polling pour l'état du jeu - Réduit à 5 secondes pour éviter le rate limiting
+    // Les événements WebSocket sont prioritaires, le polling sert de filet de sécurité
     setInterval(() => {
       this.loadGameState()
       this.loadConnectedPlayersCount()
       this.loadConnectedPlayers()
-    }, 2000)
+    }, 5000) // Toutes les 5 secondes (au lieu de 2) pour éviter le rate limiting
   },
   beforeUnmount() {
     if (this.socket) {
@@ -322,16 +362,18 @@ export default {
   methods: {
     async loadGameState() {
       try {
-        const res = await axios.get(API_URLS.game.state)
+        // Utiliser apiClient qui ajoute automatiquement le token
+        const res = await apiClient.get(API_URLS.game.state)
         this.gameState = res.data
         this.gameCode = res.data.gameCode || null
       } catch (err) {
         console.error('Error loading game state:', err)
+        // Si erreur 401, l'intercepteur redirigera automatiquement
       }
     },
     async loadGameCode() {
       try {
-        const res = await axios.get(API_URLS.game.code)
+        const res = await apiClient.get(API_URLS.game.code)
         this.gameCode = res.data.gameCode
       } catch (err) {
         console.error('Error loading game code:', err)
@@ -339,7 +381,8 @@ export default {
     },
     async loadQuestionsCount() {
       try {
-        const res = await axios.get(API_URLS.quiz.all)
+        // Les questions publiques n'ont pas besoin d'auth, mais utilisons apiClient pour cohérence
+        const res = await apiClient.get(API_URLS.quiz.all)
         this.totalQuestions = res.data.length
       } catch (err) {
         console.error('Error loading questions count:', err)
@@ -347,7 +390,7 @@ export default {
     },
     async loadConnectedPlayersCount() {
       try {
-        const res = await axios.get(API_URLS.game.playersCount)
+        const res = await apiClient.get(API_URLS.game.playersCount)
         this.gameState.connectedPlayersCount = res.data.count
       } catch (err) {
         console.error('Error loading players count:', err)
@@ -355,7 +398,7 @@ export default {
     },
     async loadConnectedPlayers() {
       try {
-        const res = await axios.get(API_URLS.game.players)
+        const res = await apiClient.get(API_URLS.game.players)
         this.connectedPlayers = res.data.players || []
         this.gameState.connectedPlayersCount = res.data.count || 0
       } catch (err) {
@@ -380,15 +423,25 @@ export default {
       this.message = ''
       
       try {
-        await axios.post(API_URLS.game.start, {
-          questionDuration: this.questionDuration
-        })
+        // Utiliser gameService qui utilise apiClient avec authentification
+        await gameService.startGame(this.questionDuration)
         this.message = `${this.t('admin.dashboard.startGame')} - ${this.questionDuration}s ${this.t('admin.dashboard.timePerQuestion')}`
         await this.loadGameState()
         await this.loadQuestionsCount()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erreur lors du démarrage du jeu'
+        console.error('❌ Error starting game:', err)
+        console.error('❌ Error response:', err.response?.data)
+        console.error('❌ Error status:', err.response?.status)
+        
+        // Si erreur 401, l'intercepteur redirigera automatiquement vers login
+        // Mais on affiche aussi un message d'erreur
+        if (err.response?.status === 401) {
+          this.error = 'Session expirée. Veuillez vous reconnecter.'
+          // L'intercepteur va rediriger, mais on donne un feedback visuel
+        } else {
+          this.error = err.response?.data?.error || err.response?.data?.message || err.message || 'Erreur lors du démarrage du jeu'
+        }
       } finally {
         this.loading = false
       }
@@ -399,8 +452,9 @@ export default {
       this.message = ''
       
       try {
-        const res = await axios.post(API_URLS.game.next)
-        if (res.data.finished) {
+        // Utiliser gameService qui utilise apiClient avec authentification
+        const res = await gameService.nextQuestion()
+        if (res.finished) {
           this.message = 'Le jeu est terminé !'
         } else {
           this.message = this.t('admin.dashboard.nextQuestionShown')
@@ -408,7 +462,7 @@ export default {
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || this.t('admin.dashboard.nextQuestionError')
+        this.error = err.response?.data?.error || err.message || this.t('admin.dashboard.nextQuestionError')
       } finally {
         this.loading = false
       }
@@ -423,12 +477,13 @@ export default {
       this.message = ''
       
       try {
-        await axios.post(API_URLS.game.end)
+        // Utiliser gameService qui utilise apiClient avec authentification
+        await gameService.endGame()
         this.message = this.t('admin.dashboard.gameEnded')
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erreur lors de la fin du jeu'
+        this.error = err.response?.data?.error || err.message || 'Erreur lors de la fin du jeu'
       } finally {
         this.loading = false
       }
@@ -443,12 +498,13 @@ export default {
       this.message = ''
       
       try {
-        await axios.delete(API_URLS.game.delete)
+        // Utiliser gameService qui utilise apiClient avec authentification
+        await gameService.deleteGame()
         this.message = this.t('admin.dashboard.gameDeleted')
         await this.loadGameState()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || 'Erreur lors de la suppression de la partie'
+        this.error = err.response?.data?.error || err.message || 'Erreur lors de la suppression de la partie'
       } finally {
         this.loading = false
       }

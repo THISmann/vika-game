@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { adminGuard, loginGuard } from './guards'
 
 import AdminLogin from '../components/admin/AdminLogin.vue'
 import AdminDashboard from '../components/admin/AdminDashboard.vue'
@@ -16,13 +17,30 @@ const routes = [
   { path: '/player/quiz', component: QuizPlay },
   { path: '/player/leaderboard', component: Leaderboard },
 
-  // Admin
-  { path: '/admin/login', component: AdminLogin },
-  { path: '/admin/dashboard', component: AdminDashboard },
-  { path: '/admin/questions', component: ManageQuestions },
+  // Admin - Protégé par guard
+  { 
+    path: '/admin/login', 
+    component: AdminLogin,
+    beforeEnter: loginGuard
+  },
+  { 
+    path: '/admin/dashboard', 
+    component: AdminDashboard,
+    beforeEnter: adminGuard
+  },
+  { 
+    path: '/admin/questions', 
+    component: ManageQuestions,
+    beforeEnter: adminGuard
+  },
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+// Note: Les guards sont gérés par beforeEnter sur chaque route
+// Pas besoin de guard global pour éviter les doubles vérifications
+
+export default router

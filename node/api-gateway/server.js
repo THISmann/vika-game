@@ -6,6 +6,8 @@ const logger = require('./src/middleware/logger');
 const errorHandler = require('./src/middleware/errorHandler');
 const rateLimiter = require('./src/middleware/rateLimiter');
 const SERVICES = require('./config/services');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./src/config/swagger');
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +26,12 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'IntelectGame API Gateway Documentation'
+}));
+
 // Health check endpoint (avant rate limiting pour éviter les blocages)
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -39,12 +47,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rate limiting (100 requêtes par minute par IP)
-// Exclure /health du rate limiting
-const limiter = rateLimiter(60000, 100);
+// Rate limiting (augmenté à 300 requêtes par minute par IP pour éviter les erreurs 429)
+// Exclure /health et certaines routes de jeu du rate limiting
+const limiter = rateLimiter(60000, 300); // Augmenté de 100 à 300
 app.use((req, res, next) => {
-  if (req.path === '/health') {
-    return next(); // Skip rate limiting for health checks
+  // Skip rate limiting for health checks et routes de jeu fréquemment pollées
+  if (req.path === '/health' || 
+      req.path === '/game/state' || 
+      req.path === '/game/players/count' || 
+      req.path === '/game/players') {
+    return next(); // Skip rate limiting for these routes
   }
   limiter(req, res, next);
 });
@@ -78,6 +90,8 @@ server.listen(PORT, () => {
   console.log('   - *    /quiz/* - Proxy to Quiz Service');
   console.log('   - *    /game/* - Proxy to Game Service');
   console.log('   - *    /telegram/* - Proxy to Telegram Bot');
+  console.log('');
+  console.log('📚 Swagger UI available at http://localhost:' + PORT + '/api-docs');
 });
 
 // Gestion gracieuse de l'arrêt

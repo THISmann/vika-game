@@ -28,6 +28,16 @@ spec:
             configMapKeyRef:
               name: app-config
               key: MONGODB_URI
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_PORT
         - name: NODE_ENV
           valueFrom:
             configMapKeyRef:

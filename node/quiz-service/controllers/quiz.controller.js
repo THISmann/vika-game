@@ -1,5 +1,5 @@
 const Question = require("../models/Question");
-const cache = require("../../shared/cache-utils");
+const cache = require("../shared/cache-utils");
 
 // Clés de cache
 const CACHE_KEYS = {
@@ -130,6 +130,55 @@ exports.getFullQuestions = async (req, res) => {
     res.json(questionsData);
   } catch (error) {
     console.error('Error getting full questions:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * Endpoint public pour vérifier une réponse
+ * Permet au game-service de vérifier les réponses des joueurs sans authentification admin
+ */
+exports.verifyAnswer = async (req, res) => {
+  try {
+    // Le paramètre de route est :id, pas questionId
+    const questionId = req.params.id;
+    
+    if (!questionId) {
+      return res.status(400).json({ error: "questionId is required" });
+    }
+
+    console.log(`🔍 Verifying answer for question: ${questionId}`);
+
+    // Essayer de récupérer depuis le cache
+    const cached = await cache.get(CACHE_KEYS.QUESTION(questionId));
+    if (cached) {
+      console.log(`✅ Question ${questionId} served from cache for verification`);
+      return res.json({ 
+        id: cached.id,
+        answer: cached.answer 
+      });
+    }
+
+    // Si pas en cache, récupérer depuis MongoDB
+    const question = await Question.findOne({ id: questionId });
+    
+    if (!question) {
+      console.error(`❌ Question ${questionId} not found in database`);
+      return res.status(404).json({ error: "Question not found" });
+    }
+
+    const questionData = {
+      id: question.id,
+      answer: question.answer
+    };
+    
+    // Mettre en cache
+    await cache.set(CACHE_KEYS.QUESTION(questionId), question.toObject(), cache.TTL.QUESTIONS);
+    
+    console.log(`✅ Question ${questionId} fetched from database for verification`);
+    res.json(questionData);
+  } catch (error) {
+    console.error('❌ Error verifying answer:', error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

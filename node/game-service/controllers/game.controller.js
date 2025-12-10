@@ -2,7 +2,7 @@ const axios = require("axios");
 const gameState = require("../gameState");
 const services = require("../config/services");
 const Score = require("../models/Score");
-const cache = require("../../shared/cache-utils");
+const cache = require("../shared/cache-utils");
 
 // Clés de cache
 const CACHE_KEYS = {
@@ -159,16 +159,40 @@ exports.answerQuestion = async (req, res) => {
       return res.status(500).json({ error: "Erreur lors de la récupération du joueur" });
     }
 
-    // 🔍 Fetch quiz questions
+    // 🔍 Fetch quiz question answer
+    // Utiliser l'endpoint public /quiz/verify/:id pour obtenir la réponse correcte
     let question;
     try {
-      const quizRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-      question = quizRes.data.find(q => q.id === questionId);
-      if (!question) {
+      // Utiliser l'endpoint public /quiz/verify/:id qui ne nécessite pas d'authentification
+      const verifyRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/verify/${questionId}`);
+      question = {
+        id: verifyRes.data.id,
+        answer: verifyRes.data.answer
+      };
+      
+      if (!question || !question.answer) {
+        console.error(`❌ Question ${questionId} has no answer`);
+        return res.status(404).json({ error: "Question answer not found" });
+      }
+      
+      console.log(`✅ Question ${questionId} answer fetched successfully`);
+    } catch (err) {
+      console.error("❌ Error fetching question answer:", err.message);
+      if (err.response?.status === 404) {
         return res.status(404).json({ error: "Question not found" });
       }
-    } catch (err) {
-      console.error("Error fetching question:", err);
+      // En cas d'erreur, essayer avec /quiz/all pour obtenir au moins la question (sans réponse)
+      try {
+        const allRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+        const questionFromAll = allRes.data.find(q => q.id === questionId);
+        if (questionFromAll) {
+          // Si on trouve la question mais pas la réponse, retourner une erreur
+          console.error(`❌ Question ${questionId} found but answer not available`);
+          return res.status(500).json({ error: "Erreur lors de la récupération de la réponse" });
+        }
+      } catch (allErr) {
+        console.error("❌ Error fetching question from /quiz/all:", allErr.message);
+      }
       return res.status(500).json({ error: "Erreur lors de la récupération de la question" });
     }
 
@@ -416,9 +440,10 @@ exports.getConnectedPlayersCount = async (req, res) => {
 
 exports.getConnectedPlayers = async (req, res) => {
   try {
-    const playerIds = await gameState.getConnectedPlayers();
+    console.log(`\n📋 ========== GET CONNECTED PLAYERS ==========`);
     
-    console.log(`📋 Getting connected players: ${playerIds.length} player IDs`);
+    const playerIds = await gameState.getConnectedPlayers();
+    console.log(`📋 Found ${playerIds.length} player IDs in gameState:`, playerIds);
     
     // Récupérer les noms des joueurs depuis auth-service
     const axios = require('axios');
@@ -438,7 +463,7 @@ exports.getConnectedPlayers = async (req, res) => {
             id: playerId,
             name: player.name || 'Joueur anonyme'
           });
-          console.log(`✅ Found player: ${player.name} (${playerId})`);
+          console.log(`✅ Found player in auth-service: ${player.name} (${playerId})`);
         } else {
           // Si le joueur n'existe pas dans auth-service, essayer de le récupérer depuis les scores
           try {
@@ -476,25 +501,30 @@ exports.getConnectedPlayers = async (req, res) => {
               id: playerId,
               name: score.playerName
             });
+            console.log(`✅ Found player in scores (fallback): ${score.playerName} (${playerId})`);
           } else {
             players.push({
               id: playerId,
               name: 'Joueur anonyme'
             });
+            console.warn(`⚠️ Player ${playerId} not found in scores, using default name`);
           }
         } catch (scoreErr) {
           players.push({
             id: playerId,
             name: 'Joueur anonyme'
           });
+          console.warn(`⚠️ Error fetching score for ${playerId}, using default name`);
         }
       }
     }
     
-    console.log(`✅ Returning ${players.length} connected players:`, players.map(p => p.name).join(', '));
+    console.log(`✅ Returning ${players.length} connected players:`, players.map(p => `${p.name} (${p.id})`).join(', '));
+    console.log(`========================================\n`);
     res.json({ players, count: players.length });
   } catch (error) {
     console.error("❌ Error getting connected players:", error);
+    console.error("❌ Error stack:", error.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -548,7 +578,24 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
       }
       
       // Utiliser la logique de nextQuestion
-      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
+      // Note: scheduleNextQuestion est appelé depuis un timer, donc on n'a pas accès à req
+      // On doit utiliser /quiz/all qui est public, ou stocker le token dans le gameState
+      // Pour l'instant, on utilise /quiz/all qui ne contient pas les réponses, mais c'est OK
+      // car les scores sont déjà calculés dans answerQuestion
+      let quiz;
+      try {
+        quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+      } catch (err) {
+        console.error("⏰ Error fetching questions from /quiz/all, trying /quiz/full without auth:", err.message);
+        // Si /quiz/all échoue, essayer /quiz/full (peut échouer si auth requise)
+        try {
+          quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
+        } catch (fullErr) {
+          console.error("⏰ Error fetching questions from /quiz/full:", fullErr.message);
+          // Continuer sans questions - on ne peut pas passer à la question suivante
+          return;
+        }
+      }
       const questions = quiz.data;
 
       // NOTE: Les scores sont maintenant calculés immédiatement dans answerQuestion
@@ -610,13 +657,68 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
 
 exports.startGame = async (req, res) => {
   try {
+    console.log(`\n🚀 ========== START GAME REQUEST ==========`);
+    console.log(`🚀 Authorization header: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+    if (req.headers.authorization) {
+      console.log(`🚀 Token preview: ${req.headers.authorization.substring(0, 30)}...`);
+    }
+    
     // Récupérer le temps par question (en secondes) depuis le body, défaut 30 secondes
     const questionDurationSeconds = req.body.questionDuration || 30;
     const questionDurationMs = questionDurationSeconds * 1000; // Convertir en millisecondes
 
-    // Récupérer les questions
-    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-    const questions = quiz.data;
+    // Récupérer les questions (nécessite l'authentification admin)
+    // Transmettre le token d'authentification depuis la requête originale
+    let questions = [];
+    try {
+      const authHeader = req.headers.authorization;
+      console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
+      console.log(`📋 Auth header present: ${!!authHeader}`);
+      if (authHeader) {
+        console.log(`📋 Auth header preview: ${authHeader.substring(0, 30)}...`);
+      }
+      
+      if (!authHeader) {
+        console.error("❌ No authorization header in request");
+        return res.status(401).json({ 
+          error: "Unauthorized",
+          message: "No authentication token provided"
+        });
+      }
+      
+      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
+        headers: { 'Authorization': authHeader },
+        timeout: 10000 // 10 secondes de timeout
+      });
+      questions = quiz.data || [];
+      console.log(`✅ Fetched ${questions.length} questions`);
+    } catch (quizError) {
+      console.error("❌ Error fetching questions:", quizError.message);
+      console.error("❌ Error response:", quizError.response?.data);
+      console.error("❌ Error status:", quizError.response?.status);
+      
+      // Si c'est une erreur 401, le token n'est pas valide
+      if (quizError.response?.status === 401) {
+        return res.status(401).json({ 
+          error: "Unauthorized",
+          message: "Invalid or missing authentication token for quiz service"
+        });
+      }
+      
+      // Si c'est une erreur 403, l'utilisateur n'est pas admin
+      if (quizError.response?.status === 403) {
+        return res.status(403).json({ 
+          error: "Forbidden",
+          message: "Admin access required to fetch questions"
+        });
+      }
+      
+      // Autre erreur
+      return res.status(500).json({ 
+        error: "Failed to fetch questions",
+        message: quizError.message || "Quiz service unavailable"
+      });
+    }
 
     if (questions.length === 0) {
       return res.status(400).json({ error: "Aucune question disponible" });
@@ -652,16 +754,22 @@ exports.startGame = async (req, res) => {
 
       // Compter les clients connectés avant d'émettre
       const connectedClients = req.io.sockets.sockets.size;
-      console.log(`🚀 Starting game with ${connectedClients} connected clients`);
+      const connectedPlayersCount = await gameState.getConnectedPlayersCount();
+      console.log(`\n🚀 ========== STARTING GAME ==========`);
+      console.log(`🚀 Connected WebSocket clients: ${connectedClients}`);
+      console.log(`🚀 Connected players in gameState: ${connectedPlayersCount}`);
+      console.log(`🚀 Player IDs:`, newState.connectedPlayers || []);
 
       // Émettre l'événement de début de jeu avec la première question
+      console.log(`📢 Emitting 'game:started' event: questionIndex=${newState.currentQuestionIndex}, totalQuestions=${questions.length}, clients=${connectedClients}`);
       req.io.emit("game:started", {
         questionIndex: newState.currentQuestionIndex,
         totalQuestions: questions.length,
         gameCode: newState.gameCode
       });
-      console.log("📢 Emitted 'game:started' event to all clients");
+      console.log("✅ 'game:started' event emitted successfully to all clients");
 
+      console.log(`📢 Emitting 'question:next' event: questionId=${firstQuestion.id}, clients=${connectedClients}`);
       req.io.emit("question:next", {
         question: {
           id: firstQuestion.id,
@@ -673,7 +781,7 @@ exports.startGame = async (req, res) => {
         startTime: newState.questionStartTime,
         duration: newState.questionDuration
       });
-      console.log("📢 Emitted 'question:next' event to all clients");
+      console.log("✅ 'question:next' event emitted successfully to all clients");
 
       // Programmer le timer pour passer automatiquement à la question suivante
       console.log(`⏰ Scheduling timer for first question (${questionDurationMs}ms)...`);
@@ -681,8 +789,15 @@ exports.startGame = async (req, res) => {
       console.log(`✅ Timer scheduled successfully`);
       
       console.log(`✅ Game started - all events emitted to ${connectedClients} clients`);
+      console.log(`========================================\n`);
     } else {
       console.error("❌ Cannot start game: no questions or no io instance");
+      if (!questions.length) {
+        console.error("❌ No questions available");
+      }
+      if (!req.io) {
+        console.error("❌ No io instance in request");
+      }
     }
 
     res.json({
@@ -690,8 +805,21 @@ exports.startGame = async (req, res) => {
       state: await gameState.getState()
     });
   } catch (err) {
-    console.error("Error starting game:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("❌ Error starting game:", err);
+    console.error("❌ Error message:", err.message);
+    console.error("❌ Error stack:", err.stack);
+    
+    // Si c'est une erreur axios, afficher plus de détails
+    if (err.response) {
+      console.error("❌ Error response status:", err.response.status);
+      console.error("❌ Error response data:", err.response.data);
+    }
+    
+    res.status(500).json({ 
+      error: "Internal server error",
+      message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      details: process.env.NODE_ENV === 'development' && err.response?.data ? err.response.data : undefined
+    });
   }
 };
 
@@ -709,9 +837,47 @@ exports.nextQuestion = async (req, res) => {
       questionTimer = null;
     }
 
-    // Récupérer les questions
-    const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-    const questions = quiz.data;
+    // Récupérer les questions (nécessite l'authentification admin)
+    // Transmettre le token d'authentification depuis la requête originale
+    let questions = [];
+    try {
+      const authHeader = req.headers.authorization;
+      console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
+      console.log(`📋 Auth header present: ${!!authHeader}`);
+      
+      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
+        headers: authHeader ? { 'Authorization': authHeader } : {},
+        timeout: 10000 // 10 secondes de timeout
+      });
+      questions = quiz.data || [];
+      console.log(`✅ Fetched ${questions.length} questions`);
+    } catch (quizError) {
+      console.error("❌ Error fetching questions:", quizError.message);
+      console.error("❌ Error response:", quizError.response?.data);
+      console.error("❌ Error status:", quizError.response?.status);
+      
+      // Si c'est une erreur 401, le token n'est pas valide
+      if (quizError.response?.status === 401) {
+        return res.status(401).json({ 
+          error: "Unauthorized",
+          message: "Invalid or missing authentication token for quiz service"
+        });
+      }
+      
+      // Si c'est une erreur 403, l'utilisateur n'est pas admin
+      if (quizError.response?.status === 403) {
+        return res.status(403).json({ 
+          error: "Forbidden",
+          message: "Admin access required to fetch questions"
+        });
+      }
+      
+      // Autre erreur
+      return res.status(500).json({ 
+        error: "Failed to fetch questions",
+        message: quizError.message || "Quiz service unavailable"
+      });
+    }
 
     // NOTE: Les scores sont maintenant calculés immédiatement dans answerQuestion
     // On n'a plus besoin de recalculer ici, mais on peut émettre les scores mis à jour

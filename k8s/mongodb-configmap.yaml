@@ -11,3 +11,5 @@ data:
   # URI MongoDB avec authentification (pour production - décommenter et utiliser)
   # MONGODB_URI: "mongodb://admin:admin123@mongodb:27017/intelectgame?authSource=admin"
 
+
+

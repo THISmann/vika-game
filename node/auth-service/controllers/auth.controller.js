@@ -1,6 +1,6 @@
 const { generateToken } = require("../utils/token");
 const User = require("../models/User");
-const cache = require("../../shared/cache-utils");
+const cache = require("../shared/cache-utils");
 
 // Clés de cache
 const CACHE_KEYS = {
@@ -96,5 +96,53 @@ exports.getAllPlayers = async (req, res) => {
     } catch (error) {
         console.error('Error getting all players:', error);
         res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+/**
+ * Vérifie un token d'authentification
+ * Utilisé par les autres services pour valider les tokens
+ */
+exports.verifyToken = (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({ 
+                valid: false,
+                error: 'No authorization header provided'
+            });
+        }
+
+        const parts = authHeader.split(' ');
+        if (parts.length !== 2 || parts[0] !== 'Bearer') {
+            return res.status(401).json({ 
+                valid: false,
+                error: 'Invalid authorization format'
+            });
+        }
+
+        const token = parts[1];
+        const { verifyToken } = require('../utils/token');
+        const decoded = verifyToken(token);
+
+        if (!decoded) {
+            return res.status(401).json({ 
+                valid: false,
+                error: 'Invalid or expired token'
+            });
+        }
+
+        res.json({
+            valid: true,
+            role: decoded.role,
+            timestamp: decoded.timestamp
+        });
+    } catch (error) {
+        console.error('Token verification error:', error);
+        res.status(500).json({ 
+            valid: false,
+            error: 'Internal server error'
+        });
     }
 }

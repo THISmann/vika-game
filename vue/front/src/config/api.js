@@ -197,30 +197,44 @@ export const API_URLS = {
         ? `${API_CONFIG.GAME_SERVICE}/results`
         : `${API_CONFIG.GAME_SERVICE}/game/results`,
   },
+  // URL WebSocket - TOUJOURS utiliser le game-service directement, jamais l'API Gateway
+  // L'API Gateway ne gère pas les WebSockets
   ws: {
     game: (() => {
-      const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
-      const gameUrl = import.meta.env.VITE_GAME_SERVICE_URL
+      // Détecter si on est vraiment en production
+      // En développement, window.location.hostname sera 'localhost' ou '127.0.0.1'
+      // et le port sera généralement 5173 (Vite) ou autre port de dev
+      const isProduction = typeof window !== 'undefined' && 
+                          window.location.hostname !== 'localhost' && 
+                          window.location.hostname !== '127.0.0.1' &&
+                          !window.location.hostname.startsWith('192.168.') &&
+                          !window.location.hostname.startsWith('10.') &&
+                          (import.meta.env.PROD || import.meta.env.MODE === 'production')
       
-      // Si on utilise l'API Gateway (toutes les URLs sont identiques)
-      if (useApiGateway && gameUrl) {
-        // Utiliser l'API Gateway pour WebSocket (si configuré)
-        // Sinon, utiliser directement le game-service
-        // Pour l'instant, on utilise directement le game-service pour WebSocket
-        return 'http://localhost:3003'
-      }
+      // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
+      // L'API Gateway ne gère pas les WebSockets, donc on ignore useApiGateway pour les WS
+      // En développement, on force TOUJOURS localhost:3003, même si VITE_GAME_SERVICE_URL pointe vers l'API Gateway
       
       if (isProduction) {
         // En production, utiliser le chemin /socket.io qui est configuré dans Nginx
         // Socket.io va automatiquement ajouter /socket.io/ à la fin
         if (typeof window !== 'undefined') {
+          // En production avec Kubernetes/Nginx, le proxy route /socket.io vers game-service
           // Utiliser l'URL de base du navigateur avec le chemin socket.io
-          return `${window.location.protocol}//${window.location.host}`
+          const url = `${window.location.protocol}//${window.location.host}`
+          console.log('🌐 Production mode - Using WebSocket URL:', url)
+          return url
         }
         return ''
       } else {
-        // En développement, utiliser localhost:3003 directement
-        return 'http://localhost:3003'
+        // En développement, TOUJOURS utiliser localhost:3003 directement (game-service)
+        // Même si on utilise l'API Gateway pour les requêtes HTTP
+        // L'API Gateway ne gère pas les WebSockets
+        // IGNORER VITE_GAME_SERVICE_URL pour les WebSockets car il peut pointer vers l'API Gateway
+        const url = 'http://localhost:3003'
+        console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', url)
+        console.log('🏠 Note: Ignoring VITE_GAME_SERVICE_URL for WebSocket (API Gateway does not support WebSockets)')
+        return url
       }
     })(),
   },

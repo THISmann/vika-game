@@ -1,6 +1,6 @@
 // socketService.js - Singleton pour gérer la connexion WebSocket partagée
 import { io } from 'socket.io-client'
-import { API_CONFIG } from '@/config/api'
+import { API_URLS } from '@/config/api'
 
 class SocketService {
   constructor() {
@@ -38,20 +38,39 @@ class SocketService {
 
     this.isConnecting = true
 
-    // Détecter si on est en production
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
+    // L'API Gateway ne gère pas les WebSockets
+    // Utiliser API_URLS.ws.game qui pointe toujours vers le game-service directement
+    let wsUrl = API_URLS.ws.game
     
-    // En production, utiliser l'URL de la page actuelle (via proxy Nginx)
-    let wsUrl
-    if (isProduction) {
-      wsUrl = `${window.location.protocol}//${window.location.host}`
-      console.log('🌐 Production mode - Using current page URL for WebSocket:', wsUrl)
+    // Vérifier que l'URL est correcte (forcer localhost:3003 en développement)
+    const isLocalDev = typeof window !== 'undefined' && 
+                      (window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' ||
+                       window.location.hostname.startsWith('192.168.') ||
+                       window.location.hostname.startsWith('10.'))
+    
+    // Si on est en développement local mais que l'URL n'est pas localhost:3003, la corriger
+    if (isLocalDev && wsUrl && !wsUrl.includes('localhost:3003') && !wsUrl.includes('127.0.0.1:3003')) {
+      console.warn('⚠️ WebSocket URL incorrect for development, forcing localhost:3003')
+      console.warn('   Original URL:', wsUrl)
+      wsUrl = 'http://localhost:3003'
+      console.warn('   Corrected URL:', wsUrl)
+    }
+    
+    if (isLocalDev) {
+      console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     } else {
-      wsUrl = API_CONFIG.GAME_SERVICE
-      console.log('🏠 Development mode - Using API_CONFIG.GAME_SERVICE:', wsUrl)
+      console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
     }
 
     console.log('🔌 Creating WebSocket connection:', wsUrl)
+    console.log('🔌 Connection options:', {
+      path: '/socket.io',
+      transports: ['polling', 'websocket'],
+      autoConnect: true,
+      timeout: 20000
+    })
 
     this.socket = io(wsUrl, {
       path: '/socket.io',
@@ -65,21 +84,47 @@ class SocketService {
       timeout: 20000
     })
 
+    // Logger immédiatement l'état du socket
+    console.log('🔌 Socket created, initial state:', {
+      connected: this.socket.connected,
+      disconnected: this.socket.disconnected,
+      connecting: this.socket.connecting,
+      id: this.socket.id
+    })
+
     // Gestion des événements de connexion
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', this.socket.id)
+      console.log('✅ WebSocket connected:', this.socket.id, 'Transport:', this.socket.io.engine.transport.name)
       this.isConnecting = false
       
       // Réenregistrer le joueur si on a un playerId
       const playerId = localStorage.getItem('playerId')
       if (playerId) {
-        console.log('🔄 Re-registering player after reconnect:', playerId)
-        this.socket.emit('register', playerId)
+        console.log('🔄 Auto re-registering player after connect:', playerId)
+        // Petit délai pour s'assurer que la connexion est stable
+        setTimeout(() => {
+          this.socket.emit('register', playerId)
+        }, 100)
       }
     })
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ WebSocket connection error:', error)
+      // Ignorer complètement l'erreur "server error" et "xhr poll error" qui sont souvent temporaires
+      // Socket.io va réessayer automatiquement
+      if (error && error.message && (
+        error.message.includes('server error') || 
+        error.message.includes('xhr poll error') ||
+        error.message.includes('poll')
+      )) {
+        // Ne rien logger pour éviter le spam dans la console
+        // La reconnexion automatique va gérer ça
+        this.isConnecting = false
+        return
+      }
+      // Logger seulement les autres erreurs critiques
+      if (error && error.message) {
+        console.error('❌ WebSocket connection error:', error.message)
+      }
       this.isConnecting = false
     })
 
@@ -110,11 +155,37 @@ class SocketService {
     })
 
     this.socket.on('reconnect_error', (error) => {
-      console.error('❌ Reconnection error:', error)
+      // Ignorer les erreurs "server error" et "xhr poll error" lors de la reconnexion
+      if (error && error.message && (
+        error.message.includes('server error') || 
+        error.message.includes('xhr poll error') ||
+        error.message.includes('poll')
+      )) {
+        // Ne rien logger, la reconnexion continue automatiquement
+        return
+      }
+      // Logger seulement les autres erreurs critiques
+      if (error && error.message) {
+        console.error('❌ Reconnection error:', error.message)
+      }
     })
 
     this.socket.on('reconnect_failed', () => {
+      // Seulement logger si la reconnexion a vraiment échoué après tous les essais
       console.error('❌ Reconnection failed after all attempts')
+    })
+    
+    // Gérer les paquets d'erreur du serveur (après connexion)
+    this.socket.on('error', (errorData) => {
+      // Ignorer les erreurs GAME_ALREADY_STARTED qui sont normales dans certains cas
+      if (errorData && errorData.code === 'GAME_ALREADY_STARTED') {
+        console.log('ℹ️ Game already started - player may need to reconnect')
+        return
+      }
+      // Logger seulement les autres erreurs
+      if (errorData && errorData.message) {
+        console.error('❌ WebSocket server error:', errorData.message)
+      }
     })
 
     return this.socket
@@ -122,21 +193,50 @@ class SocketService {
 
   // Enregistrer un joueur (sans créer de nouvelle connexion)
   registerPlayer(playerId) {
+    if (!playerId) {
+      console.error('❌ Cannot register player: playerId is required')
+      return
+    }
+
     if (!this.socket) {
+      console.log('🔌 No socket found, creating connection...')
       this.connect()
     }
 
-    // Attendre que la connexion soit établie
+    // Si le socket est connecté, enregistrer immédiatement
     if (this.socket.connected) {
-      console.log('📝 Registering player:', playerId)
+      console.log('📝 Registering player (socket connected):', playerId)
       this.socket.emit('register', playerId)
-    } else {
-      // Attendre la connexion puis enregistrer
+      return
+    }
+
+    // Si le socket est en train de se connecter, attendre
+    if (this.socket.connecting) {
+      console.log('⏳ Socket is connecting, will register after connection...')
       this.socket.once('connect', () => {
         console.log('📝 Registering player after connection:', playerId)
         this.socket.emit('register', playerId)
       })
+      return
     }
+
+    // Si le socket est déconnecté, le reconnecter puis enregistrer
+    if (this.socket.disconnected) {
+      console.log('🔄 Socket disconnected, reconnecting...')
+      this.socket.connect()
+      this.socket.once('connect', () => {
+        console.log('📝 Registering player after reconnection:', playerId)
+        this.socket.emit('register', playerId)
+      })
+      return
+    }
+
+    // Par défaut, attendre la connexion
+    console.log('⏳ Waiting for socket connection to register player...')
+    this.socket.once('connect', () => {
+      console.log('📝 Registering player after connection:', playerId)
+      this.socket.emit('register', playerId)
+    })
   }
 
   // Ajouter un listener pour un composant
@@ -197,4 +297,5 @@ class SocketService {
 
 // Export singleton
 export default new SocketService()
+
 

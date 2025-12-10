@@ -37,7 +37,9 @@ services:
 
   # Auth Service
   auth:
-    build: ./node/auth-service
+    build:
+      context: ./node
+      dockerfile: auth-service/Dockerfile
     container_name: intelectgame-auth
     volumes:
       - ./node/auth-service/data:/app/data
@@ -59,7 +61,9 @@ services:
 
   # Quiz Service
   quiz:
-    build: ./node/quiz-service
+    build:
+      context: ./node
+      dockerfile: quiz-service/Dockerfile
     container_name: intelectgame-quiz
     volumes:
       - ./node/quiz-service/data:/app/data
@@ -69,6 +73,7 @@ services:
       - NODE_ENV=development
       - PORT=3002
       - MONGODB_URI=mongodb://mongodb:27017/intelectgame
+      - AUTH_SERVICE_URL=http://auth:3001
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -76,12 +81,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      auth:
+        condition: service_started
     networks:
       - app-network
 
   # Game Service
   game:
-    build: ./node/game-service
+    build:
+      context: ./node
+      dockerfile: game-service/Dockerfile
     container_name: intelectgame-game
     volumes:
       - ./node/game-service/data:/app/data
