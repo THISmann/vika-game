@@ -82,8 +82,8 @@ data:
             
             # Game Service (HTTP) - Route principale avec rewrite
             location /api/game {
-                # Utiliser le nom de service court (plus fiable dans Kubernetes)
-                set $game "game-service:3003";
+                # Utiliser le nom complet du service Kubernetes pour la résolution DNS
+                set $game "game-service.intelectgame.svc.cluster.local:3003";
                 # Rewrite pour transformer /api/game/xxx en /game/xxx
                 rewrite ^/api/game/(.*)$ /game/$1 break;
                 rewrite ^/api/game$ /game break;
