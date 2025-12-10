@@ -47,6 +47,9 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                # CRITIQUE: Transmettre le header Authorization pour l'authentification
+                proxy_set_header Authorization $http_authorization;
+                proxy_pass_request_headers on;
             }
             
             # Quiz Service
@@ -58,6 +61,9 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                # CRITIQUE: Transmettre le header Authorization pour l'authentification
+                proxy_set_header Authorization $http_authorization;
+                proxy_pass_request_headers on;
             }
             
             # Game Service (HTTP) - Route principale avec rewrite
@@ -72,6 +78,9 @@ data:
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+                # CRITIQUE: Transmettre le header Authorization pour l'authentification
+                proxy_set_header Authorization $http_authorization;
+                proxy_pass_request_headers on;
                 
                 # WebSocket support
                 proxy_http_version 1.1;

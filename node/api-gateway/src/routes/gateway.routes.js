@@ -46,10 +46,24 @@ const createServiceProxy = (target, pathPrefix = '') => {
       // Logger la requête proxy pour déboguer
       console.log(`🔄 Proxying ${req.method} ${req.originalUrl} → ${target}${proxyReq.path}`);
       
+      // CRITIQUE: Transmettre le header Authorization pour l'authentification admin
+      if (req.headers['authorization']) {
+        proxyReq.setHeader('Authorization', req.headers['authorization']);
+        console.log(`🔑 Forwarding Authorization header to ${target}`);
+      }
+      
       // http-proxy-middleware gère automatiquement le body
       // On s'assure juste que les headers sont corrects
       if (req.headers['content-type']) {
         proxyReq.setHeader('Content-Type', req.headers['content-type']);
+      }
+      
+      // Transmettre tous les autres headers importants
+      if (req.headers['accept']) {
+        proxyReq.setHeader('Accept', req.headers['accept']);
+      }
+      if (req.headers['accept-language']) {
+        proxyReq.setHeader('Accept-Language', req.headers['accept-language']);
       }
       
       // Ajouter des headers personnalisés si nécessaire
