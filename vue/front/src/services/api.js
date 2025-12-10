@@ -157,7 +157,7 @@ export const quizService = {
    * Récupère toutes les questions (avec réponses - admin seulement)
    */
   async getFullQuestions() {
-    const response = await apiClient.get(`${API_CONFIG.QUIZ_SERVICE}/quiz/full`)
+    const response = await apiClient.get(API_URLS.quiz.full)
     return response.data
   },
 
@@ -165,7 +165,7 @@ export const quizService = {
    * Crée une nouvelle question
    */
   async createQuestion(questionData) {
-    const response = await apiClient.post(`${API_CONFIG.QUIZ_SERVICE}/quiz/create`, questionData)
+    const response = await apiClient.post(API_URLS.quiz.create, questionData)
     return response.data
   },
 
@@ -173,7 +173,7 @@ export const quizService = {
    * Met à jour une question
    */
   async updateQuestion(id, questionData) {
-    const response = await apiClient.put(`${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`, questionData)
+    const response = await apiClient.put(API_URLS.quiz.update(id), questionData)
     return response.data
   },
 
@@ -181,7 +181,7 @@ export const quizService = {
    * Supprime une question
    */
   async deleteQuestion(id) {
-    const response = await apiClient.delete(`${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`)
+    const response = await apiClient.delete(API_URLS.quiz.delete(id))
     return response.data
   }
 }
@@ -194,7 +194,7 @@ export const gameService = {
    * Démarre le jeu
    */
   async startGame(questionDuration = 30) {
-    const response = await apiClient.post(`${API_CONFIG.GAME_SERVICE}/game/start`, {
+    const response = await apiClient.post(API_URLS.game.start, {
       questionDuration
     })
     return response.data
@@ -204,7 +204,7 @@ export const gameService = {
    * Passe à la question suivante
    */
   async nextQuestion() {
-    const response = await apiClient.post(`${API_CONFIG.GAME_SERVICE}/game/next`)
+    const response = await apiClient.post(API_URLS.game.next)
     return response.data
   },
 
@@ -212,7 +212,7 @@ export const gameService = {
    * Termine le jeu
    */
   async endGame() {
-    const response = await apiClient.post(`${API_CONFIG.GAME_SERVICE}/game/end`)
+    const response = await apiClient.post(API_URLS.game.end)
     return response.data
   },
 
@@ -220,7 +220,7 @@ export const gameService = {
    * Supprime/réinitialise le jeu
    */
   async deleteGame() {
-    const response = await apiClient.delete(`${API_CONFIG.GAME_SERVICE}/game/delete`)
+    const response = await apiClient.delete(API_URLS.game.delete)
     return response.data
   },
 
@@ -228,7 +228,7 @@ export const gameService = {
    * Récupère les résultats des questions
    */
   async getResults() {
-    const response = await apiClient.get(`${API_CONFIG.GAME_SERVICE}/game/results`)
+    const response = await apiClient.get(API_URLS.game.results)
     return response.data
   }
 }
