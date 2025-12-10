@@ -22,28 +22,19 @@ const getApiUrl = (service) => {
     // Si les URLs sont relatives (commencent par /), les utiliser telles quelles
     switch (service) {
       case 'auth':
+        // Si authUrl est défini, l'utiliser (peut être relatif /api/auth ou absolu)
         if (authUrl) {
-          // Si c'est une URL relative, la retourner telle quelle
-          if (authUrl.startsWith('/')) {
-            return authUrl.replace(/\/$/, '')
-          }
-          // Si c'est une URL absolue, la retourner
           return authUrl.replace(/\/$/, '')
         }
+        // Fallback par défaut pour production
         return '/api/auth'
       case 'quiz':
         if (quizUrl) {
-          if (quizUrl.startsWith('/')) {
-            return quizUrl.replace(/\/$/, '')
-          }
           return quizUrl.replace(/\/$/, '')
         }
         return '/api/quiz'
       case 'game':
         if (gameUrl) {
-          if (gameUrl.startsWith('/')) {
-            return gameUrl.replace(/\/$/, '')
-          }
           return gameUrl.replace(/\/$/, '')
         }
         return '/api/game'

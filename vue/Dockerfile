@@ -6,9 +6,11 @@ RUN npm install
 COPY front/ .
 # Les variables VITE_* doivent être passées au moment du build
 # Elles seront remplacées par Vite dans le code compilé
-ARG VITE_AUTH_SERVICE_URL=http://localhost:3000/auth
-ARG VITE_QUIZ_SERVICE_URL=http://localhost:3000/quiz
-ARG VITE_GAME_SERVICE_URL=http://localhost:3000/game
+# IMPORTANT: En production Kubernetes, utiliser des URLs relatives (/api/auth)
+# En développement local, passer --build-arg pour utiliser http://localhost:3000
+ARG VITE_AUTH_SERVICE_URL=/api/auth
+ARG VITE_QUIZ_SERVICE_URL=/api/quiz
+ARG VITE_GAME_SERVICE_URL=/api/game
 ENV VITE_AUTH_SERVICE_URL=$VITE_AUTH_SERVICE_URL
 ENV VITE_QUIZ_SERVICE_URL=$VITE_QUIZ_SERVICE_URL
 ENV VITE_GAME_SERVICE_URL=$VITE_GAME_SERVICE_URL
