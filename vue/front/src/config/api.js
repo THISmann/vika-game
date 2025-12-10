@@ -5,43 +5,50 @@ const getApiUrl = (service) => {
   // Vérifier si on est en production (build) ou développement
   const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
   
-  // Si des variables d'environnement VITE_* sont définies, les utiliser (Docker Compose avec API Gateway)
+  // Si des variables d'environnement VITE_* sont définies, les utiliser
   const authUrl = import.meta.env.VITE_AUTH_SERVICE_URL
   const quizUrl = import.meta.env.VITE_QUIZ_SERVICE_URL
   const gameUrl = import.meta.env.VITE_GAME_SERVICE_URL
   
   // Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
+  // IMPORTANT: En production Kubernetes, les URLs sont relatives (/api/auth), donc useApiGateway sera false
   const useApiGateway = authUrl && quizUrl && gameUrl && 
                         authUrl === quizUrl && quizUrl === gameUrl &&
+                        (authUrl.startsWith('http://') || authUrl.startsWith('https://')) &&
                         (authUrl.includes(':3000') || authUrl.includes('localhost:3000') || authUrl.includes('127.0.0.1:3000'))
   
   if (isProduction) {
     // En production/Kubernetes, utiliser les variables d'environnement ou des URLs relatives
-    if (useApiGateway) {
-      // Utiliser l'API Gateway
-      const gatewayUrl = authUrl.replace(/\/$/, '')
-      switch (service) {
-        case 'auth':
-          return gatewayUrl
-        case 'quiz':
-          return gatewayUrl
-        case 'game':
-          return gatewayUrl
-        default:
-          return ''
-      }
-    } else {
-      // Utiliser les services directement (ancien comportement)
-      switch (service) {
-        case 'auth':
-          return authUrl ? authUrl.replace(/\/$/, '') : '/api/auth'
-        case 'quiz':
-          return quizUrl ? quizUrl.replace(/\/$/, '') : '/api/quiz'
-        case 'game':
-          return gameUrl ? gameUrl.replace(/\/$/, '') : '/api/game'
-        default:
-          return ''
-      }
+    // Si les URLs sont relatives (commencent par /), les utiliser telles quelles
+    switch (service) {
+      case 'auth':
+        if (authUrl) {
+          // Si c'est une URL relative, la retourner telle quelle
+          if (authUrl.startsWith('/')) {
+            return authUrl.replace(/\/$/, '')
+          }
+          // Si c'est une URL absolue, la retourner
+          return authUrl.replace(/\/$/, '')
+        }
+        return '/api/auth'
+      case 'quiz':
+        if (quizUrl) {
+          if (quizUrl.startsWith('/')) {
+            return quizUrl.replace(/\/$/, '')
+          }
+          return quizUrl.replace(/\/$/, '')
+        }
+        return '/api/quiz'
+      case 'game':
+        if (gameUrl) {
+          if (gameUrl.startsWith('/')) {
+            return gameUrl.replace(/\/$/, '')
+          }
+          return gameUrl.replace(/\/$/, '')
+        }
+        return '/api/game'
+      default:
+        return ''
     }
   } else {
     // En développement local
@@ -85,9 +92,11 @@ export const API_CONFIG = {
 const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
 
 // Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
+// IMPORTANT: En production Kubernetes, les URLs sont relatives (/api/auth), donc useApiGateway sera false
 const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE && 
                       API_CONFIG.QUIZ_SERVICE === API_CONFIG.GAME_SERVICE &&
                       API_CONFIG.AUTH_SERVICE !== '' &&
+                      (API_CONFIG.AUTH_SERVICE.startsWith('http://') || API_CONFIG.AUTH_SERVICE.startsWith('https://')) &&
                       (API_CONFIG.AUTH_SERVICE.includes(':3000') || 
                        API_CONFIG.AUTH_SERVICE.includes('localhost:3000') ||
                        API_CONFIG.AUTH_SERVICE.includes('127.0.0.1:3000'))
