@@ -19,6 +19,7 @@ data:
         resolver 10.96.0.10 valid=10s;
         
         # Permettre les underscores dans les noms de headers (pour $http_authorization)
+        # CRITIQUE: Sans cette directive, Nginx ignore les headers avec underscores
         underscores_in_headers on;
         
         # Map pour gérer l'upgrade WebSocket
@@ -79,13 +80,11 @@ data:
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
                 
-            # CRITIQUE: Transmettre le header Authorization pour l'authentification
-            # Nginx convertit les headers HTTP en minuscules avec préfixe $http_
-            # Authorization devient $http_authorization
-            # Si le header n'existe pas, $http_authorization sera vide et ne sera pas transmis
-            proxy_set_header Authorization $http_authorization;
-            # Transmettre tous les headers de la requête originale
-            proxy_pass_request_headers on;
+                # CRITIQUE: Transmettre le header Authorization pour l'authentification
+                # Utiliser directement $http_authorization car underscores_in_headers est activé
+                proxy_set_header Authorization $http_authorization;
+                # Transmettre tous les headers de la requête originale
+                proxy_pass_request_headers on;
             }
             
             # Game Service (HTTP) - Route principale avec rewrite
