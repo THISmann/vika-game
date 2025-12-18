@@ -35,7 +35,7 @@ const gameSocket = io(wsUrl, {
   forceNew: false
 });
 
-// Store user sessions: chatId -> { language, gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion, lastSentQuestionId }
+// Store user sessions: chatId -> { language, gameCode, playerId, playerName, currentQuestionIndex, questions, gameStarted, hasAnsweredCurrentQuestion, lastSentQuestionId, isRegisteredInGame }
 const userSessions = new Map();
 
 // Get token from environment variable (from GitHub Secrets in production)
@@ -197,6 +197,20 @@ async function getGameState() {
   } catch (err) {
     console.error('Error getting game state:', err.message);
     return null;
+  }
+}
+
+// Helper: Vérifier si un joueur est enregistré dans le game-service
+async function checkPlayerRegistered(playerId) {
+  try {
+    const url = getApiUrl('/game/players');
+    const res = await axios.get(url);
+    const players = res.data?.players || [];
+    const isRegistered = players.some(p => p.id === playerId);
+    return isRegistered;
+  } catch (err) {
+    console.error('Error checking if player is registered:', err.message);
+    return false;
   }
 }
 
@@ -476,12 +490,29 @@ async function initializeBot() {
         session.currentQuestionIndex = null;
         session.questions = [];
         session.hasAnsweredCurrentQuestion = false;
+        session.isRegisteredInGame = false; // Flag pour indiquer si le joueur est enregistré dans le game-service
         userSessions.set(chatId, session);
 
         // Enregistrer le joueur via WebSocket
         if (gameSocket.connected) {
           gameSocket.emit('register', session.playerId);
-          console.log(`✅ Player ${session.playerName} (${session.playerId}) registered via WebSocket`);
+          console.log(`📤 Registration request sent for player ${session.playerName} (${session.playerId}) via WebSocket`);
+          
+          // Vérifier après un court délai si le joueur a été enregistré avec succès
+          setTimeout(async () => {
+            try {
+              const isRegistered = await checkPlayerRegistered(session.playerId);
+              if (isRegistered) {
+                session.isRegisteredInGame = true;
+                userSessions.set(chatId, session);
+                console.log(`✅ Player ${session.playerName} (${session.playerId}) confirmed as registered in game-service`);
+              } else {
+                console.log(`⚠️  Player ${session.playerName} (${session.playerId}) not found in connected players list`);
+              }
+            } catch (err) {
+              console.error(`❌ Error verifying registration for ${session.playerName}:`, err.message);
+            }
+          }, 1000); // Attendre 1 seconde pour que le game-service traite l'enregistrement
           
           // Vérifier si le jeu a déjà commencé et envoyer la question actuelle si nécessaire
           try {
@@ -489,7 +520,7 @@ async function initializeBot() {
             if (gameState && gameState.isStarted) {
               session.gameStarted = true;
               userSessions.set(chatId, session);
-              console.log(`⚠️  Game already started, player will receive next question`);
+              console.log(`⚠️  Game already started, player will receive next question if registered`);
             }
           } catch (err) {
             console.error('Error checking game state:', err.message);
@@ -676,11 +707,27 @@ async function initializeBot() {
     console.log(`📡 Socket ID: ${gameSocket.id}`);
     console.log(`📡 Connected: ${gameSocket.connected}`);
     
-    // Réenregistrer tous les joueurs actifs
+    // Réenregistrer tous les joueurs actifs (réinitialiser le flag car on se reconnecte)
     for (const [chatId, session] of userSessions.entries()) {
       if (session.playerId) {
+        session.isRegisteredInGame = false; // Réinitialiser car on doit se réenregistrer
+        userSessions.set(chatId, session);
         gameSocket.emit('register', session.playerId);
-        console.log(`🔄 Re-registered player ${session.playerName} (${session.playerId})`);
+        console.log(`🔄 Re-registering player ${session.playerName} (${session.playerId}) after reconnection`);
+        
+        // Vérifier après un court délai si le joueur a été réenregistré avec succès
+        setTimeout(async () => {
+          try {
+            const isRegistered = await checkPlayerRegistered(session.playerId);
+            if (isRegistered) {
+              session.isRegisteredInGame = true;
+              userSessions.set(chatId, session);
+              console.log(`✅ Player ${session.playerName} (${session.playerId}) re-registered successfully`);
+            }
+          } catch (err) {
+            console.error(`❌ Error verifying re-registration for ${session.playerName}:`, err.message);
+          }
+        }, 1000);
       }
     }
     
@@ -707,9 +754,9 @@ async function initializeBot() {
         if (currentQuestion) {
           console.log(`✅ Found current question: ${currentQuestion.id}`);
           
-          // Envoyer la question à tous les joueurs enregistrés
+          // Envoyer la question à tous les joueurs enregistrés dans le game-service
           for (const [chatId, session] of userSessions.entries()) {
-            if (session.playerId) {
+            if (session.playerId && session.isRegisteredInGame) {
               // Vérifier si cette question a déjà été envoyée
               if (session.lastSentQuestionId === gameState.currentQuestionId) {
                 console.log(`⏭️  Question ${gameState.currentQuestionId} already sent to ${session.playerName}, skipping`);
@@ -762,12 +809,51 @@ async function initializeBot() {
     console.error('❌ WebSocket connection error:', error.message);
   });
 
+  // Événement: Confirmation d'enregistrement (joueur ajouté au game-service)
+  gameSocket.on('game:code', async (data) => {
+    console.log('📨 game:code event received:', JSON.stringify(data));
+    
+    // Vérifier tous les joueurs qui attendent une confirmation d'enregistrement
+    // et vérifier s'ils sont maintenant dans la liste des joueurs connectés
+    for (const [chatId, session] of userSessions.entries()) {
+      if (session.playerId && !session.isRegisteredInGame) {
+        // Vérifier que le gameCode correspond
+        if (data.gameCode && session.gameCode === data.gameCode) {
+          // Vérifier directement dans le game-service si le joueur est enregistré
+          const isRegistered = await checkPlayerRegistered(session.playerId);
+          if (isRegistered) {
+            session.isRegisteredInGame = true;
+            userSessions.set(chatId, session);
+            console.log(`✅ Player ${session.playerName} (${session.playerId}) confirmed as registered in game`);
+          }
+        }
+      }
+    }
+  });
+
+  // Événement: Erreur d'enregistrement
+  gameSocket.on('error', (error) => {
+    console.error('❌ WebSocket error event received:', JSON.stringify(error));
+    
+    // Si c'est une erreur d'enregistrement, marquer les joueurs concernés
+    if (error.code === 'GAME_ALREADY_STARTED' || error.message?.includes('déjà commencé')) {
+      // Trouver les joueurs qui viennent de tenter de s'enregistrer
+      for (const [chatId, session] of userSessions.entries()) {
+        if (session.playerId && !session.isRegisteredInGame) {
+          session.isRegisteredInGame = false;
+          userSessions.set(chatId, session);
+          console.log(`❌ Player ${session.playerName} (${session.playerId}) registration failed: game already started`);
+        }
+      }
+    }
+  });
+
   // Événement: Jeu démarré
   gameSocket.on('game:started', async (data) => {
     console.log('🚀 Game started event received:', JSON.stringify(data));
     
     for (const [chatId, session] of userSessions.entries()) {
-      if (session.playerId && !session.gameStarted) {
+      if (session.playerId && session.isRegisteredInGame && !session.gameStarted) {
         const lang = session.language || 'en';
         session.gameStarted = true;
         session.hasAnsweredCurrentQuestion = false;
@@ -813,11 +899,11 @@ async function initializeBot() {
     let sentCount = 0;
     let skippedCount = 0;
     for (const [chatId, session] of userSessions.entries()) {
-      console.log(`   Checking session for chatId ${chatId}: playerId=${session.playerId}, gameStarted=${session.gameStarted}`);
+      console.log(`   Checking session for chatId ${chatId}: playerId=${session.playerId}, isRegisteredInGame=${session.isRegisteredInGame}, gameStarted=${session.gameStarted}`);
       
-      // Envoyer la question à TOUS les joueurs enregistrés, même si gameStarted est false
-      // car ils peuvent s'être inscrits après le démarrage du jeu
-      if (session.playerId) {
+      // Envoyer la question UNIQUEMENT aux joueurs enregistrés dans le game-service
+      // (isRegisteredInGame === true signifie qu'ils ont reçu la confirmation via game:code)
+      if (session.playerId && session.isRegisteredInGame) {
         // Vérifier si cette question a déjà été envoyée
         if (session.lastSentQuestionId === question.id) {
           console.log(`   ⏭️  Question ${question.id} already sent to ${session.playerName}, skipping`);
@@ -873,7 +959,7 @@ async function initializeBot() {
     console.log('🏁 Game ended event received:', data);
     
     for (const [chatId, session] of userSessions.entries()) {
-      if (session.playerId && session.gameStarted) {
+      if (session.playerId && session.isRegisteredInGame && session.gameStarted) {
         session.gameStarted = false;
         userSessions.set(chatId, session);
         
@@ -897,7 +983,7 @@ async function initializeBot() {
         if (gameState.currentQuestionId) {
           // Vérifier si les joueurs ont déjà reçu cette question
           for (const [chatId, session] of userSessions.entries()) {
-            if (session.playerId) {
+            if (session.playerId && session.isRegisteredInGame) {
               // Vérifier si cette question a déjà été envoyée
               if (session.lastSentQuestionId === gameState.currentQuestionId) {
                 // Question déjà envoyée, pas besoin de vérifier plus
@@ -963,7 +1049,7 @@ async function initializeBot() {
         
         // Mettre à jour gameStarted pour les joueurs qui ne l'ont pas encore
         for (const [chatId, session] of userSessions.entries()) {
-          if (session.playerId && !session.gameStarted) {
+          if (session.playerId && session.isRegisteredInGame && !session.gameStarted) {
             const lang = session.language || 'en';
             session.gameStarted = true;
             userSessions.set(chatId, session);
