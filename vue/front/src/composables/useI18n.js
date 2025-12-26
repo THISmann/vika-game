@@ -208,6 +208,16 @@ const translations = {
     'parties.status.active': 'Active',
     'parties.status.completed': 'Terminée',
     'parties.status.cancelled': 'Annulée',
+    'parties.image': 'Image',
+    'parties.audio': 'Audio',
+    'parties.selectImage': 'Sélectionner une image',
+    'parties.changeImage': 'Changer l\'image',
+    'parties.removeImage': 'Supprimer',
+    'parties.selectAudio': 'Sélectionner un fichier audio',
+    'parties.changeAudio': 'Changer l\'audio',
+    'parties.removeAudio': 'Supprimer',
+    'parties.uploading': 'Upload en cours...',
+    'parties.uploadError': 'Erreur lors de l\'upload',
     
     // Sidebar
     'sidebar.appName': 'Vika-Game',
@@ -417,6 +427,7 @@ const translations = {
     'register.nameTaken': 'This name is already taken, choose another name',
     'register.serverError': 'Server error. Please try again.',
     'register.connectionError': 'Connection error',
+    'register.partyScheduled': 'Scheduled Party',
     'common.back': 'Back',
     
     // QuizPlay
@@ -771,6 +782,16 @@ const translations = {
     'parties.status.active': 'Active',
     'parties.status.completed': 'Completed',
     'parties.status.cancelled': 'Cancelled',
+    'parties.image': 'Image',
+    'parties.audio': 'Audio',
+    'parties.selectImage': 'Select Image',
+    'parties.changeImage': 'Change Image',
+    'parties.removeImage': 'Remove',
+    'parties.selectAudio': 'Select Audio File',
+    'parties.changeAudio': 'Change Audio',
+    'parties.removeAudio': 'Remove',
+    'parties.uploading': 'Uploading...',
+    'parties.uploadError': 'Upload error',
     
     // Sidebar
     'sidebar.appName': 'Vika-Game',
@@ -811,6 +832,7 @@ const translations = {
     'register.nameTaken': 'Это имя уже занято, выберите другое имя',
     'register.serverError': 'Ошибка сервера. Пожалуйста, попробуйте снова.',
     'register.connectionError': 'Ошибка подключения',
+    'register.partyScheduled': 'Запланированная партия',
     'common.back': 'Назад',
     
     // QuizPlay
@@ -1167,6 +1189,16 @@ const translations = {
     'parties.status.active': 'Активно',
     'parties.status.completed': 'Завершено',
     'parties.status.cancelled': 'Отменено',
+    'parties.image': 'Изображение',
+    'parties.audio': 'Аудио',
+    'parties.selectImage': 'Выбрать изображение',
+    'parties.changeImage': 'Изменить изображение',
+    'parties.removeImage': 'Удалить',
+    'parties.selectAudio': 'Выбрать аудио файл',
+    'parties.changeAudio': 'Изменить аудио',
+    'parties.removeAudio': 'Удалить',
+    'parties.uploading': 'Загрузка...',
+    'parties.uploadError': 'Ошибка загрузки',
     
     // Sidebar
     'sidebar.appName': 'Vika-Game',
@@ -1204,14 +1236,18 @@ export function useI18n() {
     setLanguage(lang)
   }
   
+  // Wrapper réactif pour la fonction t
   const translate = (key) => {
-    return t(key)
+    // Accéder à currentLanguage.value pour rendre la fonction réactive
+    const lang = currentLanguage.value
+    return translations[lang]?.[key] || translations.fr[key] || key
   }
   
   return {
     language,
     changeLanguage,
     t: translate,
+    translate,
     availableLanguages: ['fr', 'en', 'ru']
   }
 }

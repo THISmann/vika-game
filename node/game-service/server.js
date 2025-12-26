@@ -5,6 +5,8 @@ const { Server } = require("socket.io");
 const app = express();
 const gameRoutes = require("./routes/game.routes");
 const websocketRoutes = require("./routes/websocket.routes");
+const uploadRoutes = require("./routes/upload.routes");
+const minioService = require("./services/minioService");
 const path = require("path"); 
 const cors = require('cors');
 const gameState = require("./gameState");
@@ -89,6 +91,31 @@ app.use("/game", (req, res, next) => {
 
 // WebSocket documentation routes
 app.use("/game", websocketRoutes);
+
+// Upload routes
+app.use("/game/upload", uploadRoutes);
+
+// Serve files from MinIO
+app.get("/api/files/*", async (req, res) => {
+  try {
+    // Extract the object name from the path (everything after /api/files/)
+    const pathMatch = req.path.match(/\/api\/files\/(.+)/);
+    if (!pathMatch) {
+      return res.status(400).json({ error: 'Invalid file path' });
+    }
+    const objectName = pathMatch[1];
+    
+    const stream = await minioService.minioClient.getObject(minioService.BUCKET_NAME, objectName);
+    const stat = await minioService.minioClient.statObject(minioService.BUCKET_NAME, objectName);
+    
+    res.setHeader('Content-Type', stat.metaData['content-type'] || 'application/octet-stream');
+    res.setHeader('Content-Length', stat.size);
+    stream.pipe(res);
+  } catch (error) {
+    console.error('Error serving file:', error);
+    res.status(404).json({ error: 'File not found' });
+  }
+});
 
 // Player socket map
 const playersSockets = new Map();

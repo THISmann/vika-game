@@ -485,6 +485,9 @@ router.use('/quiz', createServiceProxy(SERVICES.quiz, '/quiz'));
 // Proxy pour Game Service (incluant WebSocket)
 router.use('/game', createServiceProxy(SERVICES.game, '/game'));
 
+// Proxy pour servir les fichiers depuis MinIO (via game-service)
+router.use('/api/files', createServiceProxy(SERVICES.game, ''));
+
 /**
  * @swagger
  * /telegram/*:

@@ -17,6 +17,16 @@ const gameSessionSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  imageUrl: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  audioUrl: {
+    type: String,
+    trim: true,
+    default: null
+  },
   createdBy: {
     type: String, // User ID who created this game session
     required: true,

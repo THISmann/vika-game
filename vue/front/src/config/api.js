@@ -223,6 +223,16 @@ export const API_URLS = {
           : isProduction
             ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}/start`
             : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}/start`,
+        uploadImage: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/upload/image`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/upload/image`
+            : `${API_CONFIG.GAME_SERVICE}/game/upload/image`,
+        uploadAudio: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/upload/audio`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/upload/audio`
+            : `${API_CONFIG.GAME_SERVICE}/game/upload/audio`,
     answer: useApiGateway
       ? `${API_CONFIG.GAME_SERVICE}/game/answer`
       : isProduction

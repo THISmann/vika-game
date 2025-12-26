@@ -145,21 +145,51 @@
 
     <!-- Étape 3: En attente du démarrage -->
     <div v-else-if="step === 3" class="max-w-md w-full">
-      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8 text-center">
-        <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 sm:mb-6">
-          <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+      <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 p-6 sm:p-8">
+        <!-- Party Information -->
+        <div v-if="partyInfo" class="mb-6 text-center">
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ partyInfo.name }}</h2>
+          <p v-if="partyInfo.description" class="text-sm sm:text-base text-gray-600 mb-4">{{ partyInfo.description }}</p>
+          
+          <!-- Image -->
+          <div v-if="partyInfo.imageUrl" class="mb-4">
+            <img :src="getFileUrl(partyInfo.imageUrl)" :alt="partyInfo.name" class="w-full h-48 object-cover rounded-xl shadow-lg" />
+          </div>
+          
+          <!-- Audio -->
+          <div v-if="partyInfo.audioUrl" class="mb-4">
+            <audio :src="getFileUrl(partyInfo.audioUrl)" controls class="w-full rounded-lg"></audio>
+          </div>
+          
+          <!-- Scheduled Time -->
+          <div v-if="partyInfo.scheduledStartTime" class="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <div class="flex items-center justify-center space-x-2 text-blue-800">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="font-semibold">{{ t('register.partyScheduled') || 'Partie programmée' }}</span>
+            </div>
+            <p class="text-sm font-bold text-blue-900 mt-1">{{ formatScheduledTime(partyInfo.scheduledStartTime) }}</p>
+          </div>
         </div>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{{ t('register.waiting') }}</h2>
-        <p class="text-sm sm:text-base text-gray-600 mb-2">{{ t('register.welcome') }}, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
-        <p class="text-xs sm:text-sm text-gray-600">{{ t('register.waitingDesc') }}</p>
-        <div class="mt-6">
-          <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm">
-            <svg class="w-4 h-4 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+        
+        <!-- Waiting Message -->
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 sm:mb-6">
+            <svg class="h-8 w-8 sm:h-10 sm:w-10 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Code: {{ gameCode }}
+          </div>
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{{ t('register.waiting') }}</h2>
+          <p class="text-sm sm:text-base text-gray-600 mb-2">{{ t('register.welcome') }}, <span class="font-bold text-blue-600">{{ name }}</span> !</p>
+          <p class="text-xs sm:text-sm text-gray-600">{{ t('register.waitingDesc') }}</p>
+          <div class="mt-6">
+            <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm">
+              <svg class="w-4 h-4 mr-2 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+              </svg>
+              Code: {{ gameCode }}
+            </div>
           </div>
         </div>
       </div>
@@ -222,6 +252,10 @@ export default {
         if (res.data.valid) {
           this.codeVerified = true
           this.gameStarted = res.data.isStarted
+          // Si c'est une partie, stocker les informations
+          if (res.data.isParty && res.data.party) {
+            this.partyInfo = res.data.party
+          }
           // Si le jeu a commencé, afficher un message mais permettre quand même l'inscription
           // Le joueur pourra se connecter s'il était déjà enregistré
           if (this.gameStarted) {
@@ -395,6 +429,28 @@ export default {
         this.loading = false
       }
     },
+    getFileUrl(url) {
+      if (!url) return ''
+      // Si l'URL est déjà complète, la retourner telle quelle
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url
+      }
+      // Sinon, construire l'URL complète
+      const baseUrl = API_CONFIG.GAME_SERVICE.replace('/game', '')
+      return `${baseUrl}${url}`
+    },
+    formatScheduledTime(dateString) {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      const lang = localStorage.getItem('gameLanguage') || 'fr'
+      return date.toLocaleString(lang === 'fr' ? 'fr-FR' : lang === 'ru' ? 'ru-RU' : 'en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
   },
 }
 </script>

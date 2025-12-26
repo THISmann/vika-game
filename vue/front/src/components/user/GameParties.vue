@@ -164,6 +164,78 @@
                 ></textarea>
               </div>
 
+              <!-- Image Upload -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ t('parties.image') || 'Image (optionnel)' }}
+                </label>
+                <div class="flex items-center space-x-4">
+                  <input
+                    ref="imageInput"
+                    type="file"
+                    accept="image/*"
+                    @change="handleImageUpload"
+                    class="hidden"
+                  />
+                  <button
+                    type="button"
+                    @click="imageInput?.click()"
+                    class="px-4 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all text-sm font-medium"
+                  >
+                    {{ form.imageUrl ? t('parties.changeImage') || 'Changer l\'image' : t('parties.selectImage') || 'Sélectionner une image' }}
+                  </button>
+                  <div v-if="form.imageUrl" class="flex-1">
+                    <img :src="getFileUrl(form.imageUrl)" alt="Preview" class="h-20 w-20 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      @click="form.imageUrl = null"
+                      class="mt-2 text-xs text-red-600 hover:text-red-800"
+                    >
+                      {{ t('parties.removeImage') || 'Supprimer' }}
+                    </button>
+                  </div>
+                  <div v-if="uploadingImage" class="text-sm text-gray-600">
+                    {{ t('parties.uploading') || 'Upload en cours...' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Audio Upload -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ t('parties.audio') || 'Audio (optionnel)' }}
+                </label>
+                <div class="flex items-center space-x-4">
+                  <input
+                    ref="audioInput"
+                    type="file"
+                    accept="audio/*"
+                    @change="handleAudioUpload"
+                    class="hidden"
+                  />
+                  <button
+                    type="button"
+                    @click="audioInput?.click()"
+                    class="px-4 py-2 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all text-sm font-medium"
+                  >
+                    {{ form.audioUrl ? t('parties.changeAudio') || 'Changer l\'audio' : t('parties.selectAudio') || 'Sélectionner un fichier audio' }}
+                  </button>
+                  <div v-if="form.audioUrl" class="flex-1">
+                    <audio :src="getFileUrl(form.audioUrl)" controls class="w-full max-w-xs"></audio>
+                    <button
+                      type="button"
+                      @click="form.audioUrl = null"
+                      class="mt-2 text-xs text-red-600 hover:text-red-800"
+                    >
+                      {{ t('parties.removeAudio') || 'Supprimer' }}
+                    </button>
+                  </div>
+                  <div v-if="uploadingAudio" class="text-sm text-gray-600">
+                    {{ t('parties.uploading') || 'Upload en cours...' }}
+                  </div>
+                </div>
+              </div>
+
               <!-- Questions Selection -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -274,7 +346,7 @@ import { useI18n } from '@/composables/useI18n'
 import UserSidebar from './UserSidebar.vue'
 import MobileSidebarToggle from './MobileSidebarToggle.vue'
 import apiClient from '@/services/api'
-import { API_URLS } from '@/config/api'
+import { API_URLS, API_CONFIG } from '@/config/api'
 
 export default {
   name: 'GameParties',
@@ -291,27 +363,6 @@ export default {
     const showCreateModal = ref(false)
     const editingParty = ref(null)
     const sidebarCollapsed = ref(false)
-    
-    // Check sidebar state periodically
-    const checkSidebarState = () => {
-      const savedState = localStorage.getItem('sidebarCollapsed')
-      sidebarCollapsed.value = savedState === 'true'
-    }
-    
-    let sidebarCheckInterval = null
-    
-    onMounted(async () => {
-      checkSidebarState()
-      // Check periodically for changes
-      sidebarCheckInterval = setInterval(checkSidebarState, 100)
-      await Promise.all([loadParties(), loadQuestions()])
-    })
-    
-    onUnmounted(() => {
-      if (sidebarCheckInterval) {
-        clearInterval(sidebarCheckInterval)
-      }
-    })
 
     const form = ref({
       name: '',
@@ -319,8 +370,74 @@ export default {
       questionIds: [],
       schedule: false,
       scheduledStartTime: '',
-      questionDuration: 30
+      questionDuration: 30,
+      imageUrl: null,
+      audioUrl: null
     })
+    
+    const uploadingImage = ref(false)
+    const uploadingAudio = ref(false)
+    const imageInput = ref(null)
+    const audioInput = ref(null)
+    
+    const getFileUrl = (url) => {
+      if (!url) return ''
+      // Si l'URL est déjà complète, la retourner telle quelle
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url
+      }
+      // Sinon, construire l'URL complète
+      const baseUrl = API_CONFIG.GAME_SERVICE.replace('/game', '')
+      return `${baseUrl}${url}`
+    }
+    
+    const handleImageUpload = async (event) => {
+      const file = event.target.files[0]
+      if (!file) return
+      
+      uploadingImage.value = true
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await apiClient.post(API_URLS.game.uploadImage, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        
+        form.value.imageUrl = response.data.url
+      } catch (err) {
+        console.error('Error uploading image:', err)
+        error.value = err.response?.data?.error || t('parties.uploadError') || 'Erreur lors de l\'upload de l\'image'
+      } finally {
+        uploadingImage.value = false
+      }
+    }
+    
+    const handleAudioUpload = async (event) => {
+      const file = event.target.files[0]
+      if (!file) return
+      
+      uploadingAudio.value = true
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await apiClient.post(API_URLS.game.uploadAudio, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        
+        form.value.audioUrl = response.data.url
+      } catch (err) {
+        console.error('Error uploading audio:', err)
+        error.value = err.response?.data?.error || t('parties.uploadError') || 'Erreur lors de l\'upload de l\'audio'
+      } finally {
+        uploadingAudio.value = false
+      }
+    }
 
     const minDateTime = computed(() => {
       const now = new Date()
@@ -392,7 +509,9 @@ export default {
           questionDuration: form.value.questionDuration * 1000, // Convert to milliseconds
           scheduledStartTime: form.value.schedule && form.value.scheduledStartTime
             ? new Date(form.value.scheduledStartTime).toISOString()
-            : null
+            : null,
+          imageUrl: form.value.imageUrl || null,
+          audioUrl: form.value.audioUrl || null
         }
 
         if (editingParty.value) {
@@ -421,7 +540,9 @@ export default {
         scheduledStartTime: party.scheduledStartTime
           ? new Date(party.scheduledStartTime).toISOString().slice(0, 16)
           : '',
-        questionDuration: (party.questionDuration || 30000) / 1000 // Convert to seconds
+        questionDuration: (party.questionDuration || 30000) / 1000, // Convert to seconds
+        imageUrl: party.imageUrl || null,
+        audioUrl: party.audioUrl || null
       }
       showCreateModal.value = true
     }
@@ -449,11 +570,33 @@ export default {
         questionIds: [],
         schedule: false,
         scheduledStartTime: '',
-        questionDuration: 30
+        questionDuration: 30,
+        imageUrl: null,
+        audioUrl: null
       }
       error.value = ''
     }
-
+    
+    // Check sidebar state periodically
+    const checkSidebarState = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      sidebarCollapsed.value = savedState === 'true'
+    }
+    
+    let sidebarCheckInterval = null
+    
+    onMounted(async () => {
+      checkSidebarState()
+      // Check periodically for changes
+      sidebarCheckInterval = setInterval(checkSidebarState, 100)
+      await Promise.all([loadParties(), loadQuestions()])
+    })
+    
+    onUnmounted(() => {
+      if (sidebarCheckInterval) {
+        clearInterval(sidebarCheckInterval)
+      }
+    })
 
     return {
       t,
@@ -466,8 +609,15 @@ export default {
       form,
       minDateTime,
       sidebarCollapsed,
+      uploadingImage,
+      uploadingAudio,
+      imageInput,
+      audioInput,
       getStatusLabel,
       formatDate,
+      getFileUrl,
+      handleImageUpload,
+      handleAudioUpload,
       saveParty,
       editParty,
       deleteParty,

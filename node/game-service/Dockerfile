@@ -12,6 +12,7 @@ COPY game-service/routes ./routes
 COPY game-service/models ./models
 COPY game-service/config ./config
 COPY game-service/middleware ./middleware
+COPY game-service/services ./services
 COPY game-service/gameState.js ./
 COPY game-service/websocket.js ./
 COPY game-service/server.js ./

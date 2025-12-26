@@ -404,24 +404,57 @@ exports.verifyGameCode = async (req, res) => {
     }
 
     const state = await gameState.getState();
+    const GameSession = require("../models/GameSession");
     
     console.log(`🔍 Vérification du code: "${code}"`);
     console.log(`🔍 Code du jeu actuel: "${state.gameCode}"`);
     
-    const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase().trim();
+    // Vérifier d'abord dans GameState (ancien système)
+    const isValidState = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase().trim();
     
-    console.log(`🔍 Code valide: ${isValid}`);
+    // Vérifier aussi dans GameSession (nouveau système de parties)
+    const party = await GameSession.findOne({ gameCode: code.toUpperCase().trim() });
+    const isValidParty = !!party;
     
-    res.json({ 
-      valid: isValid,
-      gameCode: state.gameCode,
-      isStarted: state.isStarted || false,
-      message: isValid 
-        ? (state.isStarted 
-            ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
-            : "Code valide. Vous pouvez continuer.")
-        : "Code invalide"
-    });
+    const isValid = isValidState || isValidParty;
+    
+    console.log(`🔍 Code valide: ${isValid} (state: ${isValidState}, party: ${isValidParty})`);
+    
+    // Si c'est une partie, retourner les informations de la partie
+    if (isValidParty && party) {
+      res.json({ 
+        valid: true,
+        gameCode: party.gameCode,
+        isStarted: party.status === 'active' || state.isStarted || false,
+        isParty: true,
+        party: {
+          name: party.name,
+          description: party.description,
+          imageUrl: party.imageUrl,
+          audioUrl: party.audioUrl,
+          scheduledStartTime: party.scheduledStartTime,
+          status: party.status
+        },
+        message: party.status === 'active' || state.isStarted
+          ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
+          : party.scheduledStartTime
+            ? `Code valide. La partie commencera le ${new Date(party.scheduledStartTime).toLocaleString('fr-FR')}.`
+            : "Code valide. Vous pouvez continuer."
+      });
+    } else {
+      // Ancien système (GameState)
+      res.json({ 
+        valid: isValid,
+        gameCode: state.gameCode,
+        isStarted: state.isStarted || false,
+        isParty: false,
+        message: isValid 
+          ? (state.isStarted 
+              ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
+              : "Code valide. Vous pouvez continuer.")
+          : "Code invalide"
+      });
+    }
   } catch (error) {
     console.error("Error verifying game code:", error);
     console.error("Error stack:", error.stack);
@@ -1153,7 +1186,9 @@ exports.createParty = async (req, res) => {
       questionDuration: questionDuration || 30000,
       scheduledStartTime: scheduledStartTime ? new Date(scheduledStartTime) : null,
       status: scheduledStartTime ? 'scheduled' : 'draft',
-      gameCode: generateGameCode()
+      gameCode: generateGameCode(),
+      imageUrl: imageUrl || null,
+      audioUrl: audioUrl || null
     });
 
     await party.save();
@@ -1212,7 +1247,7 @@ exports.updateParty = async (req, res) => {
     }
 
     const { partyId } = req.params;
-    const { name, description, questionIds, scheduledStartTime, questionDuration } = req.body;
+    const { name, description, questionIds, scheduledStartTime, questionDuration, imageUrl, audioUrl } = req.body;
 
     const party = await GameSession.findOne({ id: partyId, createdBy: userId });
 
@@ -1232,6 +1267,8 @@ exports.updateParty = async (req, res) => {
       party.questionIds = questionIds;
     }
     if (questionDuration) party.questionDuration = questionDuration;
+    if (imageUrl !== undefined) party.imageUrl = imageUrl;
+    if (audioUrl !== undefined) party.audioUrl = audioUrl;
     if (scheduledStartTime) {
       const scheduledDate = new Date(scheduledStartTime);
       if (scheduledDate <= new Date()) {
