@@ -25,9 +25,17 @@
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-              {{ t('admin.login.password') }}
-            </label>
+            <div class="flex items-center justify-between mb-1">
+              <label for="password" class="block text-sm font-medium text-gray-700">
+                {{ t('admin.login.password') }}
+              </label>
+              <router-link
+                to="/auth/forgot-password"
+                class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              >
+                {{ t('admin.login.forgotPassword') || 'Mot de passe oublié?' }}
+              </router-link>
+            </div>
             <input
               id="password"
               v-model="password"
@@ -63,6 +71,19 @@
           {{ t('admin.login.submit') }}
         </button>
       </form>
+
+      <!-- Sign-up Link -->
+      <div class="mt-6 text-center">
+        <p class="text-sm text-gray-600">
+          {{ t('admin.login.noAccount') || "Vous n'avez pas de compte?" }}
+          <router-link
+            to="/auth/signup"
+            class="font-medium text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            {{ t('admin.login.signUp') || 'Créer un compte' }}
+          </router-link>
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -89,23 +110,39 @@ export default {
       this.loading = true
       
       try {
-        const { authService } = await import('@/services/api')
-        const token = await authService.login(this.username, this.password)
+        // Use user login endpoint
+        const axios = (await import('axios')).default
+        const { API_URLS } = await import('@/config/api')
         
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        const storedToken = localStorage.getItem('adminToken')
-        if (!storedToken) {
-          throw new Error('Token not stored after login')
+        const response = await axios.post(API_URLS.auth.userLogin, {
+          email: this.username, // Use email for user login
+          password: this.password
+        })
+
+        if (response.data.token && response.data.user) {
+          // Store token and user info
+          localStorage.setItem('authToken', response.data.token)
+          localStorage.setItem('userInfo', JSON.stringify(response.data.user))
+
+          // Check user status
+          if (response.data.user.status === 'pending') {
+            this.$router.push('/auth/waiting-validation')
+            return
+          } else if (response.data.user.status === 'approved') {
+            console.log('✅ Login successful, redirecting to dashboard')
+            const redirect = this.$route.query.redirect || '/user/dashboard'
+            this.$router.push(redirect)
+            return
+          } else {
+            this.error = 'Your account is not approved yet'
+            return
+          }
         }
         
-        console.log('✅ Login successful, redirecting to dashboard')
-        
-        const redirect = this.$route.query.redirect || '/admin/dashboard'
-        this.$router.push(redirect)
+        throw new Error('No token received')
       } catch (err) {
         console.error('Login error:', err)
-        this.error = err.response?.data?.error || this.t('admin.login.invalidCredentials')
+        this.error = err.response?.data?.error || this.t('admin.login.invalidCredentials') || 'Invalid credentials'
       } finally {
         this.loading = false
       }

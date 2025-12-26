@@ -144,6 +144,16 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/unblock`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/unblock`,
+    getUserActivities: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/activities`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/activities`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/activities`,
+    updateUserRole: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/role`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/role`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/role`,
   },
   quiz: {
     all: useApiGateway

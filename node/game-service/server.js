@@ -318,11 +318,141 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
   ioInstance.emit("leaderboard:update", leaderboard); // broadcast
 }
 
+// Scheduled game checker - vérifie toutes les 10 secondes si un jeu doit être lancé
+async function checkScheduledGames() {
+  try {
+    const scheduled = await gameState.getScheduledGame();
+    if (scheduled && scheduled.scheduledStartTime) {
+      const now = new Date();
+      const scheduledTime = new Date(scheduled.scheduledStartTime);
+      
+      // Si la date planifiée est passée ou égale à maintenant, lancer le jeu
+      if (scheduledTime <= now) {
+        console.log(`\n⏰ ========== LAUNCHING SCHEDULED GAME ==========`);
+        console.log(`⏰ Scheduled time: ${scheduledTime.toISOString()}`);
+        console.log(`⏰ Current time: ${now.toISOString()}`);
+        
+        // Lancer le jeu programmatiquement
+        await launchScheduledGame(scheduled.questionDuration);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking scheduled games:', error);
+  }
+}
+
+// Fonction pour lancer un jeu planifié programmatiquement
+async function launchScheduledGame(questionDurationMs) {
+  try {
+    const Score = require('./models/Score');
+    
+    // Fonction helper pour initialiser un score
+    async function initializePlayerScore(playerId, playerName) {
+      try {
+        let score = await Score.findOne({ playerId });
+        if (!score) {
+          score = new Score({
+            playerId,
+            playerName,
+            score: 0
+          });
+          await score.save();
+          console.log(`🆕 Initialized score for player: ${playerName} (${playerId}) = 0`);
+        }
+        return score.toObject();
+      } catch (error) {
+        console.error("Error initializing player score:", error);
+        throw error;
+      }
+    }
+    
+    // Récupérer les questions (sans auth pour le lancement automatique - utiliser /quiz/all qui est public)
+    let questions = [];
+    try {
+      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+      questions = quiz.data || [];
+      console.log(`✅ Fetched ${questions.length} questions for scheduled game`);
+    } catch (quizError) {
+      console.error("❌ Error fetching questions for scheduled game:", quizError.message);
+      return;
+    }
+
+    if (questions.length === 0) {
+      console.error("❌ No questions available for scheduled game");
+      return;
+    }
+
+    // Démarrer le jeu
+    await gameState.startGame();
+    const state = await gameState.getState();
+    
+    // Initialiser les scores pour tous les joueurs connectés
+    console.log(`🎮 Initializing scores for ${state.connectedPlayers.length} connected players...`);
+    try {
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      for (const playerId of state.connectedPlayers) {
+        const player = playersRes.data.find(p => p.id === playerId);
+        if (player) {
+          await initializePlayerScore(playerId, player.name);
+        } else {
+          await initializePlayerScore(playerId, 'Joueur anonyme');
+        }
+      }
+      console.log(`✅ Scores initialized for all connected players`);
+    } catch (err) {
+      console.error("❌ Error initializing scores:", err);
+    }
+
+    // Démarrer avec la première question
+    if (questions.length > 0 && io) {
+      const firstQuestion = questions[0];
+      await gameState.setCurrentQuestion(firstQuestion.id, questionDurationMs);
+      const newState = await gameState.getState();
+
+      const connectedClients = io.sockets.sockets.size;
+      const connectedPlayersCount = await gameState.getConnectedPlayersCount();
+      console.log(`🚀 Connected WebSocket clients: ${connectedClients}`);
+      console.log(`🚀 Connected players in gameState: ${connectedPlayersCount}`);
+
+      // Émettre l'événement de début de jeu
+      io.emit("game:started", {
+        questionIndex: newState.currentQuestionIndex,
+        totalQuestions: questions.length,
+        gameCode: newState.gameCode
+      });
+
+      io.emit("question:next", {
+        question: {
+          id: firstQuestion.id,
+          question: firstQuestion.question,
+          choices: firstQuestion.choices
+        },
+        questionIndex: newState.currentQuestionIndex,
+        totalQuestions: questions.length,
+        startTime: newState.questionStartTime,
+        duration: newState.questionDuration
+      });
+
+      // Programmer le timer pour passer automatiquement à la question suivante
+      const gameController = require('./controllers/game.controller');
+      gameController.scheduleNextQuestion(io, questionDurationMs);
+      
+      console.log(`✅ Scheduled game started successfully`);
+    }
+  } catch (error) {
+    console.error('❌ Error launching scheduled game:', error);
+  }
+}
+
+// Vérifier les jeux planifiés toutes les 10 secondes
+setInterval(checkScheduledGames, 10000);
+
 const PORT = 3003;
 server.listen(PORT, () => {
   console.log("📚 Swagger UI available at http://localhost:" + PORT + "/api-docs");
   console.log("Game service (ws) running on port " + PORT);
   console.log("📦 Redis cache: " + (process.env.REDIS_HOST ? "Enabled" : "Disabled"));
+  console.log("⏰ Scheduled game checker: Enabled (checking every 10 seconds)");
 });
 
 module.exports = { io, emitScoreUpdate, playersSockets };

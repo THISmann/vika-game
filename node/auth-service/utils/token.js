@@ -1,18 +1,19 @@
 /**
  * Génère un token d'authentification
- * @param {string} role - Le rôle de l'utilisateur (ex: 'admin')
+ * @param {string} userId - L'ID de l'utilisateur
+ * @param {string} role - Le rôle de l'utilisateur (ex: 'admin', 'user')
  * @returns {string} Token encodé en base64
  */
-module.exports.generateToken = (role) => {
+module.exports.generateToken = (userId, role) => {
   const timestamp = Date.now()
-  const payload = `${role}-${timestamp}`
+  const payload = `${userId}-${role}-${timestamp}`
   return Buffer.from(payload).toString("base64")
 }
 
 /**
  * Vérifie et décode un token d'authentification
  * @param {string} token - Le token à vérifier
- * @returns {object|null} Objet avec role et timestamp, ou null si invalide
+ * @returns {object|null} Objet avec userId, role et timestamp, ou null si invalide
  */
 module.exports.verifyToken = (token) => {
   try {
@@ -23,14 +24,24 @@ module.exports.verifyToken = (token) => {
     // Décoder le token
     const decoded = Buffer.from(token, "base64").toString("utf-8")
     
-    // Format attendu: "role-timestamp"
+    // Format attendu: "userId-role-timestamp" (nouveau) ou "role-timestamp" (ancien pour compatibilité)
     const parts = decoded.split('-')
-    if (parts.length !== 2) {
+    
+    let userId, role, timestamp;
+    
+    if (parts.length === 3) {
+      // Nouveau format: userId-role-timestamp
+      userId = parts[0]
+      role = parts[1]
+      timestamp = parseInt(parts[2], 10)
+    } else if (parts.length === 2) {
+      // Ancien format pour compatibilité: role-timestamp
+      role = parts[0]
+      timestamp = parseInt(parts[1], 10)
+      userId = null
+    } else {
       return null
     }
-
-    const role = parts[0]
-    const timestamp = parseInt(parts[1], 10)
 
     // Vérifier que le timestamp est valide
     if (isNaN(timestamp) || timestamp <= 0) {
@@ -45,6 +56,7 @@ module.exports.verifyToken = (token) => {
     }
 
     return {
+      userId,
       role,
       timestamp
     }

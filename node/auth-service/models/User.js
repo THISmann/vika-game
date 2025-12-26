@@ -36,6 +36,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  role: {
+    type: String,
+    enum: ['player', 'user', 'admin'],
+    default: 'player',
+    index: true,
+    required: true
+  },
   score: {
     type: Number,
     default: 0
@@ -62,6 +69,12 @@ const userSchema = new mongoose.Schema({
     index: true
   },
   lastLoginAt: {
+    type: Date
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
     type: Date
   }
 }, {

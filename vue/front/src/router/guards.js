@@ -1,93 +1,116 @@
 /**
- * Guards de route pour protéger les pages admin
+ * Guards de route pour protéger les pages utilisateur
  */
 
 /**
- * Vérifie si l'utilisateur est authentifié en tant qu'admin
+ * Vérifie si l'utilisateur est authentifié et approuvé (rôle user ou admin)
  * @returns {boolean}
  */
-export function isAdminAuthenticated() {
-  const token = localStorage.getItem('adminToken')
-  const adminFlag = localStorage.getItem('admin')
+export function isUserAuthenticated() {
+  const token = localStorage.getItem('authToken')
+  const userInfoStr = localStorage.getItem('userInfo')
   
-  // Vérifier que le token existe et que le flag admin est présent
-  if (!token || adminFlag !== '1') {
+  // Vérifier que le token existe
+  if (!token || !userInfoStr) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔒 Auth check failed: missing token or admin flag', {
+      console.log('🔒 Auth check failed: missing token or user info', {
         hasToken: !!token,
-        hasAdminFlag: adminFlag === '1',
-        adminFlagValue: adminFlag
+        hasUserInfo: !!userInfoStr
       })
     }
     return false
   }
 
-  // Vérifier que le token n'est pas expiré
   try {
-    // Décoder le token base64 pour vérifier l'expiration
-    const decoded = atob(token)
-    const parts = decoded.split('-')
+    const userInfo = JSON.parse(userInfoStr)
     
-    if (parts.length === 2) {
-      const role = parts[0]
-      const timestamp = parseInt(parts[1], 10)
+    // Vérifier que l'utilisateur est approuvé
+    if (userInfo.status !== 'approved') {
+      console.log('🔒 Auth check failed: user not approved', userInfo.status)
+      return false
+    }
+
+    // Vérifier que le rôle est user ou admin
+    if (userInfo.role !== 'user' && userInfo.role !== 'admin') {
+      console.log('🔒 Auth check failed: invalid role', userInfo.role)
+      return false
+    }
+
+    // Vérifier que le token n'est pas expiré
+    try {
+      // Décoder le token base64 pour vérifier l'expiration
+      const decoded = atob(token)
+      // Format du token: "userId-role-timestamp" (séparé par des tirets)
+      const parts = decoded.split('-')
       
-      // Vérifier que le rôle est admin
-      if (role !== 'admin') {
-        console.log('🔒 Auth check failed: invalid role', role)
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
+      if (parts.length >= 3) {
+        // Format: userId-role-timestamp
+        const userId = parts[0]
+        const role = parts[1]
+        const timestamp = parseInt(parts[2], 10)
+        
+        // Vérifier que le rôle correspond
+        if (role !== 'user' && role !== 'admin') {
+          console.log('🔒 Auth check failed: invalid role in token', role)
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Vérifier que le timestamp est valide
+        if (isNaN(timestamp) || timestamp <= 0) {
+          console.log('🔒 Auth check failed: invalid timestamp')
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Vérifier l'expiration (24 heures)
+        const now = Date.now()
+        const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
+        
+        if (now - timestamp > TOKEN_EXPIRY) {
+          console.log('🔒 Auth check failed: token expired')
+          // Token expiré, nettoyer le localStorage
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Token valide
+        return true
+      } else {
+        console.log('🔒 Auth check failed: invalid token format', 'parts:', parts.length)
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
         return false
       }
-      
-      // Vérifier que le timestamp est valide
-      if (isNaN(timestamp) || timestamp <= 0) {
-        console.log('🔒 Auth check failed: invalid timestamp')
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
-        return false
-      }
-      
-      // Vérifier l'expiration (24 heures)
-      const now = Date.now()
-      const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
-      
-      if (now - timestamp > TOKEN_EXPIRY) {
-        console.log('🔒 Auth check failed: token expired')
-        // Token expiré, nettoyer le localStorage
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
-        return false
-      }
-      
-      // Token valide
-      return true
-    } else {
-      console.log('🔒 Auth check failed: invalid token format')
-      localStorage.removeItem('adminToken')
-      localStorage.removeItem('admin')
+    } catch (error) {
+      console.error('🔒 Error verifying token:', error)
+      // En cas d'erreur de décodage, considérer comme non authentifié
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userInfo')
       return false
     }
   } catch (error) {
-    console.error('🔒 Error verifying token:', error)
-    // En cas d'erreur de décodage, considérer comme non authentifié
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('admin')
+    console.error('🔒 Error parsing user info:', error)
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userInfo')
     return false
   }
 }
 
 /**
- * Guard pour les routes admin
+ * Guard pour les routes utilisateur
  * Redirige vers la page de login si non authentifié
  */
-export function adminGuard(to, from, next) {
-  if (isAdminAuthenticated()) {
+export function userGuard(to, from, next) {
+  if (isUserAuthenticated()) {
     next()
   } else {
     // Rediriger vers la page de login
     next({
-      path: '/admin/login',
+      path: '/user/login',
       query: { redirect: to.fullPath } // Sauvegarder la route demandée
     })
   }
@@ -98,9 +121,9 @@ export function adminGuard(to, from, next) {
  * Redirige vers le dashboard si déjà authentifié
  */
 export function loginGuard(to, from, next) {
-  if (isAdminAuthenticated()) {
+  if (isUserAuthenticated()) {
     // Déjà authentifié, rediriger vers le dashboard
-    next('/admin/dashboard')
+    next('/user/dashboard')
   } else {
     next()
   }

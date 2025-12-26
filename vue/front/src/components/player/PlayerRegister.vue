@@ -259,7 +259,7 @@ export default {
       this.error = ''
 
       try {
-        const res = await axios.post(API_URLS.auth.register, {
+        const res = await axios.post(API_URLS.auth.registerPlayer, {
           name: this.name.trim(),
         })
 

@@ -66,7 +66,7 @@ module.exports = {
     }
   },
   
-  resetGame: async () => {
+  resetGame: async (userId = null) => {
     try {
       const newGameCode = generateGameCode();
       const updates = {
@@ -79,7 +79,9 @@ module.exports = {
         gameSessionId: `session_${Date.now()}`,
         gameCode: newGameCode,
         answers: {},
-        results: {}
+        results: {},
+        createdBy: userId || null,
+        createdAt: new Date()
       };
       const state = await GameState.updateCurrent(updates);
       return toPlainObject(state);
@@ -179,7 +181,8 @@ module.exports = {
       const updates = {
         isStarted: true,
         currentQuestionIndex: 0,
-        results: {}
+        results: {},
+        scheduledStartTime: null // Clear scheduled time when game starts
         // answers: {} - REMOVED: ne pas effacer les réponses existantes
       };
       const state = await GameState.updateCurrent(updates);
@@ -187,6 +190,37 @@ module.exports = {
     } catch (error) {
       console.error("Error starting game:", error);
       throw error;
+    }
+  },
+  
+  scheduleGame: async (scheduledStartTime, questionDuration = 30000) => {
+    try {
+      const updates = {
+        scheduledStartTime: scheduledStartTime,
+        questionDuration: questionDuration,
+        isStarted: false // Game is not started yet
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error scheduling game:", error);
+      throw error;
+    }
+  },
+  
+  getScheduledGame: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      if (state && state.scheduledStartTime && !state.isStarted) {
+        return {
+          scheduledStartTime: state.scheduledStartTime,
+          questionDuration: state.questionDuration || 30000
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error getting scheduled game:", error);
+      return null;
     }
   },
   

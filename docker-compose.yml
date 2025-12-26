@@ -11,10 +11,11 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })' 2>&1 | grep -q 'ok: 1' || exit 1"]
+      interval: 15s
+      timeout: 8s
       retries: 5
+      start_period: 180s
     networks:
       - app-network
 

@@ -176,14 +176,32 @@ router.get("/players", authController.getAllPlayers);
 router.get("/verify-token", authController.verifyToken);
 
 /**
+ * User registration (for users, not players)
+ */
+router.post("/users/register", authController.registerUser);
+
+/**
+ * User login (for users, not admin)
+ */
+router.post("/users/login", authController.userLogin);
+
+/**
+ * Password reset
+ */
+router.post("/users/forgot-password", authController.forgotPassword);
+router.post("/users/reset-password", authController.resetPassword);
+
+/**
  * Admin routes - User management
  */
 router.get("/admin/users", authenticateAdmin, authController.getUsers);
 router.get("/admin/users/stats", authenticateAdmin, authController.getUserStats);
 router.get("/admin/analytics", authenticateAdmin, authController.getAnalytics);
+router.get("/admin/users/:userId/activities", authenticateAdmin, authController.getUserActivities);
 router.put("/admin/users/:userId/approve", authenticateAdmin, authController.approveUser);
 router.put("/admin/users/:userId/reject", authenticateAdmin, authController.rejectUser);
 router.put("/admin/users/:userId/block", authenticateAdmin, authController.blockUser);
 router.put("/admin/users/:userId/unblock", authenticateAdmin, authController.unblockUser);
+router.put("/admin/users/:userId/role", authenticateAdmin, authController.updateUserRole);
 
 module.exports = router;

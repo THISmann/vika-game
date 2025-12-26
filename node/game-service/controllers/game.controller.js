@@ -372,6 +372,7 @@ exports.getGameState = async (req, res) => {
       questionStartTime: state.questionStartTime,
       questionDuration: state.questionDuration,
       connectedPlayersCount: connectedCount,
+      scheduledStartTime: state.scheduledStartTime || null,
       gameSessionId: state.gameSessionId,
       gameCode: state.gameCode
     });
@@ -655,6 +656,9 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
   }, state.questionDuration);
 }
 
+// Exporter scheduleNextQuestion pour utilisation dans server.js
+exports.scheduleNextQuestion = scheduleNextQuestion;
+
 exports.startGame = async (req, res) => {
   try {
     console.log(`\n🚀 ========== START GAME REQUEST ==========`);
@@ -682,6 +686,16 @@ exports.startGame = async (req, res) => {
     // Récupérer le temps par question (en secondes) depuis le body, défaut 30 secondes
     const questionDurationSeconds = req.body.questionDuration || 30;
     const questionDurationMs = questionDurationSeconds * 1000; // Convertir en millisecondes
+    
+    // Récupérer la date/heure planifiée (optionnelle)
+    const scheduledStartTime = req.body.scheduledStartTime ? new Date(req.body.scheduledStartTime) : null;
+    
+    // Si une date est fournie, vérifier qu'elle est dans le futur
+    if (scheduledStartTime && scheduledStartTime <= new Date()) {
+      return res.status(400).json({ 
+        error: "La date de lancement planifiée doit être dans le futur" 
+      });
+    }
 
     // Récupérer les questions (nécessite l'authentification admin)
     // Transmettre le token d'authentification depuis la requête originale
@@ -743,6 +757,17 @@ exports.startGame = async (req, res) => {
       return res.status(400).json({ error: "Aucune question disponible" });
     }
 
+    // Si une date est planifiée, sauvegarder la date et retourner sans lancer le jeu
+    if (scheduledStartTime) {
+      await gameState.scheduleGame(scheduledStartTime, questionDurationMs);
+      return res.json({
+        message: "Jeu planifié avec succès",
+        scheduledStartTime: scheduledStartTime.toISOString(),
+        state: await gameState.getState()
+      });
+    }
+
+    // Sinon, lancer le jeu immédiatement
     await gameState.startGame();
     const state = await gameState.getState();
     
@@ -1070,6 +1095,244 @@ exports.getQuestionResults = async (req, res) => {
     res.json(state.results || {});
   } catch (error) {
     console.error("Error getting question results:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Game Sessions (Parties) Controllers
+const GameSession = require("../models/GameSession");
+
+// Helper function to generate unique party ID
+function generatePartyId() {
+  return `party_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Helper function to generate game code
+function generateGameCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Get current user ID from token
+function getCurrentUserId(req) {
+  // The authenticateAdmin middleware should set req.user
+  return req.user?.userId || null;
+}
+
+exports.createParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { name, description, questionIds, scheduledStartTime, questionDuration } = req.body;
+
+    if (!name || !questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.status(400).json({ error: "Name and at least one question are required" });
+    }
+
+    // Validate scheduled time if provided
+    if (scheduledStartTime) {
+      const scheduledDate = new Date(scheduledStartTime);
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ error: "Scheduled time must be in the future" });
+      }
+    }
+
+    const party = new GameSession({
+      id: generatePartyId(),
+      name,
+      description: description || '',
+      createdBy: userId,
+      questionIds,
+      questionDuration: questionDuration || 30000,
+      scheduledStartTime: scheduledStartTime ? new Date(scheduledStartTime) : null,
+      status: scheduledStartTime ? 'scheduled' : 'draft',
+      gameCode: generateGameCode()
+    });
+
+    await party.save();
+
+    res.status(201).json(party.toObject());
+  } catch (error) {
+    console.error("Error creating party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getUserParties = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const parties = await GameSession.find({ createdBy: userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(parties);
+  } catch (error) {
+    console.error("Error getting user parties:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    res.json(party.toObject());
+  } catch (error) {
+    console.error("Error getting party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.updateParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const { name, description, questionIds, scheduledStartTime, questionDuration } = req.body;
+
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    // Don't allow updating if party is active
+    if (party.status === 'active') {
+      return res.status(400).json({ error: "Cannot update an active party" });
+    }
+
+    // Update fields
+    if (name) party.name = name;
+    if (description !== undefined) party.description = description;
+    if (questionIds && Array.isArray(questionIds) && questionIds.length > 0) {
+      party.questionIds = questionIds;
+    }
+    if (questionDuration) party.questionDuration = questionDuration;
+    if (scheduledStartTime) {
+      const scheduledDate = new Date(scheduledStartTime);
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ error: "Scheduled time must be in the future" });
+      }
+      party.scheduledStartTime = scheduledDate;
+      party.status = 'scheduled';
+    } else if (scheduledStartTime === null) {
+      party.scheduledStartTime = null;
+      if (party.status === 'scheduled') {
+        party.status = 'draft';
+      }
+    }
+
+    party.updatedAt = new Date();
+    await party.save();
+
+    res.json(party.toObject());
+  } catch (error) {
+    console.error("Error updating party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.deleteParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    // Don't allow deleting if party is active
+    if (party.status === 'active') {
+      return res.status(400).json({ error: "Cannot delete an active party" });
+    }
+
+    await GameSession.deleteOne({ id: partyId, createdBy: userId });
+
+    res.json({ message: "Party deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.startParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    if (party.status === 'active') {
+      return res.status(400).json({ error: "Party is already active" });
+    }
+
+    if (party.questionIds.length === 0) {
+      return res.status(400).json({ error: "Party has no questions" });
+    }
+
+    // Update party status
+    party.status = 'active';
+    party.isStarted = true;
+    party.startedAt = new Date();
+    await party.save();
+
+    // Update GameState to use this party
+    await gameState.setState({
+      gameSessionId: party.id,
+      gameCode: party.gameCode,
+      createdBy: userId,
+      questionDuration: party.questionDuration,
+      scheduledStartTime: null // Clear scheduled time when starting
+    });
+
+    // Start the game using existing startGame logic
+    // We'll need to modify startGame to accept questionIds from party
+    // For now, we'll use the existing startGame endpoint logic
+    // This is a simplified version - you may want to refactor startGame to accept partyId
+
+    res.json({
+      message: "Party started successfully",
+      party: party.toObject(),
+      gameCode: party.gameCode
+    });
+  } catch (error) {
+    console.error("Error starting party:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

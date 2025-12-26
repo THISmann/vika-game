@@ -1,7 +1,7 @@
 <template>
   <div id="app" :class="appClass">
-    <!-- Admin Navbar -->
-    <AdminNavbar v-if="isAdminRoute" />
+    <!-- User Navbar -->
+    <UserNavbar v-if="isUserRoute" />
     
     <!-- Player Navbar -->
     <PlayerNavbar v-if="isPlayerRoute && !isLandingPage" />
@@ -16,13 +16,13 @@
 
 <script>
 import PlayerNavbar from './components/player/PlayerNavbar.vue'
-import AdminNavbar from './components/admin/AdminNavbar.vue'
+import UserNavbar from './components/user/AdminNavbar.vue'
 
 export default {
   name: 'App',
   components: {
     PlayerNavbar,
-    AdminNavbar
+    UserNavbar
   },
   computed: {
     isLandingPage() {
@@ -31,8 +31,8 @@ export default {
     isPlayerRoute() {
       return this.$route.path.startsWith('/player') && this.$route.path !== '/'
     },
-    isAdminRoute() {
-      return this.$route.path.startsWith('/admin')
+    isUserRoute() {
+      return this.$route.path.startsWith('/user') && !this.$route.path.startsWith('/user/login')
     },
     appClass() {
       if (this.isLandingPage) {
@@ -44,8 +44,8 @@ export default {
       if (this.isLandingPage) {
         return 'w-full h-full' // Full screen for landing page only
       }
-      if (this.isAdminRoute) {
-        return '' // Admin routes handle their own layout
+      if (this.isUserRoute) {
+        return '' // User routes handle their own layout
       }
       return 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
     }

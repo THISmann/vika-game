@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const gameController = require("../controllers/game.controller");
 // Utiliser le middleware local (copie dans le service)
-const { authenticateAdmin } = require("../middleware/auth.middleware");
+const { authenticateAdmin, authenticateUser } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
@@ -363,5 +363,13 @@ router.delete("/delete", authenticateAdmin, gameController.deleteGame);
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/results", gameController.getQuestionResults);
+
+// Game Sessions (Parties) routes - User or Admin
+router.post("/parties", authenticateUser, gameController.createParty);
+router.get("/parties", authenticateUser, gameController.getUserParties);
+router.get("/parties/:partyId", authenticateUser, gameController.getParty);
+router.put("/parties/:partyId", authenticateUser, gameController.updateParty);
+router.delete("/parties/:partyId", authenticateUser, gameController.deleteParty);
+router.post("/parties/:partyId/start", authenticateUser, gameController.startParty);
 
 module.exports = router;

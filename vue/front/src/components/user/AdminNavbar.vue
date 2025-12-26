@@ -1,31 +1,24 @@
 <template>
-  <nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 shadow-lg border-b border-purple-700">
+  <nav class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 shadow-lg border-b border-purple-700 fixed top-0 z-[60] transition-all duration-300" :class="sidebarCollapsed ? 'left-16 md:left-20 right-0' : 'left-0 md:left-64 right-0'">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center space-x-1">
           <router-link
-            to="/admin/dashboard"
+            to="/user/dashboard"
             class="text-2xl font-bold text-white hover:text-purple-200 transition-colors"
           >
-            🎯 Admin Panel
+            🎯 User Panel
           </router-link>
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-4">
-          <router-link
-            to="/admin/dashboard"
-            class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-white/20 transition-all"
-            active-class="bg-white/30 font-bold"
-          >
-            {{ t('admin.nav.dashboard') }}
-          </router-link>
-          <router-link
-            to="/admin/questions"
-            class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-white/20 transition-all"
-            active-class="bg-white/30 font-bold"
-          >
-            {{ t('admin.nav.questions') }}
-          </router-link>
+          <!-- User Name -->
+          <div class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-white bg-white/10 border border-white/20 flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span class="hidden sm:inline">{{ userName }}</span>
+          </div>
           
           <!-- Language Selector -->
           <div class="relative ml-2 sm:ml-4" ref="languageMenuRef">
@@ -71,7 +64,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
 export default {
@@ -80,6 +73,21 @@ export default {
     const { language, changeLanguage, t, availableLanguages } = useI18n()
     const showLanguageMenu = ref(false)
     const languageMenuRef = ref(null)
+    const sidebarCollapsed = ref(false)
+    
+    // Get user name from localStorage
+    const userName = computed(() => {
+      try {
+        const userInfoStr = localStorage.getItem('userInfo')
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr)
+          return userInfo.name || userInfo.email || 'User'
+        }
+      } catch (error) {
+        console.error('Error parsing user info:', error)
+      }
+      return 'User'
+    })
     
     const getLanguageName = (lang) => {
       const names = {
@@ -105,12 +113,26 @@ export default {
       }
     }
     
+    // Listen for sidebar collapse state changes
+    const checkSidebarState = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      sidebarCollapsed.value = savedState === 'true'
+    }
+    
     onMounted(() => {
       document.addEventListener('click', handleClickOutside)
+      checkSidebarState()
+      // Check periodically for changes (every 100ms)
+      const interval = setInterval(checkSidebarState, 100)
+      // Store interval to clear it on unmount
+      window.sidebarCheckInterval = interval
     })
     
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
+      if (window.sidebarCheckInterval) {
+        clearInterval(window.sidebarCheckInterval)
+      }
     })
     
     return {
@@ -122,14 +144,16 @@ export default {
       getLanguageName,
       toggleLanguageMenu,
       selectLanguage,
-      languageMenuRef
+      languageMenuRef,
+      userName,
+      sidebarCollapsed
     }
   },
   methods: {
     logout() {
-      localStorage.removeItem('adminToken')
-      localStorage.removeItem('admin')
-      this.$router.push('/admin/login')
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userInfo')
+      this.$router.push('/user/login')
     }
   }
 }

@@ -95,10 +95,30 @@ const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE &&
 export const API_URLS = {
   auth: {
     register: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/register`
+      : isProduction 
+        ? `${API_CONFIG.AUTH_SERVICE}/users/register`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/register`,
+    registerPlayer: useApiGateway
       ? `${API_CONFIG.AUTH_SERVICE}/auth/players/register`
       : isProduction 
         ? `${API_CONFIG.AUTH_SERVICE}/players/register`
         : `${API_CONFIG.AUTH_SERVICE}/auth/players/register`,
+    userLogin: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/login`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/login`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/login`,
+    forgotPassword: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/forgot-password`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/forgot-password`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/forgot-password`,
+    resetPassword: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/reset-password`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/reset-password`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/reset-password`,
     players: useApiGateway
       ? `${API_CONFIG.AUTH_SERVICE}/auth/players`
       : isProduction
@@ -177,7 +197,32 @@ export const API_URLS = {
         ? `${API_CONFIG.QUIZ_SERVICE}/${id}`
         : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
   },
-  game: {
+      game: {
+        createParty: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties`,
+        userParties: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties`,
+        updateParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
+        deleteParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
+        startParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}/start`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}/start`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}/start`,
     answer: useApiGateway
       ? `${API_CONFIG.GAME_SERVICE}/game/answer`
       : isProduction

@@ -1,10 +1,26 @@
 <template>
-  <div class="min-h-screen max-w-6xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <UserSidebar />
+    
+    <!-- Main Content -->
+    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 transition-all duration-300 mt-16 pt-6">
     <!-- Header -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
         <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">{{ t('admin.dashboard.title') }}</h1>
         <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">{{ t('admin.dashboard.subtitle') }}</p>
+        
+        <!-- User Info -->
+        <div v-if="currentUser" class="mt-4 sm:mt-6 inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/80 rounded-xl border-2 border-blue-300 shadow-lg">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-base sm:text-lg mr-3">
+            {{ currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U' }}
+          </div>
+          <div class="text-left">
+            <div class="text-xs sm:text-sm text-gray-600">{{ currentUser.role === 'admin' ? 'Administrateur' : 'Utilisateur' }}</div>
+            <div class="text-sm sm:text-base md:text-lg font-bold text-gray-900">{{ currentUser.name || currentUser.email || 'User' }}</div>
+          </div>
+        </div>
       </div>
 
       <!-- Game Code -->
@@ -16,6 +32,16 @@
           </div>
           <div class="text-xs sm:text-sm text-gray-600 mb-4">
             {{ t('admin.dashboard.shareCode') }}
+          </div>
+          
+          <!-- Afficher la date planifiée si elle existe -->
+          <div v-if="gameState.scheduledStartTime && !gameState.isStarted" class="mt-4 p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+            <div class="text-xs sm:text-sm font-semibold text-blue-800 mb-1">
+              {{ t('admin.dashboard.gameScheduled') || 'Jeu planifié' }}
+            </div>
+            <div class="text-sm sm:text-base font-bold text-blue-600">
+              {{ formatScheduledTime(gameState.scheduledStartTime) }}
+            </div>
           </div>
           
           <!-- Boutons d'action -->
@@ -100,7 +126,7 @@
       <!-- Game Controls -->
       <div class="space-y-4 mb-4 sm:mb-6">
         <!-- Configuration du temps par question -->
-        <div v-if="!gameState.isStarted" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-3 sm:p-4 border-2 border-blue-200 shadow-lg">
+        <div v-if="!gameState.isStarted" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-3 sm:p-4 border-2 border-blue-200 shadow-lg space-y-4">
           <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             {{ t('admin.dashboard.timePerQuestion') }}
           </label>
@@ -117,15 +143,45 @@
               {{ t('admin.dashboard.timeMinMax') }}
             </span>
           </div>
+          
+          <!-- Option de planification -->
+          <div class="flex items-center space-x-3 pt-2 border-t border-blue-200">
+            <input
+              id="scheduleGame"
+              v-model="scheduleMode"
+              type="checkbox"
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label for="scheduleGame" class="text-xs sm:text-sm font-medium text-gray-700 cursor-pointer">
+              {{ t('admin.dashboard.scheduleGame') || 'Planifier le lancement' }}
+            </label>
+          </div>
+          
+          <!-- Champ date/heure si planifié -->
+          <div v-if="scheduleMode" class="pt-2">
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+              {{ t('admin.dashboard.scheduledTime') || 'Date et heure de lancement' }}
+            </label>
+            <input
+              v-model="scheduledDateTime"
+              type="datetime-local"
+              :min="minDateTime"
+              class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 shadow-lg focus:shadow-xl"
+            />
+            <p v-if="scheduledDateTime" class="mt-2 text-xs text-gray-600">
+              {{ t('admin.dashboard.gameWillStartAt') || 'Le jeu démarrera le' }}: 
+              <strong>{{ formatScheduledTime(scheduledDateTime) }}</strong>
+            </p>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <button
             @click="startGame"
-            :disabled="gameState.isStarted || loading || totalQuestions === 0"
+            :disabled="gameState.isStarted || loading || totalQuestions === 0 || (scheduleMode && !scheduledDateTime)"
             class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
           >
-            {{ t('admin.dashboard.startGame') }}
+            {{ scheduleMode ? (t('admin.dashboard.scheduleGameButton') || 'Planifier le jeu') : t('admin.dashboard.startGame') }}
           </button>
           <button
             @click="nextQuestion"
@@ -155,7 +211,7 @@
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
       <div
-        @click="$router.push('/admin/questions')"
+        @click="$router.push('/user/questions')"
         class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
@@ -184,7 +240,7 @@
       </div>
 
       <div
-        @click="$router.push('/player/leaderboard')"
+        @click="$router.push('/user/leaderboard')"
         class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
@@ -220,278 +276,221 @@
     <div v-if="error" class="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg">
       {{ error }}
     </div>
+    </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
-import { io } from 'socket.io-client'
-import { API_URLS, API_CONFIG } from '@/config/api'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import apiClient, { gameService, quizService } from '@/services/api'
+import { useGameStore } from '@/stores/game'
+import { useQuestionsStore } from '@/stores/questions'
+import UserSidebar from './UserSidebar.vue'
+import MobileSidebarToggle from './MobileSidebarToggle.vue'
 
 export default {
+  components: {
+    UserSidebar,
+    MobileSidebarToggle
+  },
   setup() {
     const { t } = useI18n()
-    return { t }
-  },
-  data() {
-    return {
-      gameState: {
-        isStarted: false,
-        currentQuestionIndex: -1,
-        connectedPlayersCount: 0
-      },
-      gameCode: null,
-      totalQuestions: 0,
-      questionDuration: 30,
-      loading: false,
-      message: '',
-      error: '',
-      socket: null,
-      copyButtonText: '',
-      connectedPlayers: []
+    const gameStore = useGameStore()
+    const questionsStore = useQuestionsStore()
+    const questionDuration = ref(30)
+    const copyButtonText = ref('')
+    const scheduleMode = ref(false)
+    const scheduledDateTime = ref('')
+    
+    // Calculer la date/heure minimale (maintenant)
+    const minDateTime = computed(() => {
+      const now = new Date()
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+      return now.toISOString().slice(0, 16)
+    })
+    
+    // Formater la date planifiée pour l'affichage
+    const formatScheduledTime = (dateTimeString) => {
+      if (!dateTimeString) return ''
+      const date = new Date(dateTimeString)
+      return date.toLocaleString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
-  },
-  async mounted() {
-    await this.loadGameState()
-    await this.loadQuestionsCount()
-    await this.loadGameCode()
-    
-    // Connect to WebSocket
-    const wsUrl = API_URLS.ws.game
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-    
-    console.log('🔌 Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction)
-    
-    this.socket = io(wsUrl, {
-      path: '/socket.io',
-      transports: ['polling', 'websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
-      forceNew: false,
-      autoConnect: true,
-      timeout: 20000
-    })
-    
-    this.socket.on('connect', () => {
-      console.log('✅ Admin WebSocket connected:', this.socket.id)
-      this.error = ''
-    })
-    
-    this.socket.on('connect_error', (error) => {
-      if (error && error.message && (
-        error.message.includes('server error') || 
-        error.message.includes('xhr poll error') ||
-        error.message.includes('poll')
-      )) {
-        return
-      }
-      if (error && error.message) {
-        console.error('❌ Admin WebSocket connection error:', error.message)
-      }
-    })
-    
-    this.socket.on('players:count', (data) => {
-      console.log('📊 AdminDashboard received players:count event:', data)
-      this.gameState.connectedPlayersCount = data.count
-      this.loadConnectedPlayers()
-    })
-    
-    this.socket.on('game:started', (data) => {
-      console.log('🎮 AdminDashboard received game:started event:', data)
-      this.loadGameState()
-    })
-    
-    this.socket.on('game:ended', () => {
-      this.loadGameState()
-      this.message = this.t('admin.dashboard.gameEnded')
-      setTimeout(() => this.message = '', 5000)
-    })
-    
-    this.socket.on('question:next', () => {
-      this.loadGameState()
-    })
-    
-    // Polling pour l'état du jeu
-    setInterval(() => {
-      this.loadGameState()
-      this.loadConnectedPlayersCount()
-      this.loadConnectedPlayers()
-    }, 5000)
-  },
-  beforeUnmount() {
-    if (this.socket) {
-      this.socket.disconnect()
-    }
-  },
-  methods: {
-    async loadGameState() {
+
+    const currentUser = computed(() => {
       try {
-        const res = await apiClient.get(API_URLS.game.state)
-        this.gameState = res.data
-        this.gameCode = res.data.gameCode || null
-      } catch (err) {
-        console.error('Error loading game state:', err)
+        const userInfoStr = localStorage.getItem('userInfo')
+        if (userInfoStr) {
+          return JSON.parse(userInfoStr)
+        }
+      } catch (error) {
+        console.error('Error parsing user info:', error)
       }
-    },
-    async loadGameCode() {
-      try {
-        const res = await apiClient.get(API_URLS.game.code)
-        this.gameCode = res.data.gameCode
-      } catch (err) {
-        console.error('Error loading game code:', err)
-      }
-    },
-    async loadQuestionsCount() {
-      try {
-        const res = await apiClient.get(API_URLS.quiz.all)
-        this.totalQuestions = res.data.length
-      } catch (err) {
-        console.error('Error loading questions count:', err)
-      }
-    },
-    async loadConnectedPlayersCount() {
-      try {
-        const res = await apiClient.get(API_URLS.game.playersCount)
-        this.gameState.connectedPlayersCount = res.data.count
-      } catch (err) {
-        console.error('Error loading players count:', err)
-      }
-    },
-    async loadConnectedPlayers() {
-      try {
-        const res = await apiClient.get(API_URLS.game.players)
-        this.connectedPlayers = res.data.players || []
-        this.gameState.connectedPlayersCount = res.data.count || 0
-      } catch (err) {
-        console.error('Error loading connected players:', err)
-      }
-    },
-    async startGame() {
-      if (this.totalQuestions === 0) {
-        this.error = this.t('admin.dashboard.noQuestions')
+      return null
+    })
+
+    const gameState = computed(() => gameStore.gameState)
+    const gameCode = computed(() => gameStore.gameCode)
+    const totalQuestions = computed(() => questionsStore.questionsCount)
+    const connectedPlayers = computed(() => gameStore.connectedPlayers)
+    const loading = computed(() => gameStore.loading || questionsStore.loading)
+    const message = computed(() => gameStore.message)
+    const error = computed(() => gameStore.error || questionsStore.error)
+
+    onMounted(async () => {
+      // Load initial data
+      await Promise.all([
+        questionsStore.loadQuestions(),
+        gameStore.loadGameState(),
+        gameStore.loadGameCode(),
+        gameStore.loadConnectedPlayers()
+      ])
+      
+      // Setup socket listeners for real-time updates
+      gameStore.setupSocketListeners()
+    })
+
+    onUnmounted(() => {
+      // Cleanup socket listeners
+      gameStore.removeSocketListeners()
+    })
+
+    const startGame = async () => {
+      if (totalQuestions.value === 0) {
+        gameStore.error = t('admin.dashboard.noQuestions')
         return
       }
 
-      if (!this.questionDuration || this.questionDuration < 5 || this.questionDuration > 300) {
-        this.error = this.t('admin.dashboard.timeMinMax')
+      if (!questionDuration.value || questionDuration.value < 5 || questionDuration.value > 300) {
+        gameStore.error = t('admin.dashboard.timeMinMax')
         return
       }
       
-      this.loading = true
-      this.error = ''
-      this.message = ''
+      // Si mode planifié, vérifier que la date est valide
+      if (scheduleMode.value) {
+        if (!scheduledDateTime.value) {
+          gameStore.error = t('admin.dashboard.scheduledTimeRequired') || 'Veuillez sélectionner une date et heure'
+          return
+        }
+        
+        const scheduledDate = new Date(scheduledDateTime.value)
+        const now = new Date()
+        
+        if (scheduledDate <= now) {
+          gameStore.error = t('admin.dashboard.scheduledTimeMustBeFuture') || 'La date doit être dans le futur'
+          return
+        }
+      }
       
       try {
-        await gameService.startGame(this.questionDuration)
-        this.message = `${this.t('admin.dashboard.startGame')} - ${this.questionDuration}s`
-        await this.loadGameState()
-        await this.loadQuestionsCount()
-        setTimeout(() => this.message = '', 3000)
-      } catch (err) {
-        console.error('❌ Error starting game:', err)
-        if (err.response?.status === 401) {
-          this.error = 'Session expirée. Veuillez vous reconnecter.'
-        } else {
-          this.error = err.response?.data?.error || err.response?.data?.message || err.message || 'Erreur lors du démarrage du jeu'
+        const scheduledStartTime = scheduleMode.value && scheduledDateTime.value 
+          ? new Date(scheduledDateTime.value).toISOString() 
+          : null
+        
+        await gameStore.startGame(questionDuration.value, scheduledStartTime)
+        
+        // Réinitialiser le formulaire après succès
+        if (scheduleMode.value) {
+          scheduleMode.value = false
+          scheduledDateTime.value = ''
         }
-      } finally {
-        this.loading = false
+      } catch (err) {
+        // Error is already set in the store
       }
-    },
-    async nextQuestion() {
-      this.loading = true
-      this.error = ''
-      this.message = ''
-      
+    }
+
+    const nextQuestion = async () => {
       try {
-        const res = await gameService.nextQuestion()
-        if (res.finished) {
-          this.message = 'Le jeu est terminé !'
-        } else {
-          this.message = this.t('admin.dashboard.nextQuestionShown')
-        }
-        await this.loadGameState()
-        setTimeout(() => this.message = '', 3000)
+        await gameStore.nextQuestion()
       } catch (err) {
-        this.error = err.response?.data?.error || err.message || this.t('admin.dashboard.nextQuestionError')
-      } finally {
-        this.loading = false
+        // Error is already set in the store
       }
-    },
-    async endGame() {
-      if (!confirm(this.t('admin.dashboard.confirmEndGame'))) {
+    }
+
+    const endGame = async () => {
+      if (!confirm(t('admin.dashboard.confirmEndGame'))) {
         return
       }
-      
-      this.loading = true
-      this.error = ''
-      this.message = ''
-      
       try {
-        await gameService.endGame()
-        this.message = this.t('admin.dashboard.gameEnded')
-        await this.loadGameState()
-        setTimeout(() => this.message = '', 3000)
+        await gameStore.endGame()
       } catch (err) {
-        this.error = err.response?.data?.error || err.message || 'Erreur lors de la fin du jeu'
-      } finally {
-        this.loading = false
+        // Error is already set in the store
       }
-    },
-    async deleteGame() {
+    }
+
+    const deleteGame = async () => {
       if (!confirm('Êtes-vous sûr de vouloir supprimer la partie ? Tous les scores seront réinitialisés.')) {
         return
       }
-      
-      this.loading = true
-      this.error = ''
-      this.message = ''
-      
       try {
-        await gameService.deleteGame()
-        this.message = this.t('admin.dashboard.gameDeleted')
-        await this.loadGameState()
-        setTimeout(() => this.message = '', 3000)
+        await gameStore.deleteGame()
       } catch (err) {
-        this.error = err.response?.data?.error || err.message || 'Erreur lors de la suppression de la partie'
-      } finally {
-        this.loading = false
+        // Error is already set in the store
       }
-    },
-    async copyGameCode() {
+    }
+
+    const copyGameCode = async () => {
       try {
-        await navigator.clipboard.writeText(this.gameCode)
-        this.copyButtonText = this.t('admin.dashboard.codeCopied')
+        await navigator.clipboard.writeText(gameCode.value)
+        copyButtonText.value = t('admin.dashboard.codeCopied')
         setTimeout(() => {
-          this.copyButtonText = ''
+          copyButtonText.value = ''
         }, 2000)
       } catch (err) {
         const textArea = document.createElement('textarea')
-        textArea.value = this.gameCode
+        textArea.value = gameCode.value
         document.body.appendChild(textArea)
         textArea.select()
         document.execCommand('copy')
         document.body.removeChild(textArea)
-        this.copyButtonText = this.t('admin.dashboard.codeCopied')
+        copyButtonText.value = t('admin.dashboard.codeCopied')
         setTimeout(() => {
-          this.copyButtonText = ''
+          copyButtonText.value = ''
         }, 2000)
       }
-    },
-    shareOnWhatsApp() {
-      const text = encodeURIComponent(`${this.t('admin.dashboard.shareCode')} Code: ${this.gameCode}`)
+    }
+
+    const shareOnWhatsApp = () => {
+      const text = encodeURIComponent(`${t('admin.dashboard.shareCode')} Code: ${gameCode.value}`)
       window.open(`https://wa.me/?text=${text}`, '_blank', 'width=600,height=400')
-    },
-    shareOnTelegram() {
-      const text = encodeURIComponent(`${this.t('admin.dashboard.shareCode')} Code: ${this.gameCode}`)
+    }
+
+    const shareOnTelegram = () => {
+      const text = encodeURIComponent(`${t('admin.dashboard.shareCode')} Code: ${gameCode.value}`)
       const url = encodeURIComponent(window.location.origin)
       window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank', 'width=600,height=400')
     }
-  }
+
+    return {
+      t,
+      currentUser,
+      gameState,
+      gameCode,
+      totalQuestions,
+      connectedPlayers,
+      loading,
+      message,
+      error,
+      questionDuration,
+      copyButtonText,
+      startGame,
+      nextQuestion,
+      endGame,
+      deleteGame,
+      copyGameCode,
+      shareOnWhatsApp,
+      shareOnTelegram,
+      scheduleMode,
+      scheduledDateTime,
+      minDateTime,
+      formatScheduledTime
+    }
+  },
 }
 </script>
 

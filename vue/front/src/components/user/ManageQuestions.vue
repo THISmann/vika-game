@@ -1,5 +1,13 @@
 <template>
-  <div class="max-w-6xl mx-auto space-y-6">
+  <div class="flex min-h-screen">
+    <!-- Mobile Sidebar Toggle -->
+    <MobileSidebarToggle />
+    
+    <!-- Sidebar -->
+    <UserSidebar />
+    
+    <!-- Main Content -->
+    <div class="flex-1 ml-0 md:ml-64 max-w-6xl mx-auto space-y-6 px-4 sm:px-6 py-4 sm:py-6 transition-all duration-300 mt-16 pt-6">
     <!-- Header -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-6">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ t('admin.questions.title') }}</h1>
@@ -140,101 +148,104 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
-import { API_URLS } from '@/config/api'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import apiClient, { quizService } from '@/services/api'
+import { useQuestionsStore } from '@/stores/questions'
+import UserSidebar from './UserSidebar.vue'
+import MobileSidebarToggle from './MobileSidebarToggle.vue'
 
 export default {
+  name: 'ManageQuestions',
+  components: {
+    UserSidebar,
+    MobileSidebarToggle
+  },
   setup() {
     const { t } = useI18n()
-    return { t }
-  },
-  data() {
-    return {
-      questions: [],
-      question: '',
-      choicesRaw: '',
-      answer: '',
-      loading: true,
-      error: '',
-      success: false,
-    }
-  },
-  async created() {
-    await this.loadQuestions()
-  },
-  methods: {
-    async loadQuestions() {
-      try {
-        this.loading = true
-        const res = await apiClient.get(API_URLS.quiz.all)
-        this.questions = res.data
-      } catch (err) {
-        this.error = this.t('admin.questions.loadError')
-        console.error(err)
-      } finally {
-        this.loading = false
-      }
-    },
-    async addQuestion() {
-      this.error = ''
-      this.success = false
+    const questionsStore = useQuestionsStore()
+    
+    const question = ref('')
+    const choicesRaw = ref('')
+    const answer = ref('')
+    const success = ref(false)
 
-      if (!this.question || !this.choicesRaw || !this.answer) {
-        this.error = this.t('admin.questions.allFieldsRequired')
+    const questions = computed(() => questionsStore.questions)
+    const loading = computed(() => questionsStore.loading)
+    const error = computed(() => questionsStore.error)
+
+    onMounted(async () => {
+      // Load questions from store
+      await questionsStore.loadQuestions()
+    })
+
+    const addQuestion = async () => {
+      questionsStore.clearError()
+      success.value = false
+
+      if (!question.value || !choicesRaw.value || !answer.value) {
+        questionsStore.error = t('admin.questions.allFieldsRequired')
         return
       }
 
-      const choices = this.choicesRaw
+      const choices = choicesRaw.value
         .split(',')
         .map((c) => c.trim())
         .filter((c) => c)
 
       if (choices.length < 2) {
-        this.error = this.t('admin.questions.minChoices')
+        questionsStore.error = t('admin.questions.minChoices')
         return
       }
 
       try {
-        await quizService.createQuestion({
-          question: this.question,
+        await questionsStore.createQuestion({
+          question: question.value,
           choices,
-          answer: this.answer,
+          answer: answer.value,
         })
 
-        this.question = ''
-        this.choicesRaw = ''
-        this.answer = ''
-        this.success = true
-
-        await this.loadQuestions()
+        question.value = ''
+        choicesRaw.value = ''
+        answer.value = ''
+        success.value = true
 
         setTimeout(() => {
-          this.success = false
+          success.value = false
         }, 3000)
       } catch (err) {
-        this.error = err.response?.data?.error || err.message || this.t('admin.questions.addError')
-        console.error(err)
+        // Error is already set in the store
       }
-    },
-    async deleteQuestion(id) {
-      if (!confirm(this.t('admin.questions.confirmDelete'))) {
+    }
+
+    const deleteQuestion = async (id) => {
+      if (!confirm(t('admin.questions.confirmDelete'))) {
         return
       }
 
       try {
-        await quizService.deleteQuestion(id)
-        this.questions = this.questions.filter((q) => q.id !== id)
+        await questionsStore.deleteQuestion(id)
       } catch (err) {
-        this.error = err.response?.data?.error || err.message || this.t('admin.questions.deleteError')
-        console.error(err)
+        // Error is already set in the store
       }
-    },
+    }
+
+    return {
+      t,
+      questions,
+      loading,
+      error,
+      question,
+      choicesRaw,
+      answer,
+      success,
+      addQuestion,
+      deleteQuestion
+    }
   },
 }
 </script>

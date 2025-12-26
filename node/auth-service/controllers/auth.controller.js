@@ -2,6 +2,8 @@ const { generateToken } = require("../utils/token");
 const User = require("../models/User");
 const cache = require("../shared/cache-utils");
 const axios = require("axios");
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 
 // Clés de cache
 const CACHE_KEYS = {
@@ -28,10 +30,34 @@ exports.adminLogin = async (req, res) => {
     const { username, password } = req.body;
 
     if (username === "admin" && password === "admin") {
-        // Update lastLoginAt for admin user (using a special admin ID)
         const adminUserId = "00000000-0000-0000-0000-000000000001"; // Admin user ID
-        await updateLastLogin(adminUserId);
-        return res.json({ token: generateToken("admin") });
+        
+        // Find or create admin user
+        let adminUser = await User.findOne({ id: adminUserId });
+        if (!adminUser) {
+            // Hash admin password
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash("admin", saltRounds);
+            
+            adminUser = new User({
+                id: adminUserId,
+                name: "Admin",
+                email: "admin@vika-game.com",
+                password: hashedPassword,
+                role: 'admin',
+                status: 'approved',
+                createdAt: new Date(),
+                lastLoginAt: new Date()
+            });
+            await adminUser.save();
+            console.log('✅ Admin user created');
+        } else {
+            // Update lastLoginAt
+            adminUser.lastLoginAt = new Date();
+            await adminUser.save();
+        }
+        
+        return res.json({ token: generateToken(adminUserId, "admin") });
     }
 
     res.status(401).json({ error: "Invalid credentials" });
@@ -65,8 +91,9 @@ exports.registerPlayer = async (req, res) => {
             contact: contact ? contact.trim() : undefined,
             useCase: useCase || undefined,
             country: country || undefined,
+            role: 'player', // Players have role 'player'
             score: 0,
-            status: 'pending', // New users start as pending
+            status: 'approved', // Players are auto-approved (they just play)
             createdAt: new Date(),
             lastLoginAt: new Date() // Set initial login time on registration
         });
@@ -162,17 +189,247 @@ exports.updateLastLogin = async (req, res) => {
 };
 
 /**
- * Get all users with optional filters (Admin only)
+ * Register a new user (not a player) - requires email and password
+ */
+exports.registerUser = async (req, res) => {
+    const { name, email, password, contact, useCase, country } = req.body;
+
+    if (!name) return res.status(400).json({ error: "Name is required" });
+    if (!email) return res.status(400).json({ error: "Email is required" });
+    if (!password) return res.status(400).json({ error: "Password is required" });
+
+    try {
+        // Check if user name already exists
+        const existingUser = await User.findOne({ name: name.trim() });
+        if (existingUser) {
+            return res.status(409).json({ error: "User name already exists" });
+        }
+
+        // Check if email already exists
+        const existingEmail = await User.findOne({ email: email.trim().toLowerCase() });
+        if (existingEmail) {
+            return res.status(409).json({ error: "Email already registered" });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const newUser = new User({
+            id: "u" + Date.now(),
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password: hashedPassword,
+            contact: contact ? contact.trim() : undefined,
+            useCase: useCase || undefined,
+            country: country || undefined,
+            role: 'user', // Users have role 'user'
+            score: 0,
+            status: 'pending', // Users need admin approval
+            createdAt: new Date(),
+            lastLoginAt: null // Will be set on first login
+        });
+
+        await newUser.save();
+        
+        // Invalidate cache
+        await cache.del(CACHE_KEYS.ALL_PLAYERS);
+        
+        console.log('✅ User registered with pending status');
+        res.status(201).json(newUser.toObject());
+    } catch (error) {
+        console.error('Error registering user:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * User login (for users, not admin)
+ */
+exports.userLogin = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    try {
+        // Find user by email and include password
+        const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
+        
+        if (!user) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        // Check if user is a player (should use player registration)
+        if (user.role === 'player') {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        // Check user status
+        if (user.status === 'blocked') {
+            return res.status(403).json({ error: "Your account has been blocked" });
+        }
+
+        if (user.status === 'rejected') {
+            return res.status(403).json({ 
+                error: "Your account has been rejected",
+                reason: user.rejectionReason || "No reason provided"
+            });
+        }
+
+        // Update lastLoginAt
+        user.lastLoginAt = new Date();
+        await user.save();
+
+        // Generate token
+        const token = generateToken(user.id, user.role);
+
+        // Return user info (without password) and token
+        const userObj = user.toObject();
+        delete userObj.password;
+        delete userObj.resetPasswordToken;
+        delete userObj.resetPasswordExpires;
+
+        res.json({
+            token,
+            user: userObj
+        });
+    } catch (error) {
+        console.error('Error in user login:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Request password reset (forgot password)
+ */
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+    }
+
+    try {
+        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        
+        // Don't reveal if user exists or not (security best practice)
+        if (!user || user.role === 'player') {
+            return res.json({ 
+                message: "If an account exists with this email, a password reset link has been sent" 
+            });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = new Date();
+        resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // Token valid for 1 hour
+
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = resetTokenExpiry;
+        await user.save();
+
+        // In production, send email with reset link
+        // For now, we'll return the token in development (remove in production!)
+        console.log(`🔐 Password reset token for ${user.email}: ${resetToken}`);
+        
+        res.json({ 
+            message: "If an account exists with this email, a password reset link has been sent",
+            // Remove this in production - only for development
+            resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+        });
+    } catch (error) {
+        console.error('Error in forgot password:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Reset password with token
+ */
+exports.resetPassword = async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    try {
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: new Date() }
+        }).select('+password');
+
+        if (!user) {
+            return res.status(400).json({ error: "Invalid or expired reset token" });
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+        console.error('Error in reset password:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Get all users (not players) with optional filters (Admin only)
  */
 exports.getUsers = async (req, res) => {
     try {
-        const { status, search, page = 1, limit = 50 } = req.query;
+        const { status, search, page = 1, limit = 50, role } = req.query;
         
-        // Build query
+        // First, migrate old documents without role field
+        // Documents with email are likely users, without email are players
+        await User.updateMany(
+            { role: { $exists: false }, email: { $exists: true, $ne: null } },
+            { $set: { role: 'user' } }
+        );
+        await User.updateMany(
+            { role: { $exists: false }, email: { $exists: false } },
+            { $set: { role: 'player' } }
+        );
+        await User.updateMany(
+            { role: { $exists: false } },
+            { $set: { role: 'player' } }
+        );
+        
+        // Build query - exclude players by default, only show users and admins
         const query = {};
+        
+        // Role filter
+        if (role) {
+            query.role = role;
+        } else {
+            // Default: show only users and admins, not players
+            query.role = { $in: ['user', 'admin'] };
+        }
+        
+        // Status filter
         if (status) {
             query.status = status;
         }
+        
+        // Search filter
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
@@ -183,16 +440,27 @@ exports.getUsers = async (req, res) => {
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         
+        console.log('🔍 getUsers query:', JSON.stringify(query, null, 2));
+        
         const users = await User.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))
             .lean();
         
+        console.log(`📊 Found ${users.length} users`);
+        
+        // Remove passwords from response
+        const usersWithoutPasswords = users.map(user => {
+            const userObj = { ...user };
+            delete userObj.password;
+            return userObj;
+        });
+        
         const total = await User.countDocuments(query);
         
         res.json({
-            users,
+            users: usersWithoutPasswords,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -202,6 +470,64 @@ exports.getUsers = async (req, res) => {
         });
     } catch (error) {
         console.error('Error getting users:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Get user activities (last logins, game sessions, etc.) (Admin only)
+ */
+exports.getUserActivities = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findOne({ id: userId });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Get user activities
+        const activities = [];
+        
+        // Add registration activity
+        if (user.createdAt) {
+            activities.push({
+                type: 'registration',
+                date: user.createdAt,
+                description: 'User registered on the platform'
+            });
+        }
+        
+        // Add last login activity
+        if (user.lastLoginAt) {
+            activities.push({
+                type: 'login',
+                date: user.lastLoginAt,
+                description: 'Last login'
+            });
+        }
+        
+        // Add status change activities
+        if (user.statusChangedAt) {
+            activities.push({
+                type: 'status_change',
+                date: user.statusChangedAt,
+                description: `Status changed to ${user.status} by ${user.statusChangedBy || 'admin'}`,
+                status: user.status,
+                changedBy: user.statusChangedBy
+            });
+        }
+
+        // Sort by date (most recent first)
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.json({
+            userId: user.id,
+            userName: user.name,
+            activities: activities.slice(0, 20) // Last 20 activities
+        });
+    } catch (error) {
+        console.error('Error getting user activities:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -365,10 +691,17 @@ exports.getAnalytics = async (req, res) => {
 
 /**
  * Get user statistics for dashboard (Admin only)
+ * Only counts users (role: 'user' or 'admin'), not players
  */
 exports.getUserStats = async (req, res) => {
     try {
+        // Only count users and admins, not players
         const stats = await User.aggregate([
+            {
+                $match: {
+                    role: { $in: ['user', 'admin'] }
+                }
+            },
             {
                 $group: {
                     _id: '$status',
@@ -390,11 +723,12 @@ exports.getUserStats = async (req, res) => {
             statsObj.total += stat.count;
         });
 
-        // Get recent registrations (last 7 days)
+        // Get recent user registrations (last 7 days) - only users and admins
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
         const recentRegistrations = await User.countDocuments({
+            role: { $in: ['user', 'admin'] },
             createdAt: { $gte: sevenDaysAgo }
         });
 
@@ -565,6 +899,62 @@ exports.unblockUser = async (req, res) => {
 };
 
 /**
+ * Update user role (Admin only)
+ */
+exports.updateUserRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { role } = req.body;
+        const adminUser = req.user;
+
+        if (!role) {
+            return res.status(400).json({ error: "Role is required" });
+        }
+
+        // Validate role
+        if (!['player', 'user', 'admin'].includes(role)) {
+            return res.status(400).json({ error: "Invalid role. Must be 'player', 'user', or 'admin'" });
+        }
+
+        const user = await User.findOne({ id: userId });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Prevent changing role of the current admin user (security)
+        if (user.id === adminUser.userId && role !== 'admin') {
+            return res.status(400).json({ error: "You cannot change your own role" });
+        }
+
+        // Update role
+        const oldRole = user.role;
+        user.role = role;
+        
+        // If changing to admin, automatically approve
+        if (role === 'admin' && user.status !== 'approved') {
+            user.status = 'approved';
+            user.statusChangedAt = new Date();
+            user.statusChangedBy = adminUser.role || 'admin';
+        }
+
+        await user.save();
+        
+        // Invalidate cache
+        await cache.del(CACHE_KEYS.PLAYER(userId));
+        await cache.del(CACHE_KEYS.ALL_PLAYERS);
+        
+        console.log(`✅ User ${userId} role changed from ${oldRole} to ${role} by admin`);
+        res.json({
+            ...user.toObject(),
+            previousRole: oldRole
+        });
+    } catch (error) {
+        console.error('Error updating user role:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
  * Vérifie un token d'authentification
  * Utilisé par les autres services pour valider les tokens
  */
@@ -600,6 +990,7 @@ exports.verifyToken = (req, res) => {
 
         res.json({
             valid: true,
+            userId: decoded.userId,
             role: decoded.role,
             timestamp: decoded.timestamp
         });

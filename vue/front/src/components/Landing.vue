@@ -144,13 +144,13 @@
 
         <form @submit.prevent="handleLogin" class="space-y-5 sm:space-y-6">
           <div>
-            <label class="block text-gray-100 text-sm sm:text-base font-bold mb-2 sm:mb-3">{{ t('landing.username') }}</label>
+            <label class="block text-gray-100 text-sm sm:text-base font-bold mb-2 sm:mb-3">{{ t('landing.email') }}</label>
             <input
-              v-model="loginForm.username"
-              type="text"
+              v-model="loginForm.email"
+              type="email"
               required
               class="w-full px-4 py-3 sm:py-4 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white text-base focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg focus:shadow-xl placeholder-gray-500"
-              :placeholder="t('landing.usernamePlaceholder')"
+              :placeholder="t('landing.emailPlaceholder')"
             />
           </div>
 
@@ -313,7 +313,7 @@ export default {
       showLogin: false,
       showSignup: false,
       loginForm: {
-        username: '',
+        email: '',
         password: ''
       },
       signupForm: {
@@ -375,17 +375,29 @@ export default {
       this.loginLoading = true
 
       try {
-        const response = await axios.post(API_URLS.auth.login, {
-          username: this.loginForm.username,
+        // Use user login endpoint, not admin login
+        const response = await axios.post(API_URLS.auth.userLogin, {
+          email: this.loginForm.email,
           password: this.loginForm.password
         })
 
-        if (response.data.token) {
-          localStorage.setItem('adminToken', response.data.token)
-          this.$router.push('/admin/dashboard')
+        if (response.data.token && response.data.user) {
+          // Store token and user info
+          localStorage.setItem('authToken', response.data.token)
+          localStorage.setItem('userInfo', JSON.stringify(response.data.user))
+
+          // Check user status and redirect accordingly
+          if (response.data.user.status === 'pending') {
+            this.$router.push('/auth/waiting-validation')
+          } else if (response.data.user.status === 'approved') {
+            this.$router.push('/user/dashboard')
+          } else {
+            this.loginError = this.t('landing.loginError') || 'Your account is not approved yet'
+          }
         }
       } catch (error) {
-        this.loginError = error.response?.data?.error || this.t('landing.loginError')
+        console.error('Login error:', error)
+        this.loginError = error.response?.data?.error || this.t('landing.loginError') || 'Invalid credentials'
       } finally {
         this.loginLoading = false
       }

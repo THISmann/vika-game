@@ -243,4 +243,28 @@ router.get("/full", authenticateAdmin, quizController.getFullQuestions);
  */
 router.get("/verify/:id", quizController.verifyAnswer);
 
+/**
+ * @swagger
+ * /quiz/user/questions:
+ *   get:
+ *     summary: Get questions created by the current user
+ *     tags: [Questions]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's questions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/QuestionPublic'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/user/questions", authenticateAdmin, quizController.getUserQuestions);
+
 module.exports = router;

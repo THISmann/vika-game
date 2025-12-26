@@ -10,6 +10,7 @@ const CACHE_KEYS = {
 
 exports.addQuestion = async (req, res) => {
   const { question, choices, answer } = req.body;
+  const userId = req.user?.userId; // Get userId from authenticated user
 
   if (!question || !choices || !answer) {
     return res.status(400).json({ error: "Missing fields" });
@@ -20,7 +21,9 @@ exports.addQuestion = async (req, res) => {
       id: "q" + Date.now(),
       question,
       choices,
-      answer
+      answer,
+      createdBy: userId || null, // Link question to user
+      createdAt: new Date()
     });
 
     await newQuestion.save();
@@ -39,9 +42,15 @@ exports.addQuestion = async (req, res) => {
 
 exports.updateQuestion = async (req, res) => {
   try {
+    const userId = req.user?.userId;
     const question = await Question.findOne({ id: req.params.id });
 
     if (!question) return res.status(404).json({ error: "Not found" });
+
+    // Check if user owns this question (unless admin)
+    if (question.createdBy && question.createdBy !== userId && req.user?.role !== 'admin') {
+      return res.status(403).json({ error: "You can only update your own questions" });
+    }
 
     // Update fields
     if (req.body.question) question.question = req.body.question;
@@ -65,7 +74,17 @@ exports.updateQuestion = async (req, res) => {
 
 exports.deleteQuestion = async (req, res) => {
   try {
-    const question = await Question.findOneAndDelete({ id: req.params.id });
+    const userId = req.user?.userId;
+    const question = await Question.findOne({ id: req.params.id });
+
+    if (!question) return res.status(404).json({ error: "Not found" });
+
+    // Check if user owns this question (unless admin)
+    if (question.createdBy && question.createdBy !== userId && req.user?.role !== 'admin') {
+      return res.status(403).json({ error: "You can only delete your own questions" });
+    }
+
+    await Question.findOneAndDelete({ id: req.params.id });
 
     if (!question) return res.status(404).json({ error: "Not found" });
 
@@ -106,6 +125,35 @@ exports.getQuestions = async (req, res) => {
     res.json(questionsData);
   } catch (error) {
     console.error('Error getting questions:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getUserQuestions = async (req, res) => {
+  try {
+    const userId = req.user?.userId; // Get userId from authenticated user
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    // Get questions created by this user
+    const questions = await Question.find({ createdBy: userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Remove answers for security (only return question, choices, id)
+    const questionsWithoutAnswers = questions.map(q => ({
+      id: q.id,
+      question: q.question,
+      choices: q.choices,
+      createdBy: q.createdBy,
+      createdAt: q.createdAt
+    }));
+
+    res.json(questionsWithoutAnswers);
+  } catch (error) {
+    console.error('Error getting user questions:', error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
