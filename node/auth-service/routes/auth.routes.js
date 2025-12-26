@@ -118,6 +118,7 @@ router.post("/players/register", authController.registerPlayer);
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/players/:id", authController.getPlayer);
+router.put("/players/:id/update-last-login", authController.updateLastLogin);
 
 /**
  * @swagger
@@ -179,6 +180,7 @@ router.get("/verify-token", authController.verifyToken);
  */
 router.get("/admin/users", authenticateAdmin, authController.getUsers);
 router.get("/admin/users/stats", authenticateAdmin, authController.getUserStats);
+router.get("/admin/analytics", authenticateAdmin, authController.getAnalytics);
 router.put("/admin/users/:userId/approve", authenticateAdmin, authController.approveUser);
 router.put("/admin/users/:userId/reject", authenticateAdmin, authController.rejectUser);
 router.put("/admin/users/:userId/block", authenticateAdmin, authController.blockUser);

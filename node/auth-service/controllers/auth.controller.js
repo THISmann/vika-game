@@ -9,10 +9,28 @@ const CACHE_KEYS = {
   ALL_PLAYERS: cache.PREFIXES.AUTH + 'all-players'
 };
 
-exports.adminLogin = (req, res) => {
+/**
+ * Update lastLoginAt for a user
+ */
+async function updateLastLogin(userId) {
+    try {
+        await User.updateOne(
+            { id: userId },
+            { $set: { lastLoginAt: new Date() } }
+        );
+        console.log(`✅ Updated lastLoginAt for user: ${userId}`);
+    } catch (error) {
+        console.error(`❌ Error updating lastLoginAt for user ${userId}:`, error);
+    }
+}
+
+exports.adminLogin = async (req, res) => {
     const { username, password } = req.body;
 
     if (username === "admin" && password === "admin") {
+        // Update lastLoginAt for admin user (using a special admin ID)
+        const adminUserId = "00000000-0000-0000-0000-000000000001"; // Admin user ID
+        await updateLastLogin(adminUserId);
         return res.json({ token: generateToken("admin") });
     }
 
@@ -49,7 +67,8 @@ exports.registerPlayer = async (req, res) => {
             country: country || undefined,
             score: 0,
             status: 'pending', // New users start as pending
-            createdAt: new Date()
+            createdAt: new Date(),
+            lastLoginAt: new Date() // Set initial login time on registration
         });
 
         await newUser.save();
@@ -113,7 +132,34 @@ exports.getAllPlayers = async (req, res) => {
         console.error('Error getting all players:', error);
         res.status(500).json({ error: "Internal server error" });
     }
-}
+};
+
+/**
+ * Update lastLoginAt for a player (called by game-service when player connects)
+ */
+exports.updateLastLogin = async (req, res) => {
+    try {
+        const playerId = req.params.id;
+        
+        const user = await User.findOne({ id: playerId });
+        if (!user) {
+            return res.status(404).json({ error: "Player not found" });
+        }
+
+        user.lastLoginAt = new Date();
+        await user.save();
+        
+        // Invalidate cache
+        await cache.del(CACHE_KEYS.PLAYER(playerId));
+        await cache.del(CACHE_KEYS.ALL_PLAYERS);
+        
+        console.log(`✅ Updated lastLoginAt for player: ${playerId}`);
+        res.json({ success: true, lastLoginAt: user.lastLoginAt });
+    } catch (error) {
+        console.error('Error updating lastLoginAt:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
 
 /**
  * Get all users with optional filters (Admin only)
@@ -156,6 +202,163 @@ exports.getUsers = async (req, res) => {
         });
     } catch (error) {
         console.error('Error getting users:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Get analytics data for charts (Admin only)
+ */
+exports.getAnalytics = async (req, res) => {
+    try {
+        const { period = 30 } = req.query; // Default to 30 days
+        const days = parseInt(period, 10) || 30;
+        
+        // Set startDate to beginning of day (00:00:00) to include full day
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        startDate.setHours(0, 0, 0, 0); // Set to beginning of day
+        
+        // Set endDate to end of today (23:59:59) to include today
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999); // Set to end of today
+        
+        // Get user registrations grouped by date
+        const registrationsByDate = await User.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: days <= 30 ? '%Y-%m-%d' : days <= 90 ? '%Y-%m-%d' : '%Y-%m',
+                            date: '$createdAt'
+                        }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Get user logins grouped by date (for active users)
+        const loginsByDate = await User.aggregate([
+            {
+                $match: {
+                    lastLoginAt: { 
+                        $gte: startDate, 
+                        $lte: endDate,
+                        $ne: null 
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: days <= 30 ? '%Y-%m-%d' : days <= 90 ? '%Y-%m-%d' : '%Y-%m',
+                            date: '$lastLoginAt'
+                        }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+        
+        // Build complete date range
+        const labels = [];
+        const registrations = [];
+        const activeUsers = [];
+        const userGrowth = [];
+        
+        const now = new Date();
+        let cumulativeUsers = 0;
+        
+        // Get total users before the period
+        const usersBeforePeriod = await User.countDocuments({
+            createdAt: { $lt: startDate }
+        });
+        cumulativeUsers = usersBeforePeriod;
+        
+        // Determine date format based on period
+        const dateFormat = days <= 30 ? '%Y-%m-%d' : days <= 90 ? '%Y-%m-%d' : '%Y-%m';
+        
+        // Determine iteration step
+        const isMonthly = days > 90;
+        const iterations = isMonthly ? Math.ceil(days / 30) : days;
+        
+        for (let i = iterations - 1; i >= 0; i--) {
+            const date = new Date(now);
+            if (isMonthly) {
+                date.setMonth(date.getMonth() - i);
+                date.setDate(1); // First day of month
+            } else {
+                date.setDate(date.getDate() - i);
+            }
+            
+            let label;
+            if (days <= 30) {
+                label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } else if (days <= 90) {
+                label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } else {
+                label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            }
+            
+            let dateKey;
+            if (days <= 90) {
+                dateKey = date.toISOString().split('T')[0];
+            } else {
+                dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            }
+            
+            labels.push(label);
+            
+            // Find registrations for this date
+            const regData = registrationsByDate.find(r => r._id === dateKey);
+            const regCount = regData ? regData.count : 0;
+            registrations.push(regCount);
+            
+            cumulativeUsers += regCount;
+            userGrowth.push(cumulativeUsers);
+            
+            // Find active users for this date
+            const loginData = loginsByDate.find(l => l._id === dateKey);
+            activeUsers.push(loginData ? loginData.count : 0);
+        }
+        
+        // Calculate summary
+        const totalUsers = await User.countDocuments();
+        const newUsers = registrations.reduce((a, b) => a + b, 0);
+        const totalVisits = activeUsers.reduce((a, b) => a + b, 0);
+        const avgActiveUsers = Math.round(activeUsers.reduce((a, b) => a + b, 0) / activeUsers.length) || 0;
+        
+        res.json({
+            period: days,
+            summary: {
+                totalUsers,
+                newUsers,
+                totalVisits,
+                activeUsers: avgActiveUsers
+            },
+            charts: {
+                labels,
+                userGrowth,
+                registrations,
+                activeUsers,
+                visits: activeUsers // Using active users as visits proxy
+            }
+        });
+    } catch (error) {
+        console.error('Error getting analytics:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

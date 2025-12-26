@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-50">
-    <!-- Admin Navbar -->
-    <AdminNavbar v-if="isAdmin" />
+    <!-- Admin Navbar (only for login page) -->
+    <AdminNavbar v-if="isAdmin && $route.path !== '/admin/login'" />
     
     <main>
       <router-view />

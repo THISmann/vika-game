@@ -119,6 +119,11 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/users/stats`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/stats`,
+    analytics: (period) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/analytics${period ? `?period=${period}` : ''}`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/analytics${period ? `?period=${period}` : ''}`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/analytics${period ? `?period=${period}` : ''}`,
     approveUser: (userId) => useApiGateway
       ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/approve`
       : isProduction

@@ -20,6 +20,26 @@ const routes = [
     component: AdminDashboard,
     beforeEnter: adminGuard
   },
+  { 
+    path: '/admin/users', 
+    component: () => import('../components/admin/AdminUsers.vue'),
+    beforeEnter: adminGuard
+  },
+  { 
+    path: '/admin/questions', 
+    component: () => import('../components/admin/AdminQuestions.vue'),
+    beforeEnter: adminGuard
+  },
+  { 
+    path: '/admin/settings', 
+    component: () => import('../components/admin/AdminSettings.vue'),
+    beforeEnter: adminGuard
+  },
+  { 
+    path: '/admin/analytics', 
+    component: () => import('../components/admin/AdminAnalytics.vue'),
+    beforeEnter: adminGuard
+  },
 ]
 
 const router = createRouter({
@@ -28,4 +48,3 @@ const router = createRouter({
 })
 
 export default router
-

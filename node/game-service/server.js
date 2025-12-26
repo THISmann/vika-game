@@ -193,11 +193,21 @@ io.on("connection", (socket) => {
         }
         
         // Initialiser le score du joueur s'il n'existe pas encore
+        // Et mettre à jour lastLoginAt dans auth-service
         try {
           const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
           const player = playersRes.data.find(p => p.id === playerId);
           const playerName = player ? player.name : 'Joueur anonyme';
           console.log(`📝 Player name from auth-service: ${playerName}`);
+          
+          // Update lastLoginAt in auth-service
+          try {
+            await axios.put(`${services.AUTH_SERVICE_URL}/auth/players/${playerId}/update-last-login`);
+            console.log(`✅ Updated lastLoginAt for player: ${playerId}`);
+          } catch (loginUpdateErr) {
+            console.warn(`⚠️ Could not update lastLoginAt for player ${playerId}:`, loginUpdateErr.message);
+            // Continue even if update fails
+          }
           
           let score = await Score.findOne({ playerId });
           if (!score) {
