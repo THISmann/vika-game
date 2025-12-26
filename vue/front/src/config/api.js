@@ -109,6 +109,36 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`,
+    users: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users`,
+    usersStats: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/stats`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/stats`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/stats`,
+    approveUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/approve`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/approve`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/approve`,
+    rejectUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/reject`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/reject`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/reject`,
+    blockUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/block`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/block`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/block`,
+    unblockUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/unblock`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/unblock`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/unblock`,
   },
   quiz: {
     // En production, API_CONFIG.QUIZ_SERVICE est déjà /api/quiz
@@ -244,14 +274,16 @@ export const API_URLS = {
         }
         return ''
       } else {
-        // En développement, TOUJOURS utiliser localhost:3003 directement (game-service)
-        // Même si on utilise l'API Gateway pour les requêtes HTTP
-        // L'API Gateway ne gère pas les WebSockets
-        // IGNORER VITE_GAME_SERVICE_URL pour les WebSockets car il peut pointer vers l'API Gateway
-        const url = 'http://localhost:3003'
-        console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', url)
-        console.log('🏠 Note: Ignoring VITE_GAME_SERVICE_URL for WebSocket (API Gateway does not support WebSockets)')
-        return url
+        // En développement local avec Minikube/Kubernetes, utiliser le proxy Nginx
+        // Le proxy Nginx route /api/game vers game-service et supporte les WebSockets
+        if (typeof window !== 'undefined') {
+          // Utiliser l'URL de base du navigateur (via proxy Nginx)
+          const url = `${window.location.protocol}//${window.location.host}`
+          console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
+          return url
+        }
+        // Fallback si window n'est pas disponible
+        return 'http://localhost:5173'
       }
     })(),
   },

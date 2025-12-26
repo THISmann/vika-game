@@ -1,0 +1,72 @@
+{{- if .Values.quizService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quiz-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: quiz-service
+spec:
+  replicas: {{ .Values.quizService.replicas }}
+  selector:
+    matchLabels:
+      app: quiz-service
+  template:
+    metadata:
+      labels:
+        app: quiz-service
+    spec:
+      containers:
+      - name: quiz-service
+        image: {{ .Values.global.imageRegistry }}{{ .Values.quizService.image.repository }}:{{ .Values.quizService.image.tag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.quizService.service.port }}
+        env:
+        - name: PORT
+          value: "{{ .Values.quizService.service.port }}"
+        - name: MONGODB_URI
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONGODB_URI
+        - name: AUTH_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AUTH_SERVICE_URL
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: REDIS_PORT
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
+        resources:
+          {{- toYaml .Values.quizService.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quiz-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: quiz-service
+spec:
+  type: {{ .Values.quizService.service.type }}
+  ports:
+  - port: {{ .Values.quizService.service.port }}
+    targetPort: {{ .Values.quizService.service.port }}
+  selector:
+    app: quiz-service
+{{- end }}
+
+

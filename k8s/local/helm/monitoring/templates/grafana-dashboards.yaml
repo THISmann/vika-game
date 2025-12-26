@@ -1,0 +1,143 @@
+{{- if .Values.grafana.dashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  error-monitoring.json: |
+    {
+      "dashboard": {
+        "title": "Error Monitoring - Microservices",
+        "tags": ["errors", "microservices", "logs"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "10s",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Errors by Service",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "refId": "A",
+                "query": "kubernetes.labels.app:* AND (tag:error OR error_detected:true)",
+                "alias": "Errors"
+              }
+            ],
+            "xaxis": {"mode": "time"},
+            "yaxes": [
+              {"format": "short", "label": "Count"},
+              {"format": "short"}
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Error Logs Table",
+            "type": "table",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "refId": "A",
+                "query": "tag:error OR error_detected:true",
+                "alias": "Errors"
+              }
+            ],
+            "columns": [
+              {"text": "Time", "value": "@timestamp"},
+              {"text": "Service", "value": "kubernetes.labels.app"},
+              {"text": "Pod", "value": "kubernetes.pod.name"},
+              {"text": "Message", "value": "message"}
+            ]
+          },
+          {
+            "id": 3,
+            "title": "HTTP Errors",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "refId": "A",
+                "query": "tag:http_error",
+                "alias": "HTTP Errors"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Logs by Service",
+            "type": "piechart",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "refId": "A",
+                "query": "*",
+                "alias": "Logs"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  
+  system-metrics.json: |
+    {
+      "dashboard": {
+        "title": "System Metrics",
+        "tags": ["metrics", "system"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "10s",
+        "panels": [
+          {
+            "id": 1,
+            "title": "CPU Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "datasource": "Prometheus",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total[5m])",
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Memory Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "datasource": "Prometheus",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes",
+                "refId": "A"
+              }
+            ]
+          }
+        ]
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /etc/grafana/provisioning/dashboards
+{{- end }}
+

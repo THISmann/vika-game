@@ -1,0 +1,97 @@
+{{- if .Values.promtail.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: monitoring
+data:
+  config.yml: |
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 9095
+    
+    positions:
+      filename: /tmp/positions.yaml
+    
+    clients:
+      - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+    
+    scrape_configs:
+    # Scrape les logs de tous les pods Kubernetes
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - intelectgame
+            - default
+            - kube-system
+      pipeline_stages:
+      # Extraire les métadonnées Kubernetes
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            time: time
+      - labels:
+          stream:
+      - output:
+          source: output
+      # Ajouter les labels Kubernetes
+      - kubernetes:
+          labels:
+            app: app
+            component: component
+            tier: tier
+      # Parser les timestamps
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      # Détecter les erreurs
+      - match:
+          selector: '{stream="stderr"}'
+          stages:
+            - labels:
+                log_level: error
+      - match:
+          selector: '{stream="stdout"}'
+          stages:
+            - regex:
+                expression: '(?i)(error|exception|failed|failure|fatal|critical)'
+            - labels:
+                log_level: error
+      relabel_configs:
+      # Garder seulement les pods avec des logs
+      - source_labels:
+          - __meta_kubernetes_pod_controller_name
+        regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+        action: replace
+        target_label: __tmp_controller_name
+      - source_labels:
+          - __meta_kubernetes_pod_label_app
+        target_label: app
+      - source_labels:
+          - __meta_kubernetes_pod_label_component
+        target_label: component
+      - source_labels:
+          - __meta_kubernetes_pod_name
+        target_label: pod
+      - source_labels:
+          - __meta_kubernetes_namespace
+        target_label: namespace
+      - source_labels:
+          - __meta_kubernetes_pod_container_name
+        target_label: container
+      - replacement: /var/log/pods/*$1/*.log
+        target_label: __path__
+        source_labels:
+          - __meta_kubernetes_pod_uid
+          - __meta_kubernetes_pod_container_name
+        separator: /
+      - source_labels:
+          - __meta_kubernetes_pod_container_name
+        regex: (.+)
+        target_label: __path__
+        replacement: /var/log/pods/*$1/*.log
+{{- end }}
+

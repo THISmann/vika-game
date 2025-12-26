@@ -1,0 +1,65 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: {{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}
+        imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.prometheus.service.port }}
+        resources:
+          {{- toYaml .Values.prometheus.resources | nindent 10 }}
+        volumeMounts:
+        {{- if .Values.prometheus.persistence.enabled }}
+        - name: data
+          mountPath: /prometheus
+        {{- end }}
+      volumes:
+      {{- if .Values.prometheus.persistence.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - port: {{ .Values.prometheus.service.port }}
+    targetPort: {{ .Values.prometheus.service.port }}
+  selector:
+    app: prometheus
+---
+{{- if .Values.prometheus.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.persistence.size }}
+{{- end }}
+{{- end }}
+
+

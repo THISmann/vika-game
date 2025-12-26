@@ -1,12 +1,12 @@
 <template>
-  <div id="app" class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-    <!-- Player Navbar -->
-    <PlayerNavbar v-if="isPlayerRoute" />
-    
+  <div id="app" :class="appClass">
     <!-- Admin Navbar -->
-    <AdminNavbar v-else-if="isAdminRoute && isAdmin" />
+    <AdminNavbar v-if="isAdminRoute" />
     
-    <!-- No navbar for admin login -->
+    <!-- Player Navbar -->
+    <PlayerNavbar v-if="isPlayerRoute && !isLandingPage" />
+    
+    <!-- No navbar for landing page -->
     
     <main :class="mainClass">
       <router-view />
@@ -25,18 +25,27 @@ export default {
     AdminNavbar
   },
   computed: {
-    isAdmin() {
-      return localStorage.getItem('admin') === '1'
+    isLandingPage() {
+      return this.$route.path === '/'
     },
     isPlayerRoute() {
-      return this.$route.path.startsWith('/player') || this.$route.path === '/'
+      return this.$route.path.startsWith('/player') && this.$route.path !== '/'
     },
     isAdminRoute() {
       return this.$route.path.startsWith('/admin')
     },
+    appClass() {
+      if (this.isLandingPage) {
+        return 'w-full h-screen overflow-hidden' // Full screen for landing page only
+      }
+      return 'min-h-screen bg-gradient-to-br from-gray-50 to-gray-100'
+    },
     mainClass() {
-      if (this.isAdminRoute && this.isAdmin) {
-        return 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
+      if (this.isLandingPage) {
+        return 'w-full h-full' // Full screen for landing page only
+      }
+      if (this.isAdminRoute) {
+        return '' // Admin routes handle their own layout
       }
       return 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
     }

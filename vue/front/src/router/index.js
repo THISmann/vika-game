@@ -1,16 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminGuard, loginGuard } from './guards'
 
-import AdminLogin from '../components/admin/AdminLogin.vue'
-import AdminDashboard from '../components/admin/AdminDashboard.vue'
-import ManageQuestions from '../components/admin/ManageQuestions.vue'
-
+import Landing from '../components/Landing.vue'
 import PlayerRegister from '../components/player/PlayerRegister.vue'
 import QuizPlay from '../components/player/QuizPlay.vue'
 import Leaderboard from '../components/player/Leaderboard.vue'
 
+import AdminLogin from '../components/admin/AdminLogin.vue'
+import AdminUserManagement from '../components/admin/AdminUserManagement.vue'
+import ManageQuestions from '../components/admin/ManageQuestions.vue'
+
 const routes = [
-  { path: '/', redirect: '/player/register' },
+  { path: '/', component: Landing },
 
   // Joueur
   { path: '/player/register', component: PlayerRegister },
@@ -25,12 +26,17 @@ const routes = [
   },
   { 
     path: '/admin/dashboard', 
-    component: AdminDashboard,
+    component: () => import('../components/admin/AdminDashboard.vue'),
     beforeEnter: adminGuard
   },
   { 
     path: '/admin/questions', 
     component: ManageQuestions,
+    beforeEnter: adminGuard
+  },
+  { 
+    path: '/admin/users', 
+    component: AdminUserManagement,
     beforeEnter: adminGuard
   },
 ]

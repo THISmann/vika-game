@@ -1,0 +1,69 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: {{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}
+        imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_DATABASE
+          value: "intelectgame"
+        volumeMounts:
+        - name: data
+          mountPath: /data/db
+        resources:
+          {{- toYaml .Values.mongodb.resources | nindent 10 }}
+      volumes:
+      {{- if .Values.mongodb.persistence.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
+      {{- else }}
+      - name: data
+        emptyDir: {}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: database
+spec:
+  type: {{ .Values.mongodb.service.type }}
+  ports:
+  - port: {{ .Values.mongodb.service.port }}
+    targetPort: 27017
+  selector:
+    app: mongodb
+---
+{{- if .Values.mongodb.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mongodb.persistence.size }}
+{{- end }}
+{{- end }}
+
+

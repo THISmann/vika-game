@@ -38,27 +38,26 @@ class SocketService {
 
     this.isConnecting = true
 
-    // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
-    // L'API Gateway ne gère pas les WebSockets
-    // Utiliser API_URLS.ws.game qui pointe toujours vers le game-service directement
+    // Utiliser API_URLS.ws.game qui gère automatiquement dev/prod
     let wsUrl = API_URLS.ws.game
     
-    // Vérifier que l'URL est correcte (forcer localhost:3003 en développement)
+    // En local avec Minikube/Kubernetes, utiliser le proxy Nginx via l'URL du navigateur
+    // Le proxy Nginx route /api/game/socket.io vers game-service
     const isLocalDev = typeof window !== 'undefined' && 
                       (window.location.hostname === 'localhost' || 
                        window.location.hostname === '127.0.0.1' ||
                        window.location.hostname.startsWith('192.168.') ||
                        window.location.hostname.startsWith('10.'))
     
-    // Si on est en développement local mais que l'URL n'est pas localhost:3003, la corriger
-    if (isLocalDev && wsUrl && !wsUrl.includes('localhost:3003') && !wsUrl.includes('127.0.0.1:3003')) {
-      console.warn('⚠️ WebSocket URL incorrect for development, forcing localhost:3003')
-      console.warn('   Original URL:', wsUrl)
+    // Si on est en local avec Kubernetes (via proxy), utiliser l'URL du navigateur
+    // Cela permet d'utiliser le proxy Nginx qui route /api/game vers game-service
+    if (isLocalDev && typeof window !== 'undefined') {
+      // Utiliser l'URL de base du navigateur (via proxy Nginx)
+      wsUrl = `${window.location.protocol}//${window.location.host}`
+      console.log('🏠 Local Kubernetes mode - Using WebSocket URL via proxy:', wsUrl)
+    } else if (isLocalDev) {
+      // Fallback pour développement sans Kubernetes
       wsUrl = 'http://localhost:3003'
-      console.warn('   Corrected URL:', wsUrl)
-    }
-    
-    if (isLocalDev) {
       console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     } else {
       console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
@@ -72,8 +71,16 @@ class SocketService {
       timeout: 20000
     })
 
+    // En local avec Kubernetes (via proxy Nginx), utiliser le chemin /api/game/socket.io
+    // En développement direct (localhost:3003), utiliser /socket.io
+    // Si l'URL est celle du navigateur (localhost:5173), c'est via proxy Kubernetes
+    const isKubernetesLocal = isLocalDev && typeof window !== 'undefined' && 
+                              window.location.port === '5173'
+    const socketPath = isKubernetesLocal ? '/api/game/socket.io' : '/socket.io'
+    console.log('🔌 Socket path:', socketPath, '(Kubernetes local:', isKubernetesLocal, ')')
+    
     this.socket = io(wsUrl, {
-      path: '/socket.io',
+      path: socketPath,
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,

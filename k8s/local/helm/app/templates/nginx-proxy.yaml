@@ -1,0 +1,132 @@
+{{- if .Values.nginxProxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-proxy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    app: nginx-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-proxy
+  template:
+    metadata:
+      labels:
+        app: nginx-proxy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-proxy-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-proxy-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        
+        # Activer les underscores dans les headers
+        underscores_in_headers on;
+        
+        # Frontend
+        location / {
+            proxy_pass http://frontend:{{ .Values.frontend.service.port }};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        
+        # Auth Service
+        location /api/auth {
+            rewrite ^/api/auth/(.*)$ /auth/$1 break;
+            proxy_pass http://auth-service:{{ .Values.authService.service.port }};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+            proxy_pass_request_headers on;
+        }
+        
+        # Quiz Service
+        location /api/quiz {
+            rewrite ^/api/quiz/(.*)$ /quiz/$1 break;
+            proxy_pass http://quiz-service:{{ .Values.quizService.service.port }};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+            proxy_pass_request_headers on;
+        }
+        
+        # Game Service WebSocket (doit être avant /api/game pour priorité)
+        location /api/game/socket.io {
+            proxy_pass http://game-service:{{ .Values.gameService.service.port }}/socket.io;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # WebSocket support
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 86400;
+        }
+        
+        # Game Service HTTP
+        location /api/game {
+            rewrite ^/api/game/(.*)$ /game/$1 break;
+            proxy_pass http://game-service:{{ .Values.gameService.service.port }};
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+            proxy_pass_request_headers on;
+            
+            # WebSocket support (fallback)
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-proxy
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    app: nginx-proxy
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30081
+  selector:
+    app: nginx-proxy
+{{- end }}
+

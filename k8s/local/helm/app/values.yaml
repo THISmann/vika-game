@@ -1,0 +1,113 @@
+# Values for application services
+
+# Configuration globale
+global:
+  namespace: intelectgame
+  imageRegistry: ""  # Vide pour utiliser les images locales
+  imagePullPolicy: Never  # Utiliser les images de Minikube/local
+
+# Auth Service
+authService:
+  enabled: true
+  image:
+    repository: gamev2-auth-service
+    tag: "local"
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+  service:
+    type: ClusterIP
+    port: 3001
+
+# Quiz Service
+quizService:
+  enabled: true
+  image:
+    repository: gamev2-quiz-service
+    tag: "local"
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+  service:
+    type: ClusterIP
+    port: 3002
+
+# Game Service
+gameService:
+  enabled: true
+  image:
+    repository: gamev2-game-service
+    tag: "local"
+  replicas: 1
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  service:
+    type: ClusterIP
+    port: 3003
+
+# Frontend
+frontend:
+  enabled: true
+  image:
+    repository: gamev2-frontend
+    tag: "local"
+  replicas: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  service:
+    type: ClusterIP  # ClusterIP car le proxy Nginx expose le frontend
+    port: 5173
+
+# Telegram Bot
+telegramBot:
+  enabled: true
+  image:
+    repository: gamev2-telegram-bot
+    tag: "local"
+  replicas: 1
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+
+# Configuration des services externes
+externalServices:
+  mongodb:
+    host: mongodb.database.svc.cluster.local
+    port: 27017
+  redis:
+    host: redis.database.svc.cluster.local  # FQDN pour accéder au service dans un autre namespace
+    port: 6379
+
+# Ingress Configuration
+ingress:
+  enabled: false  # Désactivé car Nginx Ingress Controller a des problèmes
+
+# Nginx Proxy (alternative simple pour local)
+nginxProxy:
+  enabled: true  # Activer le proxy Nginx simple pour router les requêtes API
+
+

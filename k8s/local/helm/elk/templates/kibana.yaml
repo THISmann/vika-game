@@ -1,0 +1,68 @@
+{{- if .Values.kibana.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: elk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: {{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}
+        imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.kibana.service.port }}
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch.elk.svc.cluster.local:9200"
+        resources:
+          {{- toYaml .Values.kibana.resources | nindent 10 }}
+        volumeMounts:
+        {{- if .Values.kibana.persistence.enabled }}
+        - name: data
+          mountPath: /usr/share/kibana/data
+        {{- end }}
+      volumes:
+      {{- if .Values.kibana.persistence.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: kibana-pvc
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: elk
+spec:
+  type: {{ .Values.kibana.service.type }}
+  ports:
+  - port: {{ .Values.kibana.service.port }}
+    targetPort: {{ .Values.kibana.service.port }}
+  selector:
+    app: kibana
+---
+{{- if .Values.kibana.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kibana-pvc
+  namespace: elk
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.kibana.persistence.size }}
+{{- end }}
+{{- end }}
+
+

@@ -183,3 +183,4 @@ Avant d'ajouter une nouvelle connexion WebSocket :
 - [ ] Documenter dans le code que l'API Gateway ne gère pas les WebSockets
 
 
+

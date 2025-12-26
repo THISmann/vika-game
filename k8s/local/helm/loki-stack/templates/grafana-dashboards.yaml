@@ -1,0 +1,93 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /etc/grafana/provisioning/dashboards
+  logs-overview.json: |
+    {
+      "dashboard": {
+        "title": "Logs Overview - Microservices",
+        "tags": ["logs", "microservices", "loki"],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "10s",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Logs by Service",
+            "type": "logs",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "{namespace=\"intelectgame\"}",
+                "refId": "A"
+              }
+            ],
+            "options": {
+              "dedupStrategy": "none",
+              "enableLogDetails": true,
+              "prettifyLogMessage": false,
+              "showCommonLabels": false,
+              "showLabels": false,
+              "showTime": true,
+              "sortOrder": "Descending",
+              "wrapLogMessage": false
+            }
+          },
+          {
+            "id": 2,
+            "title": "Error Logs",
+            "type": "logs",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "{namespace=\"intelectgame\", log_level=\"error\"}",
+                "refId": "A"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Logs Rate by Service",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "targets": [
+              {
+                "expr": "sum(rate({namespace=\"intelectgame\"}[5m])) by (app)",
+                "refId": "A",
+                "legendFormat": "{{app}}"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Error Rate by Service",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "targets": [
+              {
+                "expr": "sum(rate({namespace=\"intelectgame\", log_level=\"error\"}[5m])) by (app)",
+                "refId": "A",
+                "legendFormat": "{{app}}"
+              }
+            ]
+          }
+        ]
+      }
+    }
+{{- end }}
+

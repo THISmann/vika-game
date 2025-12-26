@@ -51,14 +51,14 @@
       <!-- Leaderboard Items -->
       <div v-else class="divide-y-2 divide-gray-200">
         <div
-          v-for="(player, index) in leaderboard"
+          v-for="(player, index) in paginatedLeaderboard"
           :key="player.playerId || index"
           class="p-5 sm:p-6 md:p-7 lg:p-8 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all active:scale-[0.98]"
           style="touch-action: manipulation;"
           :class="{
-            'bg-gradient-to-r from-yellow-50 to-orange-50': index === 0,
-            'bg-gradient-to-r from-gray-50 to-slate-50': index === 1,
-            'bg-gradient-to-r from-amber-50 to-yellow-50': index === 2,
+            'bg-gradient-to-r from-yellow-50 to-orange-50': (startIndex + index) === 0,
+            'bg-gradient-to-r from-gray-50 to-slate-50': (startIndex + index) === 1,
+            'bg-gradient-to-r from-amber-50 to-yellow-50': (startIndex + index) === 2,
           }"
         >
           <div class="flex items-center justify-between gap-3 sm:gap-4 md:gap-5">
@@ -67,16 +67,16 @@
               <div
                 class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center font-extrabold text-lg sm:text-xl md:text-2xl shadow-xl ring-4"
                 :class="{
-                  'bg-gradient-to-br from-yellow-400 to-orange-500 text-white ring-yellow-300': index === 0,
-                  'bg-gradient-to-br from-gray-300 to-gray-400 text-white ring-gray-200': index === 1,
-                  'bg-gradient-to-br from-amber-400 to-yellow-500 text-white ring-amber-300': index === 2,
-                  'bg-gradient-to-br from-blue-200 to-purple-200 text-gray-700 ring-blue-100': index > 2,
+                  'bg-gradient-to-br from-yellow-400 to-orange-500 text-white ring-yellow-300': (startIndex + index) === 0,
+                  'bg-gradient-to-br from-gray-300 to-gray-400 text-white ring-gray-200': (startIndex + index) === 1,
+                  'bg-gradient-to-br from-amber-400 to-yellow-500 text-white ring-amber-300': (startIndex + index) === 2,
+                  'bg-gradient-to-br from-blue-200 to-purple-200 text-gray-700 ring-blue-100': (startIndex + index) > 2,
                 }"
               >
-                <span v-if="index === 0">🥇</span>
-                <span v-else-if="index === 1">🥈</span>
-                <span v-else-if="index === 2">🥉</span>
-                <span v-else>{{ index + 1 }}</span>
+                <span v-if="(startIndex + index) === 0">🥇</span>
+                <span v-else-if="(startIndex + index) === 1">🥈</span>
+                <span v-else-if="(startIndex + index) === 2">🥉</span>
+                <span v-else>{{ startIndex + index + 1 }}</span>
               </div>
 
               <!-- Player Info -->
@@ -85,10 +85,10 @@
                   <div
                     class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center font-extrabold text-white text-base sm:text-lg md:text-xl shadow-xl ring-4"
                     :class="{
-                      'bg-gradient-to-br from-yellow-400 to-orange-500 ring-yellow-300': index === 0,
-                      'bg-gradient-to-br from-gray-400 to-gray-500 ring-gray-200': index === 1,
-                      'bg-gradient-to-br from-amber-400 to-yellow-500 ring-amber-300': index === 2,
-                      'bg-gradient-to-br from-blue-500 to-purple-600 ring-blue-200': index > 2,
+                      'bg-gradient-to-br from-yellow-400 to-orange-500 ring-yellow-300': (startIndex + index) === 0,
+                      'bg-gradient-to-br from-gray-400 to-gray-500 ring-gray-200': (startIndex + index) === 1,
+                      'bg-gradient-to-br from-amber-400 to-yellow-500 ring-amber-300': (startIndex + index) === 2,
+                      'bg-gradient-to-br from-blue-500 to-purple-600 ring-blue-200': (startIndex + index) > 2,
                     }"
                   >
                     {{ player.playerName ? player.playerName.charAt(0).toUpperCase() : '?' }}
@@ -110,10 +110,10 @@
                   <span
                     class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold"
                     :class="{
-                      'text-yellow-600': index === 0,
-                      'text-gray-600': index === 1,
-                      'text-amber-600': index === 2,
-                      'text-blue-600': index > 2,
+                      'text-yellow-600': (startIndex + index) === 0,
+                      'text-gray-600': (startIndex + index) === 1,
+                      'text-amber-600': (startIndex + index) === 2,
+                      'text-blue-600': (startIndex + index) > 2,
                     }"
                   >
                     {{ player.score }}
@@ -123,6 +123,56 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="border-t-2 border-gray-200 bg-gray-50 px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="text-sm sm:text-base text-gray-600">
+          {{ formatPaginationText(startIndex + 1, Math.min(endIndex, totalItems), totalItems) }}
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            :class="{
+              'opacity-50 cursor-not-allowed': currentPage === 1,
+              'hover:bg-gray-200': currentPage > 1
+            }"
+            class="px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg transition-all disabled:cursor-not-allowed"
+            style="touch-action: manipulation;"
+          >
+            {{ t('leaderboard.pagination.previous') }}
+          </button>
+          
+          <div class="flex items-center gap-1 sm:gap-2">
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              @click="goToPage(page)"
+              :class="{
+                'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-600': page === currentPage,
+                'bg-white text-gray-700 border-gray-300 hover:bg-gray-50': page !== currentPage
+              }"
+              class="w-8 sm:w-10 h-8 sm:h-10 text-sm sm:text-base font-semibold border-2 rounded-lg transition-all"
+              style="touch-action: manipulation;"
+            >
+              {{ page }}
+            </button>
+          </div>
+          
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            :class="{
+              'opacity-50 cursor-not-allowed': currentPage === totalPages,
+              'hover:bg-gray-200': currentPage < totalPages
+            }"
+            class="px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg transition-all disabled:cursor-not-allowed"
+            style="touch-action: manipulation;"
+          >
+            {{ t('leaderboard.pagination.next') }}
+          </button>
         </div>
       </div>
     </div>
@@ -163,7 +213,64 @@ export default {
       leaderboard: [],
       socket: null,
       loading: true,
+      currentPage: 1,
+      itemsPerPage: 5,
     }
+  },
+  computed: {
+    totalItems() {
+      return this.leaderboard.length
+    },
+    totalPages() {
+      return Math.ceil(this.totalItems / this.itemsPerPage)
+    },
+    startIndex() {
+      return (this.currentPage - 1) * this.itemsPerPage
+    },
+    endIndex() {
+      return this.startIndex + this.itemsPerPage
+    },
+    paginatedLeaderboard() {
+      return this.leaderboard.slice(this.startIndex, this.endIndex)
+    },
+    visiblePages() {
+      const pages = []
+      const maxVisible = 5
+      let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2))
+      let end = Math.min(this.totalPages, start + maxVisible - 1)
+      
+      if (end - start < maxVisible - 1) {
+        start = Math.max(1, end - maxVisible + 1)
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      
+      return pages
+    },
+  },
+  methods: {
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page
+        // Scroll to top of leaderboard
+        this.$nextTick(() => {
+          const leaderboardElement = document.querySelector('.bg-gradient-to-br.from-white.to-gray-50')
+          if (leaderboardElement) {
+            leaderboardElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        })
+      }
+    },
+    formatPaginationText(start, end, total) {
+      const text = this.t('leaderboard.pagination.showing')
+      return text
+        .replace('{start}', start)
+        .replace('{end}', end)
+        .replace('{total}', total)
+        .replace('{to}', end)
+    },
   },
   async mounted() {
     // --- 1. Load initial leaderboard from API

@@ -37,15 +37,18 @@ let isConnected = false;
 
 // Configuration Redis depuis les variables d'environnement
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
-const REDIS_PORT = process.env.REDIS_PORT || 6379;
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || null;
-const REDIS_DB = process.env.REDIS_DB || 0;
+const REDIS_DB = parseInt(process.env.REDIS_DB || '0', 10);
 
 // Créer le client Redis
 function createClient() {
   if (client && isConnected) {
     return client;
   }
+
+  // Log de la configuration pour déboguer
+  console.log(`🔧 Redis Configuration: host=${REDIS_HOST}, port=${REDIS_PORT}, db=${REDIS_DB}`);
 
   const config = {
     socket: {

@@ -1,0 +1,20 @@
+# Values for Nginx Ingress Controller
+
+controller:
+  enabled: true
+  image:
+    repository: registry.k8s.io/ingress-nginx/controller
+    tag: "v1.9.4"
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30080
+      https: 30443
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"

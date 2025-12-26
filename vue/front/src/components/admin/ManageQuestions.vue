@@ -1,13 +1,13 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-6">
     <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+    <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-6">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ t('admin.questions.title') }}</h1>
       <p class="text-gray-600">{{ t('admin.questions.subtitle') }}</p>
     </div>
 
     <!-- Add Question Form -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+    <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-6">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ t('admin.questions.addTitle') }}</h2>
 
       <form @submit.prevent="addQuestion" class="space-y-4">
@@ -17,7 +17,7 @@
             v-model="question"
             rows="3"
             required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
             :placeholder="t('admin.questions.questionPlaceholder')"
           ></textarea>
         </div>
@@ -30,7 +30,7 @@
             v-model="choicesRaw"
             type="text"
             required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
             :placeholder="t('admin.questions.choicesPlaceholder')"
           />
         </div>
@@ -41,7 +41,7 @@
             v-model="answer"
             type="text"
             required
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
             :placeholder="t('admin.questions.correctAnswerPlaceholder')"
           />
         </div>
@@ -62,7 +62,7 @@
 
         <button
           type="submit"
-          class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          class="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl font-bold hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl hover:shadow-2xl"
         >
           {{ t('admin.questions.addButton') }}
         </button>
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Questions List -->
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+    <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold text-gray-900">
           {{ t('admin.questions.listTitle') }} ({{ questions.length }})
@@ -172,7 +172,6 @@ export default {
     async loadQuestions() {
       try {
         this.loading = true
-        // Utiliser apiClient pour les questions publiques (pas besoin d'auth)
         const res = await apiClient.get(API_URLS.quiz.all)
         this.questions = res.data
       } catch (err) {
@@ -202,23 +201,19 @@ export default {
       }
 
       try {
-        // Utiliser quizService qui utilise apiClient avec authentification
         await quizService.createQuestion({
           question: this.question,
           choices,
           answer: this.answer,
         })
 
-        // Reset form
         this.question = ''
         this.choicesRaw = ''
         this.answer = ''
         this.success = true
 
-        // Reload questions
         await this.loadQuestions()
 
-        // Hide success message after 3 seconds
         setTimeout(() => {
           this.success = false
         }, 3000)
@@ -233,7 +228,6 @@ export default {
       }
 
       try {
-        // Utiliser quizService qui utilise apiClient avec authentification
         await quizService.deleteQuestion(id)
         this.questions = this.questions.filter((q) => q.id !== id)
       } catch (err) {
@@ -244,3 +238,4 @@ export default {
   },
 }
 </script>
+

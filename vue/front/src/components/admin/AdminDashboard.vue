@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen max-w-6xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
     <!-- Header -->
-    <div class="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 p-4 sm:p-5 md:p-6">
+    <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
         <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">{{ t('admin.dashboard.title') }}</h1>
         <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">{{ t('admin.dashboard.subtitle') }}</p>
@@ -23,7 +23,7 @@
             <!-- Bouton Copier -->
             <button
               @click="copyGameCode"
-              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2"
+              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -34,7 +34,7 @@
             <!-- Bouton Partager WhatsApp -->
             <button
               @click="shareOnWhatsApp"
-              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#25D366] text-white rounded-lg hover:bg-[#20ba5a] transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2"
+              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#25D366] text-white rounded-xl font-bold hover:bg-[#20ba5a] transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl"
             >
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -45,7 +45,7 @@
             <!-- Bouton Partager Telegram -->
             <button
               @click="shareOnTelegram"
-              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#0088cc] text-white rounded-lg hover:bg-[#0077b5] transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2"
+              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#0088cc] text-white rounded-xl font-bold hover:bg-[#0077b5] transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl"
             >
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -57,7 +57,7 @@
       </div>
 
       <!-- Game State Info -->
-      <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 sm:p-6 mb-6">
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-4 sm:p-6 mb-6 border-2 border-blue-200 shadow-xl">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold text-purple-600">{{ gameState.connectedPlayersCount }}</div>
@@ -100,7 +100,7 @@
       <!-- Game Controls -->
       <div class="space-y-4 mb-4 sm:mb-6">
         <!-- Configuration du temps par question -->
-        <div v-if="!gameState.isStarted" class="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-200">
+        <div v-if="!gameState.isStarted" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-3 sm:p-4 border-2 border-blue-200 shadow-lg">
           <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             {{ t('admin.dashboard.timePerQuestion') }}
           </label>
@@ -110,7 +110,7 @@
               type="number"
               min="5"
               max="300"
-              class="w-full sm:w-32 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full sm:w-32 px-3 sm:px-4 py-2 text-sm sm:text-base border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 shadow-lg focus:shadow-xl"
               placeholder="30"
             />
             <span class="text-xs sm:text-sm text-gray-600">
@@ -123,28 +123,28 @@
           <button
             @click="startGame"
             :disabled="gameState.isStarted || loading || totalQuestions === 0"
-            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
           >
             {{ t('admin.dashboard.startGame') }}
           </button>
           <button
             @click="nextQuestion"
             :disabled="!gameState.isStarted || loading"
-            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
           >
             {{ t('admin.dashboard.nextQuestion') }}
           </button>
           <button
             @click="endGame"
             :disabled="!gameState.isStarted || loading"
-            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white font-medium rounded-lg hover:from-orange-700 hover:to-red-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold rounded-xl hover:from-orange-700 hover:to-red-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
           >
             {{ t('admin.dashboard.endGame') }}
           </button>
           <button
             @click="deleteGame"
             :disabled="loading"
-            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-red-600 to-pink-600 text-white font-medium rounded-lg hover:from-red-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold rounded-xl hover:from-red-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
           >
             {{ t('admin.dashboard.deleteGame') }}
           </button>
@@ -156,7 +156,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
       <div
         @click="$router.push('/admin/questions')"
-        class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl"
+        class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
           <h3 class="text-xl sm:text-2xl font-bold">{{ t('admin.nav.questions') }}</h3>
@@ -185,7 +185,7 @@
 
       <div
         @click="$router.push('/player/leaderboard')"
-        class="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl"
+        class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
           <h3 class="text-xl sm:text-2xl font-bold">Classement</h3>
@@ -214,10 +214,10 @@
     </div>
 
     <!-- Messages -->
-    <div v-if="message" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+    <div v-if="message" class="bg-blue-50 border-2 border-blue-200 text-blue-700 px-4 py-3 rounded-xl shadow-lg">
       {{ message }}
     </div>
-    <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+    <div v-if="error" class="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-lg">
       {{ error }}
     </div>
   </div>
@@ -244,7 +244,7 @@ export default {
       },
       gameCode: null,
       totalQuestions: 0,
-      questionDuration: 30, // Temps par question en secondes (défaut: 30)
+      questionDuration: 30,
       loading: false,
       message: '',
       error: '',
@@ -258,15 +258,11 @@ export default {
     await this.loadQuestionsCount()
     await this.loadGameCode()
     
-    // IMPORTANT: Les WebSockets doivent TOUJOURS se connecter directement au game-service
-    // L'API Gateway ne gère pas les WebSockets
-    // Utiliser API_URLS.ws.game qui pointe toujours vers le game-service directement
+    // Connect to WebSocket
     const wsUrl = API_URLS.ws.game
-    
-    // Détecter si on est en production
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     
-    console.log('🔌 Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction, 'hostname:', window.location.hostname, 'port:', window.location.port)
+    console.log('🔌 Admin connecting to WebSocket:', wsUrl, 'isProduction:', isProduction)
     
     this.socket = io(wsUrl, {
       path: '/socket.io',
@@ -282,52 +278,25 @@ export default {
     
     this.socket.on('connect', () => {
       console.log('✅ Admin WebSocket connected:', this.socket.id)
-      this.error = '' // Clear any previous errors
+      this.error = ''
     })
     
     this.socket.on('connect_error', (error) => {
-      // Ignorer complètement l'erreur "server error" et "xhr poll error" qui sont souvent temporaires
-      // Socket.io va réessayer automatiquement
       if (error && error.message && (
         error.message.includes('server error') || 
         error.message.includes('xhr poll error') ||
         error.message.includes('poll')
       )) {
-        // Ne rien logger pour éviter le spam dans la console
-        // La reconnexion automatique va gérer ça
         return
       }
-      // Logger seulement les autres erreurs critiques
       if (error && error.message) {
         console.error('❌ Admin WebSocket connection error:', error.message)
-      }
-      // Ne pas afficher l'erreur à l'utilisateur pour les erreurs temporaires
-      // Seulement pour les erreurs critiques qui persistent
-      if (error && error.type === 'TransportError' && !error.message.includes('poll')) {
-        this.error = this.t('admin.dashboard.connectionError') || 'Connection error'
-        setTimeout(() => this.error = '', 5000)
-      }
-    })
-    
-    // Handle server error packets (emitted by server after connection)
-    this.socket.on('error', (errorData) => {
-      console.error('❌ Admin WebSocket server error:', errorData)
-      // Ignore GAME_ALREADY_STARTED errors for admin (admin doesn't need to register as player)
-      if (errorData && errorData.code === 'GAME_ALREADY_STARTED') {
-        console.log('ℹ️ Game already started - this is normal for admin')
-        return
-      }
-      // Only show error if it's not a game already started error
-      if (errorData && errorData.message) {
-        this.error = errorData.message
-        setTimeout(() => this.error = '', 5000)
       }
     })
     
     this.socket.on('players:count', (data) => {
       console.log('📊 AdminDashboard received players:count event:', data)
       this.gameState.connectedPlayersCount = data.count
-      // Recharger aussi la liste des joueurs pour mettre à jour l'affichage
       this.loadConnectedPlayers()
     })
     
@@ -346,13 +315,12 @@ export default {
       this.loadGameState()
     })
     
-    // Polling pour l'état du jeu - Réduit à 5 secondes pour éviter le rate limiting
-    // Les événements WebSocket sont prioritaires, le polling sert de filet de sécurité
+    // Polling pour l'état du jeu
     setInterval(() => {
       this.loadGameState()
       this.loadConnectedPlayersCount()
       this.loadConnectedPlayers()
-    }, 5000) // Toutes les 5 secondes (au lieu de 2) pour éviter le rate limiting
+    }, 5000)
   },
   beforeUnmount() {
     if (this.socket) {
@@ -362,13 +330,11 @@ export default {
   methods: {
     async loadGameState() {
       try {
-        // Utiliser apiClient qui ajoute automatiquement le token
         const res = await apiClient.get(API_URLS.game.state)
         this.gameState = res.data
         this.gameCode = res.data.gameCode || null
       } catch (err) {
         console.error('Error loading game state:', err)
-        // Si erreur 401, l'intercepteur redirigera automatiquement
       }
     },
     async loadGameCode() {
@@ -381,7 +347,6 @@ export default {
     },
     async loadQuestionsCount() {
       try {
-        // Les questions publiques n'ont pas besoin d'auth, mais utilisons apiClient pour cohérence
         const res = await apiClient.get(API_URLS.quiz.all)
         this.totalQuestions = res.data.length
       } catch (err) {
@@ -406,13 +371,11 @@ export default {
       }
     },
     async startGame() {
-      // Vérifier qu'il y a des questions avant de démarrer
       if (this.totalQuestions === 0) {
         this.error = this.t('admin.dashboard.noQuestions')
         return
       }
 
-      // Valider le temps par question
       if (!this.questionDuration || this.questionDuration < 5 || this.questionDuration > 300) {
         this.error = this.t('admin.dashboard.timeMinMax')
         return
@@ -423,22 +386,15 @@ export default {
       this.message = ''
       
       try {
-        // Utiliser gameService qui utilise apiClient avec authentification
         await gameService.startGame(this.questionDuration)
-        this.message = `${this.t('admin.dashboard.startGame')} - ${this.questionDuration}s ${this.t('admin.dashboard.timePerQuestion')}`
+        this.message = `${this.t('admin.dashboard.startGame')} - ${this.questionDuration}s`
         await this.loadGameState()
         await this.loadQuestionsCount()
         setTimeout(() => this.message = '', 3000)
       } catch (err) {
         console.error('❌ Error starting game:', err)
-        console.error('❌ Error response:', err.response?.data)
-        console.error('❌ Error status:', err.response?.status)
-        
-        // Si erreur 401, l'intercepteur redirigera automatiquement vers login
-        // Mais on affiche aussi un message d'erreur
         if (err.response?.status === 401) {
           this.error = 'Session expirée. Veuillez vous reconnecter.'
-          // L'intercepteur va rediriger, mais on donne un feedback visuel
         } else {
           this.error = err.response?.data?.error || err.response?.data?.message || err.message || 'Erreur lors du démarrage du jeu'
         }
@@ -452,7 +408,6 @@ export default {
       this.message = ''
       
       try {
-        // Utiliser gameService qui utilise apiClient avec authentification
         const res = await gameService.nextQuestion()
         if (res.finished) {
           this.message = 'Le jeu est terminé !'
@@ -477,7 +432,6 @@ export default {
       this.message = ''
       
       try {
-        // Utiliser gameService qui utilise apiClient avec authentification
         await gameService.endGame()
         this.message = this.t('admin.dashboard.gameEnded')
         await this.loadGameState()
@@ -498,7 +452,6 @@ export default {
       this.message = ''
       
       try {
-        // Utiliser gameService qui utilise apiClient avec authentification
         await gameService.deleteGame()
         this.message = this.t('admin.dashboard.gameDeleted')
         await this.loadGameState()
@@ -517,7 +470,6 @@ export default {
           this.copyButtonText = ''
         }, 2000)
       } catch (err) {
-        // Fallback pour les navigateurs qui ne supportent pas clipboard API
         const textArea = document.createElement('textarea')
         textArea.value = this.gameCode
         document.body.appendChild(textArea)
@@ -542,3 +494,4 @@ export default {
   }
 }
 </script>
+

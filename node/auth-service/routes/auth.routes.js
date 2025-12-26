@@ -174,4 +174,14 @@ router.get("/players", authController.getAllPlayers);
  */
 router.get("/verify-token", authController.verifyToken);
 
+/**
+ * Admin routes - User management
+ */
+router.get("/admin/users", authenticateAdmin, authController.getUsers);
+router.get("/admin/users/stats", authenticateAdmin, authController.getUserStats);
+router.put("/admin/users/:userId/approve", authenticateAdmin, authController.approveUser);
+router.put("/admin/users/:userId/reject", authenticateAdmin, authController.rejectUser);
+router.put("/admin/users/:userId/block", authenticateAdmin, authController.blockUser);
+router.put("/admin/users/:userId/unblock", authenticateAdmin, authController.unblockUser);
+
 module.exports = router;

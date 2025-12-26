@@ -15,6 +15,5 @@ COPY auth-service/middleware ./middleware
 COPY auth-service/utils ./utils
 COPY auth-service/data ./data
 COPY auth-service/server.js ./
-COPY auth-service/token.js ./
 EXPOSE 3001
 CMD ["node","server.js"]

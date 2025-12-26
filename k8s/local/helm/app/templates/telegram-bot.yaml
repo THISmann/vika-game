@@ -1,0 +1,88 @@
+{{- if .Values.telegramBot.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: telegram-bot-secret
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    app: telegram-bot
+  annotations:
+    {{- include "app.annotations" . | nindent 4 }}
+type: Opaque
+stringData:
+  TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN_HERE"  # À remplacer manuellement
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: telegram-bot
+spec:
+  replicas: {{ .Values.telegramBot.replicas }}
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+    spec:
+      containers:
+      - name: telegram-bot
+        image: {{ .Values.global.imageRegistry }}{{ .Values.telegramBot.image.repository }}:{{ .Values.telegramBot.image.tag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: 3004
+        env:
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secret
+              key: TELEGRAM_BOT_TOKEN
+        - name: AUTH_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AUTH_SERVICE_URL
+        - name: QUIZ_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: QUIZ_SERVICE_URL
+        - name: GAME_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: GAME_SERVICE_URL
+        - name: GAME_WS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: GAME_SERVICE_URL
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
+        resources:
+          {{- toYaml .Values.telegramBot.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegram-bot
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: telegram-bot
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3004
+    targetPort: 3004
+  selector:
+    app: telegram-bot
+{{- end }}
+

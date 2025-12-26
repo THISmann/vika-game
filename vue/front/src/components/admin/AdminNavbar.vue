@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-gradient-to-r from-purple-700 to-indigo-800 shadow-lg border-b border-purple-900">
+  <nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 shadow-lg border-b border-purple-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center space-x-1">
@@ -99,7 +99,6 @@ export default {
       showLanguageMenu.value = false
     }
     
-    // Fermer le menu en cliquant à l'extérieur
     const handleClickOutside = (event) => {
       if (languageMenuRef.value && !languageMenuRef.value.contains(event.target)) {
         showLanguageMenu.value = false
@@ -128,6 +127,7 @@ export default {
   },
   methods: {
     logout() {
+      localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
       this.$router.push('/admin/login')
     }
@@ -145,6 +145,4 @@ export default {
   transform: translateY(-10px);
 }
 </style>
-
-
 

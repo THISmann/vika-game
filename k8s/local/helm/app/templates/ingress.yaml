@@ -1,0 +1,53 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/websocket-services: game-service
+    nginx.ingress.kubernetes.io/proxy-set-headers: "kube-system/nginx-ingress-headers"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      # API Routes - doivent être avant le frontend
+      - path: /api/auth(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: {{ .Values.authService.service.port }}
+      - path: /api/quiz(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: quiz-service
+            port:
+              number: {{ .Values.quizService.service.port }}
+      - path: /api/game(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: game-service
+            port:
+              number: {{ .Values.gameService.service.port }}
+      # Frontend - doit être en dernier
+      - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: {{ .Values.frontend.service.port }}
+{{- end }}
+

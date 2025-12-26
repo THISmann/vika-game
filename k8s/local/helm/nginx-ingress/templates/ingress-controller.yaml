@@ -1,0 +1,53 @@
+{{- if .Values.controller.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+  namespace: nginx-ingress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-ingress-controller
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress-controller
+    spec:
+      containers:
+      - name: nginx-ingress-controller
+        image: {{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}
+        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        resources:
+          {{- toYaml .Values.controller.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller
+  namespace: nginx-ingress
+spec:
+  type: {{ .Values.controller.service.type }}
+  ports:
+  {{- if .Values.controller.service.nodePorts }}
+  - name: http
+    port: 80
+    targetPort: 80
+    nodePort: {{ .Values.controller.service.nodePorts.http }}
+  - name: https
+    port: 443
+    targetPort: 443
+    nodePort: {{ .Values.controller.service.nodePorts.https }}
+  {{- else }}
+  - port: 80
+    targetPort: 80
+  - port: 443
+    targetPort: 443
+  {{- end }}
+  selector:
+    app: nginx-ingress-controller
+{{- end -}}
+
