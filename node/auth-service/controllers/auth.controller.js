@@ -549,10 +549,11 @@ exports.getAnalytics = async (req, res) => {
         const endDate = new Date();
         endDate.setHours(23, 59, 59, 999); // Set to end of today
         
-        // Get user registrations grouped by date
+        // Get user registrations grouped by date (only users and admins, not players)
         const registrationsByDate = await User.aggregate([
             {
                 $match: {
+                    role: { $in: ['user', 'admin'] },
                     createdAt: { $gte: startDate }
                 }
             },
@@ -572,10 +573,11 @@ exports.getAnalytics = async (req, res) => {
             }
         ]);
         
-        // Get user logins grouped by date (for active users)
+        // Get user logins grouped by date (for active users - only users and admins, not players)
         const loginsByDate = await User.aggregate([
             {
                 $match: {
+                    role: { $in: ['user', 'admin'] },
                     lastLoginAt: { 
                         $gte: startDate, 
                         $lte: endDate,
@@ -608,8 +610,9 @@ exports.getAnalytics = async (req, res) => {
         const now = new Date();
         let cumulativeUsers = 0;
         
-        // Get total users before the period
+        // Get total users before the period (only users and admins, not players)
         const usersBeforePeriod = await User.countDocuments({
+            role: { $in: ['user', 'admin'] },
             createdAt: { $lt: startDate }
         });
         cumulativeUsers = usersBeforePeriod;
@@ -661,8 +664,14 @@ exports.getAnalytics = async (req, res) => {
             activeUsers.push(loginData ? loginData.count : 0);
         }
         
-        // Calculate summary
-        const totalUsers = await User.countDocuments();
+        // Calculate summary (only users and admins, not players)
+        const totalUsers = await User.countDocuments({
+            role: { $in: ['user', 'admin'] }
+        });
+        // Count total players (role: 'player')
+        const totalPlayers = await User.countDocuments({
+            role: 'player'
+        });
         const newUsers = registrations.reduce((a, b) => a + b, 0);
         const totalVisits = activeUsers.reduce((a, b) => a + b, 0);
         const avgActiveUsers = Math.round(activeUsers.reduce((a, b) => a + b, 0) / activeUsers.length) || 0;
@@ -671,6 +680,7 @@ exports.getAnalytics = async (req, res) => {
             period: days,
             summary: {
                 totalUsers,
+                totalPlayers,
                 newUsers,
                 totalVisits,
                 activeUsers: avgActiveUsers

@@ -34,7 +34,7 @@ const upload = multer({
 
 /**
  * @swagger
- * /upload/image:
+ * /game/upload/image:
  *   post:
  *     summary: Upload an image file
  *     tags: [Upload]
@@ -46,17 +46,25 @@ const upload = multer({
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required: [file]
  *             properties:
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Image file (JPEG, PNG, GIF, WebP)
  *     responses:
  *       200:
  *         description: File uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UploadResponse'
  *       400:
- *         description: Invalid file
+ *         description: Invalid file or no file provided
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Upload failed
  */
 router.post('/image', authenticateUser, upload.single('file'), async (req, res) => {
   try {
@@ -79,7 +87,7 @@ router.post('/image', authenticateUser, upload.single('file'), async (req, res) 
 
 /**
  * @swagger
- * /upload/audio:
+ * /game/upload/audio:
  *   post:
  *     summary: Upload an audio file
  *     tags: [Upload]
@@ -91,17 +99,25 @@ router.post('/image', authenticateUser, upload.single('file'), async (req, res) 
  *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required: [file]
  *             properties:
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Audio file (MP3, WAV, OGG, WebM)
  *     responses:
  *       200:
  *         description: File uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UploadResponse'
  *       400:
- *         description: Invalid file
+ *         description: Invalid file or no file provided
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Upload failed
  */
 router.post('/audio', authenticateUser, upload.single('file'), async (req, res) => {
   try {
@@ -121,6 +137,42 @@ router.post('/audio', authenticateUser, upload.single('file'), async (req, res) 
     res.status(500).json({ error: 'Failed to upload file' });
   }
 });
+
+/**
+ * @swagger
+ * /api/files/{filePath}:
+ *   get:
+ *     summary: Serve uploaded files (images and audio)
+ *     tags: [Upload]
+ *     parameters:
+ *       - in: path
+ *         name: filePath
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: File path (e.g., image-1234567890.jpg)
+ *     responses:
+ *       200:
+ *         description: File content
+ *         content:
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           audio/mpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: File not found
+ *       500:
+ *         description: Error serving file
+ */
+// Note: This route is defined in server.js, not in this router file
 
 module.exports = router;
 

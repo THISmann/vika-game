@@ -26,48 +26,71 @@ export function isAdminAuthenticated() {
   try {
     // Décoder le token base64 pour vérifier l'expiration
     const decoded = atob(token)
-    const parts = decoded.split('-')
     
-    if (parts.length === 2) {
-      const role = parts[0]
-      const timestamp = parseInt(parts[1], 10)
-      
-      // Vérifier que le rôle est admin
-      if (role !== 'admin') {
-        console.log('🔒 Auth check failed: invalid role', role)
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
-        return false
-      }
-      
-      // Vérifier que le timestamp est valide
-      if (isNaN(timestamp) || timestamp <= 0) {
-        console.log('🔒 Auth check failed: invalid timestamp')
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
-        return false
-      }
-      
-      // Vérifier l'expiration (24 heures)
-      const now = Date.now()
-      const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
-      
-      if (now - timestamp > TOKEN_EXPIRY) {
-        console.log('🔒 Auth check failed: token expired')
-        // Token expiré, nettoyer le localStorage
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
-        return false
-      }
-      
-      // Token valide
-      return true
-    } else {
-      console.log('🔒 Auth check failed: invalid token format')
+    let role, timestamp;
+    
+    // Le format est: userId-role-timestamp
+    // Le userId peut être un UUID (contient des tirets), donc on doit extraire depuis la fin
+    // On cherche le dernier tiret qui sépare role et timestamp, et celui avant qui sépare userId et role
+    
+    // Extraire le timestamp (dernière partie après le dernier tiret)
+    const lastDashIndex = decoded.lastIndexOf('-')
+    if (lastDashIndex === -1 || lastDashIndex === decoded.length - 1) {
+      console.log('🔒 Auth check failed: no dash found in token or invalid format')
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
       return false
     }
+    
+    const timestampStr = decoded.substring(lastDashIndex + 1)
+    timestamp = parseInt(timestampStr, 10)
+    
+    // Extraire le role (partie avant le dernier tiret, mais on cherche l'avant-dernier tiret)
+    const beforeLastPart = decoded.substring(0, lastDashIndex)
+    const secondLastDashIndex = beforeLastPart.lastIndexOf('-')
+    
+    if (secondLastDashIndex === -1 || secondLastDashIndex === beforeLastPart.length - 1) {
+      // Format ancien: role-timestamp (pas de userId)
+      role = beforeLastPart
+    } else {
+      // Format nouveau: userId-role-timestamp
+      role = decoded.substring(secondLastDashIndex + 1, lastDashIndex)
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔒 Token verification:', { role, timestamp, timestampStr, decoded: decoded.substring(0, 50) + '...' })
+    }
+    
+    // Vérifier que le rôle est admin
+    if (role !== 'admin') {
+      console.log('🔒 Auth check failed: invalid role', role)
+      localStorage.removeItem('adminToken')
+      localStorage.removeItem('admin')
+      return false
+    }
+    
+    // Vérifier que le timestamp est valide
+    if (isNaN(timestamp) || timestamp <= 0) {
+      console.log('🔒 Auth check failed: invalid timestamp', timestamp)
+      localStorage.removeItem('adminToken')
+      localStorage.removeItem('admin')
+      return false
+    }
+    
+    // Vérifier l'expiration (24 heures)
+    const now = Date.now()
+    const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
+    
+    if (now - timestamp > TOKEN_EXPIRY) {
+      console.log('🔒 Auth check failed: token expired')
+      // Token expiré, nettoyer le localStorage
+      localStorage.removeItem('adminToken')
+      localStorage.removeItem('admin')
+      return false
+    }
+    
+    // Token valide
+    return true
   } catch (error) {
     console.error('🔒 Error verifying token:', error)
     // En cas d'erreur de décodage, considérer comme non authentifié

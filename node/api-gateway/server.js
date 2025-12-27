@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const gatewayRoutes = require('./src/routes/gateway.routes');
-const logger = require('./src/middleware/logger');
+const loggerMiddleware = require('./src/middleware/logger');
+const logger = loggerMiddleware.logger;
+const errorLogger = loggerMiddleware.errorLogger;
 const errorHandler = require('./src/middleware/errorHandler');
 const rateLimiter = require('./src/middleware/rateLimiter');
 const SERVICES = require('./config/services');
@@ -24,7 +26,7 @@ app.use(cors({
 // IMPORTANT: Ne pas utiliser express.json() globalement car il consomme le body
 // et le proxy ne peut plus le lire. On l'utilisera seulement pour les routes non-proxy
 app.use(express.urlencoded({ extended: true }));
-app.use(logger);
+app.use(loggerMiddleware); // Request logging
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -66,6 +68,9 @@ app.use((req, res, next) => {
 app.use('/test', express.json(), gatewayRoutes);
 app.use('/', gatewayRoutes); // Les routes proxifiées n'utilisent pas express.json() ici
 
+// Error logging middleware (before error handler)
+app.use(errorLogger);
+
 // Middleware de gestion des erreurs (doit être en dernier)
 app.use(errorHandler);
 
@@ -76,22 +81,14 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log('🚀 API Gateway running on port', PORT);
-  console.log('📡 Services configured:');
-  console.log('   - Auth Service:', SERVICES.auth);
-  console.log('   - Quiz Service:', SERVICES.quiz);
-  console.log('   - Game Service:', SERVICES.game);
-  console.log('   - Telegram Bot:', SERVICES.telegram);
-  console.log('');
-  console.log('🌐 Available routes:');
-  console.log('   - GET  /health - Health check');
-  console.log('   - GET  /test - Test endpoint');
-  console.log('   - *    /auth/* - Proxy to Auth Service');
-  console.log('   - *    /quiz/* - Proxy to Quiz Service');
-  console.log('   - *    /game/* - Proxy to Game Service');
-  console.log('   - *    /telegram/* - Proxy to Telegram Bot');
-  console.log('');
-  console.log('📚 Swagger UI available at http://localhost:' + PORT + '/api-docs');
+  logger.info(`API Gateway started on port ${PORT}`);
+  logger.info('📡 Services configured:', {
+    auth: SERVICES.auth,
+    quiz: SERVICES.quiz,
+    game: SERVICES.game,
+    telegram: SERVICES.telegram
+  });
+  logger.info('📚 Swagger UI available at http://localhost:' + PORT + '/api-docs');
 });
 
 // Gestion gracieuse de l'arrêt

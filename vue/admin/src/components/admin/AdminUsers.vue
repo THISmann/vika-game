@@ -31,8 +31,8 @@
     <div class="flex-1 flex flex-col min-w-0">
       <div class="bg-white border-b border-gray-200 shadow-sm">
         <div class="px-6 py-4">
-          <h1 class="text-2xl font-semibold text-gray-900">Users Management</h1>
-          <p class="mt-1 text-sm text-gray-500">Manage and monitor user accounts (not players)</p>
+          <h1 class="text-2xl font-semibold text-gray-900">{{ t('admin.users.title') }}</h1>
+          <p class="mt-1 text-sm text-gray-500">{{ t('admin.users.subtitle') }}</p>
         </div>
       </div>
 
@@ -42,29 +42,29 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Search -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('admin.users.searchPlaceholder') }}</label>
               <input
                 v-model="filters.search"
-                @input="loadUsers"
+                @input="adminStore.updateUsersFilters({ search: filters.search })"
                 type="text"
-                placeholder="Search by name, email, or ID..."
+                :placeholder="t('admin.users.searchPlaceholder')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <!-- Status Filter -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('admin.users.status') }}</label>
               <select
                 v-model="filters.status"
-                @change="loadUsers"
+                @change="adminStore.updateUsersFilters({ status: filters.status })"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="blocked">Blocked</option>
+                <option value="">{{ t('admin.users.allStatus') }}</option>
+                <option value="pending">{{ t('admin.users.pending') }}</option>
+                <option value="approved">{{ t('admin.users.approved') }}</option>
+                <option value="rejected">{{ t('admin.users.rejected') }}</option>
+                <option value="blocked">{{ t('admin.users.blocked') }}</option>
               </select>
             </div>
 
@@ -73,7 +73,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
               <select
                 v-model="filters.role"
-                @change="loadUsers"
+                @change="adminStore.updateUsersFilters({ role: filters.role })"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Roles</option>
@@ -86,9 +86,9 @@
 
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center py-12">
-          <div class="text-center">
+            <div class="text-center">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600"></div>
-            <p class="mt-4 text-sm text-gray-600">Loading users...</p>
+            <p class="mt-4 text-sm text-gray-600">{{ t('admin.users.loading') }}</p>
           </div>
         </div>
 
@@ -125,13 +125,13 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.users.name') }}</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.users.email') }}</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.users.status') }}</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.users.createdAt') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('admin.users.actions') }}</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -242,39 +242,39 @@
           </div>
 
           <!-- Pagination -->
-          <div v-if="pagination && pagination.pages > 1" class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
+          <div v-if="adminStore.usersPagination && adminStore.usersPagination.pages > 1" class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
             <div class="flex-1 flex justify-between sm:hidden">
               <button
-                @click="changePage(pagination.page - 1)"
-                :disabled="pagination.page === 1"
+                @click="changePage(adminStore.usersPagination.page - 1)"
+                :disabled="adminStore.usersPagination.page === 1"
                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
-                Previous
+                {{ t('admin.users.previous') }}
               </button>
               <button
-                @click="changePage(pagination.page + 1)"
-                :disabled="pagination.page === pagination.pages"
+                    @click="changePage(adminStore.usersPagination.page + 1)"
+                    :disabled="adminStore.usersPagination.page === adminStore.usersPagination.pages"
                 class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
-                Next
+                {{ t('admin.users.next') }}
               </button>
             </div>
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700">
-                  Showing <span class="font-medium">{{ (pagination.page - 1) * pagination.limit + 1 }}</span>
-                  to <span class="font-medium">{{ Math.min(pagination.page * pagination.limit, pagination.total) }}</span>
-                  of <span class="font-medium">{{ pagination.total }}</span> results
+                  Showing <span class="font-medium">{{ (adminStore.usersPagination.page - 1) * adminStore.usersPagination.limit + 1 }}</span>
+                  to <span class="font-medium">{{ Math.min(adminStore.usersPagination.page * adminStore.usersPagination.limit, adminStore.usersPagination.total) }}</span>
+                  of <span class="font-medium">{{ adminStore.usersPagination.total }}</span> results
                 </p>
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
-                    @click="changePage(pagination.page - 1)"
-                    :disabled="pagination.page === 1"
+                    @click="changePage(adminStore.usersPagination.page - 1)"
+                    :disabled="adminStore.usersPagination.page === 1"
                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Previous
+                    {{ t('admin.users.previous') }}
                   </button>
                   <button
                     v-for="page in visiblePages"
@@ -282,7 +282,7 @@
                     @click="changePage(page)"
                     :class="[
                       'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                      page === pagination.page
+                      page === adminStore.usersPagination.page
                         ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                         : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                     ]"
@@ -290,11 +290,11 @@
                     {{ page }}
                   </button>
                   <button
-                    @click="changePage(pagination.page + 1)"
-                    :disabled="pagination.page === pagination.pages"
+                    @click="changePage(adminStore.usersPagination.page + 1)"
+                    :disabled="adminStore.usersPagination.page === adminStore.usersPagination.pages"
                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Next
+                    {{ t('admin.users.next') }}
                   </button>
                 </nav>
               </div>
@@ -332,7 +332,7 @@
             @click="showConfirmModal = false"
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            Cancel
+            {{ t('admin.users.cancel') }}
           </button>
           <button
             @click="executeConfirmAction"
@@ -399,22 +399,40 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useAdminStore } from '@/stores/admin'
+import { useI18n } from '@/composables/useI18n'
 import apiClient from '@/services/api'
 import { API_URLS } from '@/config/api'
 
 export default {
   name: 'AdminUsers',
   setup() {
-    const users = ref([])
-    const loading = ref(false)
-    const error = ref(null)
-    const pagination = ref(null)
-    const filters = ref({
-      search: '',
-      status: '',
-      role: ''
+    const adminStore = useAdminStore()
+    const { t } = useI18n()
+    
+    // Initialize socket if not already done
+    onMounted(() => {
+      if (!adminStore.isConnected) {
+        adminStore.initSocket()
+      }
+      adminStore.loadUsers()
     })
+    
+    // Watch for filter changes
+    watch(() => adminStore.usersFilters, () => {
+      adminStore.loadUsers(1)
+    }, { deep: true })
+    
+    const users = computed(() => adminStore.users)
+    const loading = computed(() => adminStore.loadingUsers)
+    const error = computed(() => adminStore.usersError)
+    const pagination = computed(() => adminStore.usersPagination)
+    const filters = computed({
+      get: () => adminStore.usersFilters,
+      set: (value) => adminStore.updateUsersFilters(value)
+    })
+    
     const showActivitiesModal = ref(false)
     const selectedUser = ref(null)
     const activities = ref([])
@@ -434,47 +452,18 @@ export default {
     })
 
     const loadUsers = async () => {
-      loading.value = true
-      error.value = null
-
-      try {
-        const params = new URLSearchParams()
-        if (filters.value.search) params.append('search', filters.value.search)
-        if (filters.value.status) params.append('status', filters.value.status)
-        if (filters.value.role) params.append('role', filters.value.role)
-        params.append('page', pagination.value?.page || 1)
-        params.append('limit', '20')
-
-        const url = `${API_URLS.auth.users}?${params.toString()}`
-        console.log('🔍 Loading users from:', url)
-        
-        const res = await apiClient.get(url)
-        console.log('📊 Users response:', res.data)
-        
-        users.value = res.data.users || []
-        pagination.value = res.data.pagination || { page: 1, limit: 20, total: 0, pages: 0 }
-        
-        console.log(`✅ Loaded ${users.value.length} users`)
-      } catch (err) {
-        console.error('Error loading users:', err)
-        error.value = err.response?.data?.error || 'Failed to load users'
-      } finally {
-        loading.value = false
-      }
+      await adminStore.loadUsers()
     }
 
     const changePage = (page) => {
-      if (pagination.value) {
-        pagination.value.page = page
-        loadUsers()
-      }
+      adminStore.loadUsers(page)
     }
 
     const visiblePages = computed(() => {
-      if (!pagination.value) return []
+      if (!adminStore.usersPagination) return []
       const pages = []
-      const total = pagination.value.pages
-      const current = pagination.value.page
+      const total = adminStore.usersPagination.pages
+      const current = adminStore.usersPagination.page
       
       if (total <= 7) {
         for (let i = 1; i <= total; i++) pages.push(i)
@@ -575,7 +564,8 @@ export default {
             await apiClient.put(API_URLS.auth.unblockUser(userId))
             break
         }
-        await loadUsers()
+        await adminStore.loadUsers()
+        await adminStore.loadUserStats()
       } catch (err) {
         console.error(`Error ${action}ing user:`, err)
         alert(err.response?.data?.error || `Failed to ${action} user`)
@@ -583,27 +573,27 @@ export default {
     }
 
     const approveUser = (userId) => {
-      const user = users.value.find(u => u.id === userId)
+      const user = adminStore.users.find(u => u.id === userId)
       showConfirm('approve', userId, user?.name || 'this user')
     }
 
     const rejectUser = (userId) => {
-      const user = users.value.find(u => u.id === userId)
+      const user = adminStore.users.find(u => u.id === userId)
       showConfirm('reject', userId, user?.name || 'this user')
     }
 
     const blockUser = (userId) => {
-      const user = users.value.find(u => u.id === userId)
+      const user = adminStore.users.find(u => u.id === userId)
       showConfirm('block', userId, user?.name || 'this user')
     }
 
     const unblockUser = (userId) => {
-      const user = users.value.find(u => u.id === userId)
+      const user = adminStore.users.find(u => u.id === userId)
       showConfirm('unblock', userId, user?.name || 'this user')
     }
 
     const changeUserRole = async (userId, newRole, event) => {
-      const user = users.value.find(u => u.id === userId)
+      const user = adminStore.users.find(u => u.id === userId)
       if (!user) return
 
       const oldRole = user.role || 'player'
@@ -619,7 +609,7 @@ export default {
 
       try {
         await apiClient.put(API_URLS.auth.updateUserRole(userId), { role: newRole })
-        await loadUsers()
+        await adminStore.loadUsers()
       } catch (err) {
         console.error('Error changing user role:', err)
         alert(err.response?.data?.error || 'Failed to change user role')
@@ -647,11 +637,9 @@ export default {
       }
     }
 
-    onMounted(() => {
-      loadUsers()
-    })
-
     return {
+      adminStore,
+      t,
       users,
       loading,
       error,

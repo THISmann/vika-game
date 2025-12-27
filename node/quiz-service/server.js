@@ -6,11 +6,18 @@ const connectDB = require("./config/database");
 const redisClient = require("./shared/redis-client");
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { createLogger, requestLogger, errorLogger } = require("./shared/logger");
+
+// Create logger instance
+const logger = createLogger('quiz-service');
 
 // Enable CORS for all routes
 app.use(cors());
 
 app.use(express.json());
+
+// Request logging middleware (must be before routes)
+app.use(requestLogger(logger));
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -28,11 +35,22 @@ redisClient.connect().catch(err => {
 
 app.use("/quiz", quizRoutes);
 
+// Error logging middleware (must be after routes, before error handlers)
+app.use(errorLogger(logger));
+
+// Global error handler
+app.use((err, req, res, next) => {
+  logger.logError(err, req);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
+  });
+});
+
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
-  console.log("Quiz service running on port " + PORT);
-  console.log("📦 Redis cache: " + (process.env.REDIS_HOST ? "Enabled" : "Disabled"));
-  console.log("📚 Swagger UI available at http://localhost:" + PORT + "/api-docs");
+  logger.info(`Quiz service started on port ${PORT}`);
+  logger.info(`📦 Redis cache: ${process.env.REDIS_HOST ? "Enabled" : "Disabled"}`);
+  logger.info(`📚 Swagger UI available at http://localhost:${PORT}/api-docs`);
 });
 
 

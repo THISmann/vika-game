@@ -17,11 +17,18 @@ const Score = require("./models/Score");
 const redisClient = require("./shared/redis-client");
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { createLogger, requestLogger, errorLogger } = require("./shared/logger");
+
+// Create logger instance
+const logger = createLogger('game-service');
 
 // Enable CORS for all routes
 app.use(cors());
 
 app.use(express.json());
+
+// Request logging middleware (must be before routes)
+app.use(requestLogger(logger));
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -46,7 +53,7 @@ connectDB();
 
 // Connect to Redis (non-blocking)
 redisClient.connect().catch(err => {
-  console.warn('⚠️ Redis connection failed, continuing without cache:', err.message);
+  logger.warn('Redis connection failed, continuing without cache', { error: err.message });
 });
 
 // Create server
@@ -71,7 +78,10 @@ const io = new Server(server, {
     // Logger pour debug
     const sid = req.url?.split('sid=')[1]?.split('&')[0];
     if (sid) {
-      console.log(`🔍 Socket.io request with sid: ${sid.substring(0, 10)}... from ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
+      logger.debug('Socket.io request', {
+        sid: sid.substring(0, 10),
+        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+      });
     }
     // Accepter toutes les requêtes (la vérification sera faite dans les handlers)
     // Le sessionAffinity dans Kubernetes garantit que le même client va au même pod
@@ -95,6 +105,58 @@ app.use("/game", websocketRoutes);
 // Upload routes
 app.use("/game/upload", uploadRoutes);
 
+/**
+ * @swagger
+ * /api/files/{filePath}:
+ *   get:
+ *     summary: Serve uploaded files (images and audio) from MinIO
+ *     tags: [Upload]
+ *     parameters:
+ *       - in: path
+ *         name: filePath
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: File path (e.g., image-1234567890.jpg or audio-1234567890.mp3)
+ *     responses:
+ *       200:
+ *         description: File content
+ *         content:
+ *           image/jpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/png:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/gif:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           image/webp:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           audio/mpeg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           audio/wav:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           audio/ogg:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Invalid file path
+ *       404:
+ *         description: File not found
+ *       500:
+ *         description: Error serving file
+ */
 // Serve files from MinIO
 app.get("/api/files/*", async (req, res) => {
   try {
@@ -112,7 +174,9 @@ app.get("/api/files/*", async (req, res) => {
     res.setHeader('Content-Length', stat.size);
     stream.pipe(res);
   } catch (error) {
-    console.error('Error serving file:', error);
+    logger.error('Error serving file', error, {
+      path: req.path
+    });
     res.status(404).json({ error: 'File not found' });
   }
 });
@@ -122,7 +186,7 @@ const playersSockets = new Map();
 
 // Gérer les erreurs de connexion avant le handshake
 io.engine.on("connection_error", (err) => {
-  console.error("❌ Socket.io connection error:", {
+  logger.warn('Socket.io connection error', {
     remoteAddress: err.req?.socket?.remoteAddress,
     message: err.message,
     context: err.context,
@@ -136,30 +200,48 @@ io.engine.on("connection_error", (err) => {
 io.on("connection", (socket) => {
   const clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
   const userAgent = socket.handshake.headers['user-agent'] || 'unknown';
-  console.log("✅ WebSocket client connected:", socket.id, "IP:", clientIP, "User-Agent:", userAgent.substring(0, 50), "Total clients on this pod:", io.sockets.sockets.size);
+  logger.info('WebSocket client connected', {
+    socketId: socket.id,
+    ip: clientIP,
+    userAgent: userAgent.substring(0, 50),
+    totalClients: io.sockets.sockets.size
+  });
   
   // Logger les erreurs de connexion
   socket.on("error", (error) => {
-    console.error("❌ Socket error:", socket.id, error);
+    logger.error('Socket error', error, {
+      socketId: socket.id
+    });
     // Ne pas envoyer d'erreur au client pour éviter les boucles d'erreur
   });
   
   // Logger les tentatives de reconnexion
   socket.on("reconnect_attempt", (attemptNumber) => {
-    console.log("🔄 Reconnection attempt:", socket.id, "Attempt:", attemptNumber);
+    logger.debug('Reconnection attempt', {
+      socketId: socket.id,
+      attemptNumber
+    });
   });
   
   // Gérer les erreurs non capturées pour éviter les "server error" génériques
   socket.on("disconnect", (reason) => {
     if (reason === "transport close" || reason === "transport error") {
-      console.log("ℹ️ Socket disconnected due to transport issue:", socket.id, reason);
+      logger.debug('Socket disconnected due to transport issue', {
+        socketId: socket.id,
+        reason
+      });
+    } else {
+      logger.info('Socket disconnected', {
+        socketId: socket.id,
+        reason
+      });
     }
   });
 
   socket.on("register", async (playerId) => {
     try {
       if (!playerId) {
-        console.error("❌ Register called without playerId");
+        logger.error('Register called without playerId', null, { socketId: socket.id });
         socket.emit("error", { 
           message: "Player ID is required",
           code: "INVALID_PLAYER_ID"
@@ -167,20 +249,19 @@ io.on("connection", (socket) => {
         return;
       }
 
-      console.log(`\n📝 ========== REGISTER PLAYER ==========`);
-      console.log(`📝 Player ID: ${playerId}`);
-      console.log(`📝 Socket ID: ${socket.id}`);
+      logger.debug('Register player request', {
+        playerId,
+        socketId: socket.id
+      });
       
       const state = await gameState.getState();
-      console.log(`📝 Current state:`, {
+      logger.debug('Current game state', {
         isStarted: state.isStarted,
-        connectedPlayersCount: state.connectedPlayers?.length || 0,
-        connectedPlayers: state.connectedPlayers || []
+        connectedPlayersCount: state.connectedPlayers?.length || 0
       });
       
       // Vérifier si le joueur est déjà dans la liste des joueurs connectés
       const isAlreadyConnected = state.connectedPlayers && state.connectedPlayers.includes(playerId);
-      console.log(`📝 Is already connected: ${isAlreadyConnected}`);
       
       // Si le jeu a déjà commencé, vérifier si le joueur était déjà enregistré
       // Si le joueur était déjà enregistré, permettre la reconnexion (par exemple après une déconnexion temporaire)
@@ -188,7 +269,7 @@ io.on("connection", (socket) => {
         // Vérifier si le joueur avait déjà été enregistré dans une session précédente
         // En regardant les scores ou autres données persistantes
         // Pour l'instant, on rejette seulement les nouveaux joueurs
-        console.log(`⚠️ Game already started, rejecting new player: ${playerId}`);
+        logger.warn('Game already started, rejecting new player', { playerId });
         socket.emit("error", { 
           message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.",
           code: "GAME_ALREADY_STARTED"
@@ -198,25 +279,25 @@ io.on("connection", (socket) => {
       
       // Si le joueur était déjà connecté et que le jeu a commencé, c'est une reconnexion
       if (state.isStarted && isAlreadyConnected) {
-        console.log(`🔄 Player reconnecting during active game: ${playerId}`);
+        logger.info('Player reconnecting during active game', { playerId });
       }
       
       // Enregistrer le socket du joueur
       playersSockets.set(playerId, socket.id);
       socket.playerId = playerId;
-      console.log(`📝 Socket registered for player: ${playerId}`);
+      logger.info('Socket registered for player', { playerId, socketId: socket.id });
       
       // Ajouter le joueur à la liste des connectés seulement s'il n'y est pas déjà
       if (!isAlreadyConnected) {
-        console.log(`📝 Adding player to connectedPlayers list...`);
         await gameState.addConnectedPlayer(playerId);
         
         // Vérifier que le joueur a bien été ajouté
         const updatedState = await gameState.getState();
         const isNowConnected = updatedState.connectedPlayers && updatedState.connectedPlayers.includes(playerId);
-        console.log(`📝 Player added to connectedPlayers: ${isNowConnected}`);
         if (!isNowConnected) {
-          console.error(`❌ Failed to add player ${playerId} to connectedPlayers`);
+          logger.error('Failed to add player to connectedPlayers', null, { playerId });
+        } else {
+          logger.debug('Player added to connectedPlayers', { playerId });
         }
         
         // Initialiser le score du joueur s'il n'existe pas encore
@@ -225,14 +306,14 @@ io.on("connection", (socket) => {
           const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
           const player = playersRes.data.find(p => p.id === playerId);
           const playerName = player ? player.name : 'Joueur anonyme';
-          console.log(`📝 Player name from auth-service: ${playerName}`);
+          logger.debug('Player name from auth-service', { playerId, playerName });
           
           // Update lastLoginAt in auth-service
           try {
             await axios.put(`${services.AUTH_SERVICE_URL}/auth/players/${playerId}/update-last-login`);
-            console.log(`✅ Updated lastLoginAt for player: ${playerId}`);
+            logger.debug('Updated lastLoginAt for player', { playerId });
           } catch (loginUpdateErr) {
-            console.warn(`⚠️ Could not update lastLoginAt for player ${playerId}:`, loginUpdateErr.message);
+            logger.warn('Could not update lastLoginAt for player', { playerId, error: loginUpdateErr.message });
             // Continue even if update fails
           }
           
@@ -244,17 +325,17 @@ io.on("connection", (socket) => {
               score: 0
             });
             await score.save();
-            console.log(`🆕 Initialized score for new player: ${playerName} (${playerId}) = 0`);
+            logger.info('Initialized score for new player', { playerId, playerName, score: 0 });
           } else {
             // Mettre à jour le nom si nécessaire
             if (score.playerName !== playerName) {
               score.playerName = playerName;
               await score.save();
-              console.log(`🔄 Updated name for ${playerId}: ${playerName}`);
+              logger.debug('Updated player name', { playerId, playerName });
             }
           }
         } catch (err) {
-          console.error(`❌ Error initializing score for player ${playerId}:`, err);
+          logger.error('Error initializing score for player', err, { playerId });
           // Continue même si l'initialisation échoue
         }
       }
@@ -263,16 +344,15 @@ io.on("connection", (socket) => {
       const connectedCount = await gameState.getConnectedPlayersCount();
       const currentState = await gameState.getState();
       
-      console.log(`📢 Emitting 'players:count' event: count=${connectedCount}, total clients=${io.sockets.sockets.size}`);
+      logger.debug('Emitting players:count event', { count: connectedCount, totalClients: io.sockets.sockets.size });
       io.emit("players:count", { count: connectedCount });
-      console.log(`✅ 'players:count' event emitted successfully`);
       
       // Envoyer le code de jeu au joueur qui vient de se connecter
       socket.emit("game:code", { gameCode: currentState.gameCode });
       
       // Si le jeu a déjà commencé, envoyer l'état actuel au joueur qui se reconnecte
       if (currentState.isStarted) {
-        console.log("🔄 Player reconnecting during active game:", playerId);
+        logger.info('Player reconnecting during active game', { playerId });
         
         // Envoyer l'événement de jeu démarré
         socket.emit("game:started", {
@@ -302,16 +382,21 @@ io.on("connection", (socket) => {
               });
             }
           } catch (err) {
-            console.error("Error fetching current question for reconnecting player:", err);
+            logger.error('Error fetching current question for reconnecting player', err, { playerId });
           }
         }
       }
       
-      console.log(`✅ Player registered successfully: ${playerId}, Total: ${connectedCount}, Game started: ${currentState.isStarted}`);
-      console.log(`========================================\n`);
+      logger.info('Player registered successfully', {
+        playerId,
+        totalConnected: connectedCount,
+        gameStarted: currentState.isStarted
+      });
     } catch (error) {
-      console.error("❌ Error registering player:", error);
-      console.error("❌ Error stack:", error.stack);
+      logger.error('Error registering player', error, {
+        playerId,
+        socketId: socket.id
+      });
       // Envoyer une erreur plus détaillée en développement
       const errorMessage = process.env.NODE_ENV === 'development' 
         ? `Erreur lors de l'enregistrement: ${error.message}`
@@ -326,7 +411,11 @@ io.on("connection", (socket) => {
   // Handler de déconnexion
   socket.on("disconnect", async (reason) => {
     if (socket.playerId) {
-      console.log("🔌 Player disconnecting:", socket.playerId, "Socket ID:", socket.id, "Reason:", reason);
+      logger.info('Player disconnecting', {
+        playerId: socket.playerId,
+        socketId: socket.id,
+        reason
+      });
       playersSockets.delete(socket.playerId);
       await gameState.removeConnectedPlayer(socket.playerId);
       
@@ -334,7 +423,10 @@ io.on("connection", (socket) => {
       const connectedCount = await gameState.getConnectedPlayersCount();
       io.emit("players:count", { count: connectedCount });
     }
-    console.log("⚠️ Socket disconnected:", socket.id, "Reason:", reason);
+    logger.info('Socket disconnected', {
+      socketId: socket.id,
+      reason
+    });
   });
 });
 
@@ -355,16 +447,18 @@ async function checkScheduledGames() {
       
       // Si la date planifiée est passée ou égale à maintenant, lancer le jeu
       if (scheduledTime <= now) {
-        console.log(`\n⏰ ========== LAUNCHING SCHEDULED GAME ==========`);
-        console.log(`⏰ Scheduled time: ${scheduledTime.toISOString()}`);
-        console.log(`⏰ Current time: ${now.toISOString()}`);
+        logger.info('Launching scheduled game', {
+          scheduledTime: scheduledTime.toISOString(),
+          currentTime: now.toISOString(),
+          gameSessionId: party.id
+        });
         
         // Lancer le jeu programmatiquement
         await launchScheduledGame(scheduled.questionDuration);
       }
     }
   } catch (error) {
-    console.error('❌ Error checking scheduled games:', error);
+    logger.error('Error checking scheduled games', error);
   }
 }
 
@@ -384,11 +478,11 @@ async function launchScheduledGame(questionDurationMs) {
             score: 0
           });
           await score.save();
-          console.log(`🆕 Initialized score for player: ${playerName} (${playerId}) = 0`);
+          logger.debug('Initialized score for player', { playerId, playerName, score: 0 });
         }
         return score.toObject();
       } catch (error) {
-        console.error("Error initializing player score:", error);
+        logger.error('Error initializing player score', error, { playerId });
         throw error;
       }
     }
@@ -398,14 +492,14 @@ async function launchScheduledGame(questionDurationMs) {
     try {
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
       questions = quiz.data || [];
-      console.log(`✅ Fetched ${questions.length} questions for scheduled game`);
+      logger.info('Fetched questions for scheduled game', { count: questions.length, gameSessionId: party.id });
     } catch (quizError) {
-      console.error("❌ Error fetching questions for scheduled game:", quizError.message);
+      logger.error('Error fetching questions for scheduled game', quizError, { gameSessionId: party.id });
       return;
     }
 
     if (questions.length === 0) {
-      console.error("❌ No questions available for scheduled game");
+      logger.error('No questions available for scheduled game', null, { gameSessionId: party.id });
       return;
     }
 
@@ -414,7 +508,7 @@ async function launchScheduledGame(questionDurationMs) {
     const state = await gameState.getState();
     
     // Initialiser les scores pour tous les joueurs connectés
-    console.log(`🎮 Initializing scores for ${state.connectedPlayers.length} connected players...`);
+      logger.info('Initializing scores for connected players', { count: state.connectedPlayers.length });
     try {
       const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
       for (const playerId of state.connectedPlayers) {
@@ -425,9 +519,9 @@ async function launchScheduledGame(questionDurationMs) {
           await initializePlayerScore(playerId, 'Joueur anonyme');
         }
       }
-      console.log(`✅ Scores initialized for all connected players`);
+      logger.info('Scores initialized for all connected players', { count: state.connectedPlayers.length });
     } catch (err) {
-      console.error("❌ Error initializing scores:", err);
+      logger.error('Error initializing scores', err);
     }
 
     // Démarrer avec la première question
@@ -464,20 +558,47 @@ async function launchScheduledGame(questionDurationMs) {
       const gameController = require('./controllers/game.controller');
       gameController.scheduleNextQuestion(io, questionDurationMs);
       
-      console.log(`✅ Scheduled game started successfully`);
+      logger.info('Scheduled game started successfully', {
+        gameSessionId: party.id,
+        gameCode: party.gameCode
+      });
     }
   } catch (error) {
-    console.error('❌ Error launching scheduled game:', error);
+    logger.error('Error launching scheduled game', error);
   }
 }
 
 // Vérifier les jeux planifiés toutes les 10 secondes
 setInterval(checkScheduledGames, 10000);
 
+// WebSocket connection logging
+io.on("connection", (socket) => {
+  const clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  logger.info('WebSocket client connected', {
+    socketId: socket.id,
+    ip: clientIP,
+    userAgent: socket.handshake.headers['user-agent']?.substring(0, 50),
+    totalClients: io.sockets.sockets.size
+  });
+  
+  socket.on('disconnect', (reason) => {
+    logger.info('WebSocket client disconnected', {
+      socketId: socket.id,
+      reason: reason
+    });
+  });
+  
+  socket.on('error', (error) => {
+    logger.error('WebSocket error', error, {
+      socketId: socket.id
+    });
+  });
+});
+
 const PORT = 3003;
 server.listen(PORT, () => {
-  console.log("📚 Swagger UI available at http://localhost:" + PORT + "/api-docs");
-  console.log("Game service (ws) running on port " + PORT);
+  logger.info(`Game service started on port ${PORT}`);
+  logger.info(`📚 Swagger UI available at http://localhost:${PORT}/api-docs`);
   console.log("📦 Redis cache: " + (process.env.REDIS_HOST ? "Enabled" : "Disabled"));
   console.log("⏰ Scheduled game checker: Enabled (checking every 10 seconds)");
 });

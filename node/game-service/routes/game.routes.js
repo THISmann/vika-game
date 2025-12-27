@@ -161,6 +161,7 @@ router.get("/code", gameController.getGameCode);
  *   post:
  *     summary: Verify game access code
  *     tags: [State]
+ *     description: Verifies a game code and returns game state. If a party exists for this code, also returns party information (name, description, image, audio, scheduled time).
  *     requestBody:
  *       required: true
  *       content:
@@ -169,11 +170,11 @@ router.get("/code", gameController.getGameCode);
  *             $ref: '#/components/schemas/VerifyCodeRequest'
  *     responses:
  *       200:
- *         description: Code verification result
+ *         description: Code verification result with optional party information
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/VerifyCodeResponse'
+ *               $ref: '#/components/schemas/VerifyCodeResponseWithParty'
  *       400:
  *         description: Code is required
  *         content:
@@ -364,12 +365,174 @@ router.delete("/delete", authenticateAdmin, gameController.deleteGame);
  */
 router.get("/results", gameController.getQuestionResults);
 
-// Game Sessions (Parties) routes - User or Admin
+/**
+ * @swagger
+ * /game/parties:
+ *   post:
+ *     summary: Create a new game party (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreatePartyRequest'
+ *     responses:
+ *       201:
+ *         description: Party created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GameSession'
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
 router.post("/parties", authenticateUser, gameController.createParty);
+
+/**
+ * @swagger
+ * /game/parties:
+ *   get:
+ *     summary: Get all parties for the current user (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's parties
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/GameSession'
+ *       401:
+ *         description: Unauthorized
+ */
 router.get("/parties", authenticateUser, gameController.getUserParties);
+
+/**
+ * @swagger
+ * /game/parties/{partyId}:
+ *   get:
+ *     summary: Get a specific party by ID (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GameSession'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Party not found
+ */
 router.get("/parties/:partyId", authenticateUser, gameController.getParty);
+
+/**
+ * @swagger
+ * /game/parties/{partyId}:
+ *   put:
+ *     summary: Update a party (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Party ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdatePartyRequest'
+ *     responses:
+ *       200:
+ *         description: Party updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GameSession'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Party not found
+ */
 router.put("/parties/:partyId", authenticateUser, gameController.updateParty);
+
+/**
+ * @swagger
+ * /game/parties/{partyId}:
+ *   delete:
+ *     summary: Delete a party (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Party not found
+ */
 router.delete("/parties/:partyId", authenticateUser, gameController.deleteParty);
+
+/**
+ * @swagger
+ * /game/parties/{partyId}/start:
+ *   post:
+ *     summary: Start a party (User or Admin)
+ *     tags: [Parties]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: partyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/StartGameResponse'
+ *       400:
+ *         description: Party cannot be started
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Party not found
+ */
 router.post("/parties/:partyId/start", authenticateUser, gameController.startParty);
 
 module.exports = router;

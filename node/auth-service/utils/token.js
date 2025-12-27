@@ -25,27 +25,36 @@ module.exports.verifyToken = (token) => {
     const decoded = Buffer.from(token, "base64").toString("utf-8")
     
     // Format attendu: "userId-role-timestamp" (nouveau) ou "role-timestamp" (ancien pour compatibilité)
-    const parts = decoded.split('-')
+    // Le userId peut être un UUID (contient des tirets), donc on doit extraire depuis la fin
     
     let userId, role, timestamp;
     
-    if (parts.length === 3) {
-      // Nouveau format: userId-role-timestamp
-      userId = parts[0]
-      role = parts[1]
-      timestamp = parseInt(parts[2], 10)
-    } else if (parts.length === 2) {
-      // Ancien format pour compatibilité: role-timestamp
-      role = parts[0]
-      timestamp = parseInt(parts[1], 10)
-      userId = null
-    } else {
+    // Extraire le timestamp (dernière partie après le dernier tiret)
+    const lastDashIndex = decoded.lastIndexOf('-')
+    if (lastDashIndex === -1 || lastDashIndex === decoded.length - 1) {
       return null
     }
-
+    
+    const timestampStr = decoded.substring(lastDashIndex + 1)
+    timestamp = parseInt(timestampStr, 10)
+    
     // Vérifier que le timestamp est valide
     if (isNaN(timestamp) || timestamp <= 0) {
       return null
+    }
+    
+    // Extraire le role (partie avant le dernier tiret, mais on cherche l'avant-dernier tiret)
+    const beforeLastPart = decoded.substring(0, lastDashIndex)
+    const secondLastDashIndex = beforeLastPart.lastIndexOf('-')
+    
+    if (secondLastDashIndex === -1 || secondLastDashIndex === beforeLastPart.length - 1) {
+      // Format ancien: role-timestamp (pas de userId)
+      role = beforeLastPart
+      userId = null
+    } else {
+      // Format nouveau: userId-role-timestamp
+      role = decoded.substring(secondLastDashIndex + 1, lastDashIndex)
+      userId = decoded.substring(0, secondLastDashIndex)
     }
 
     // Optionnel: Vérifier l'expiration (24 heures par défaut)

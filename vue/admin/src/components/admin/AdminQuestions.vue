@@ -33,13 +33,13 @@
     <div class="flex-1 flex flex-col min-w-0">
       <div class="bg-white border-b border-gray-200 shadow-sm">
         <div class="px-6 py-4">
-          <h1 class="text-2xl font-semibold text-gray-900">Questions Management</h1>
-          <p class="mt-1 text-sm text-gray-500">Manage quiz questions</p>
+          <h1 class="text-2xl font-semibold text-gray-900">{{ t('admin.questions.title') }}</h1>
+          <p class="mt-1 text-sm text-gray-500">{{ t('admin.questions.subtitle') }}</p>
         </div>
       </div>
       <div class="flex-1 px-6 py-8">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p class="text-gray-600">Questions management page - Coming soon</p>
+          <p class="text-gray-600">{{ t('admin.questions.comingSoon') }}</p>
         </div>
       </div>
     </div>
@@ -47,8 +47,14 @@
 </template>
 
 <script>
+import { useI18n } from '@/composables/useI18n'
+
 export default {
-  name: 'AdminQuestions'
+  name: 'AdminQuestions',
+  setup() {
+    const { t } = useI18n()
+    return { t }
+  }
 }
 </script>
 

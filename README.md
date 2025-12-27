@@ -96,8 +96,20 @@ L'application sera accessible sur `http://localhost:5173`
 
 ### Déploiement avec Docker Compose
 
+**Option 1 : Utiliser le script (recommandé)**
 ```bash
-docker-compose up --build
+./docker-compose.up.sh
+```
+
+**Option 2 : Désactiver BuildKit manuellement**
+```bash
+DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up -d --build
+```
+
+**Option 3 : Build classique (si BuildKit cause des problèmes)**
+```bash
+docker compose build --no-cache
+docker compose up -d
 ```
 
 Les services seront accessibles sur :

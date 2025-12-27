@@ -34,8 +34,8 @@
         <div class="px-6 py-4">
           <div class="flex items-center justify-between">
             <div>
-              <h1 class="text-2xl font-semibold text-gray-900">Analytics</h1>
-              <p class="mt-1 text-sm text-gray-500">View detailed analytics and reports</p>
+              <h1 class="text-2xl font-semibold text-gray-900">{{ t('admin.analytics.title') }}</h1>
+              <p class="mt-1 text-sm text-gray-500">{{ t('admin.analytics.subtitle') }}</p>
             </div>
             <div class="flex items-center space-x-3">
               <!-- Period Selector -->
@@ -44,10 +44,10 @@
                 @change="loadAnalytics"
                 class="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-                <option value="365">Last year</option>
+                <option value="7">{{ t('admin.analytics.period.7') }}</option>
+                <option value="30">{{ t('admin.analytics.period.30') }}</option>
+                <option value="90">{{ t('admin.analytics.period.90') }}</option>
+                <option value="365">{{ t('admin.analytics.period.365') }}</option>
               </select>
             </div>
           </div>
@@ -58,7 +58,7 @@
         <div v-if="loading" class="flex items-center justify-center py-12">
           <div class="text-center">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600"></div>
-            <p class="mt-4 text-sm text-gray-600">Loading analytics...</p>
+            <p class="mt-4 text-sm text-gray-600">{{ t('admin.analytics.loading') }}</p>
           </div>
         </div>
 
@@ -85,13 +85,13 @@
                 <div class="flex-shrink-0">
                   <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                 </div>
                 <div class="ml-5">
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                  <dd class="text-2xl font-semibold text-gray-900">{{ summary.totalUsers }}</dd>
+                  <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.analytics.totalPlayers') }}</dt>
+                  <dd class="text-2xl font-semibold text-gray-900">{{ summary.totalPlayers || 0 }}</dd>
                 </div>
               </div>
             </div>
@@ -106,7 +106,7 @@
                   </div>
                 </div>
                 <div class="ml-5">
-                  <dt class="text-sm font-medium text-gray-500 truncate">New Users</dt>
+                  <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.analytics.newUsers') }}</dt>
                   <dd class="text-2xl font-semibold text-gray-900">{{ summary.newUsers }}</dd>
                 </div>
               </div>
@@ -123,7 +123,7 @@
                   </div>
                 </div>
                 <div class="ml-5">
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Visits</dt>
+                  <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.analytics.totalVisits') }}</dt>
                   <dd class="text-2xl font-semibold text-gray-900">{{ summary.totalVisits }}</dd>
                 </div>
               </div>
@@ -139,7 +139,7 @@
                   </div>
                 </div>
                 <div class="ml-5">
-                  <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                  <dt class="text-sm font-medium text-gray-500 truncate">{{ t('admin.analytics.activeUsers') }}</dt>
                   <dd class="text-2xl font-semibold text-gray-900">{{ summary.activeUsers }}</dd>
                 </div>
               </div>
@@ -151,11 +151,12 @@
             <!-- User Growth Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">User Growth</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.userGrowth') }}</h3>
               </div>
               <div class="h-80">
                 <LineChart
                   v-if="userGrowthData"
+                  :key="`userGrowth-${selectedPeriod}`"
                   :data="userGrowthData"
                   :options="chartOptions"
                 />
@@ -165,11 +166,12 @@
             <!-- Site Visits Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Site Visits</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.siteVisits') }}</h3>
               </div>
               <div class="h-80">
                 <BarChart
                   v-if="visitsData"
+                  :key="`visits-${selectedPeriod}`"
                   :data="visitsData"
                   :options="chartOptions"
                 />
@@ -182,11 +184,12 @@
             <!-- User Registrations by Period -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">User Registrations</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.userRegistrations') }}</h3>
               </div>
               <div class="h-80">
                 <BarChart
                   v-if="registrationsData"
+                  :key="`registrations-${selectedPeriod}`"
                   :data="registrationsData"
                   :options="chartOptions"
                 />
@@ -196,11 +199,12 @@
             <!-- Daily Active Users -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Daily Active Users</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{ t('admin.analytics.dailyActiveUsers') }}</h3>
               </div>
               <div class="h-80">
                 <LineChart
                   v-if="dailyActiveUsersData"
+                  :key="`dailyActive-${selectedPeriod}`"
                   :data="dailyActiveUsersData"
                   :options="chartOptions"
                 />
@@ -226,8 +230,8 @@ import {
   Legend
 } from 'chart.js'
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs'
-import apiClient from '@/services/api'
-import { API_URLS } from '@/config/api'
+import { useAdminStore } from '@/stores/admin'
+import { useI18n } from '@/composables/useI18n'
 
 ChartJS.register(
   CategoryScale,
@@ -246,17 +250,14 @@ export default {
     LineChart,
     BarChart
   },
+  setup() {
+    const adminStore = useAdminStore()
+    const { t } = useI18n()
+    return { adminStore, t }
+  },
   data() {
     return {
-      loading: false,
-      error: null,
       selectedPeriod: 30,
-      summary: {
-        totalUsers: 0,
-        newUsers: 0,
-        totalVisits: 0,
-        activeUsers: 0
-      },
       userGrowthData: null,
       visitsData: null,
       registrationsData: null,
@@ -285,81 +286,105 @@ export default {
     }
   },
   async mounted() {
-    await this.loadAnalytics()
+    if (!this.adminStore.isConnected) {
+      this.adminStore.initSocket()
+    }
+    await this.adminStore.loadAnalytics(this.selectedPeriod)
+    this.updateChartData()
   },
   methods: {
     async loadAnalytics() {
-      this.loading = true
-      this.error = null
-
-      try {
-        // Fetch analytics data from backend
-        const analyticsRes = await apiClient.get(API_URLS.auth.analytics(this.selectedPeriod))
-        const analyticsData = analyticsRes.data
-
-        // Update summary
-        this.summary = {
-          totalUsers: analyticsData.summary.totalUsers || 0,
-          newUsers: analyticsData.summary.newUsers || 0,
-          totalVisits: analyticsData.summary.totalVisits || 0,
-          activeUsers: analyticsData.summary.activeUsers || 0
-        }
-
-        const charts = analyticsData.charts
-
-        // Prepare chart data
-        this.userGrowthData = {
-          labels: charts.labels,
-          datasets: [{
-            label: 'Total Users',
-            data: charts.userGrowth,
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        }
-
-        this.visitsData = {
-          labels: charts.labels,
-          datasets: [{
-            label: 'Visits',
-            data: charts.visits,
-            backgroundColor: 'rgba(139, 92, 246, 0.8)',
-            borderColor: 'rgb(139, 92, 246)',
-            borderWidth: 1
-          }]
-        }
-
-        this.registrationsData = {
-          labels: charts.labels,
-          datasets: [{
-            label: 'New Registrations',
-            data: charts.registrations,
-            backgroundColor: 'rgba(34, 197, 94, 0.8)',
-            borderColor: 'rgb(34, 197, 94)',
-            borderWidth: 1
-          }]
-        }
-
-        this.dailyActiveUsersData = {
-          labels: charts.labels,
-          datasets: [{
-            label: 'Active Users',
-            data: charts.activeUsers,
-            borderColor: 'rgb(168, 85, 247)',
-            backgroundColor: 'rgba(168, 85, 247, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        }
-
-      } catch (err) {
-        console.error('Error loading analytics:', err)
-        this.error = err.response?.data?.error || 'Failed to load analytics data'
-      } finally {
-        this.loading = false
+      await this.adminStore.loadAnalytics(this.selectedPeriod)
+      this.updateChartData()
+    },
+    updateChartData() {
+      const analyticsData = this.adminStore.analytics
+      if (!analyticsData || !analyticsData.charts) {
+        // Reset charts if no data
+        this.userGrowthData = null
+        this.visitsData = null
+        this.registrationsData = null
+        this.dailyActiveUsersData = null
+        return
       }
+
+      const charts = analyticsData.charts
+
+      // Prepare chart data
+      this.userGrowthData = {
+        labels: charts.labels || [],
+        datasets: [{
+          label: 'Total Users',
+          data: charts.userGrowth || [],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      }
+
+      this.visitsData = {
+        labels: charts.labels || [],
+        datasets: [{
+          label: 'Visits',
+          data: charts.visits || [],
+          backgroundColor: 'rgba(139, 92, 246, 0.8)',
+          borderColor: 'rgb(139, 92, 246)',
+          borderWidth: 1
+        }]
+      }
+
+      this.registrationsData = {
+        labels: charts.labels || [],
+        datasets: [{
+          label: 'New Registrations',
+          data: charts.registrations || [],
+          backgroundColor: 'rgba(34, 197, 94, 0.8)',
+          borderColor: 'rgb(34, 197, 94)',
+          borderWidth: 1
+        }]
+      }
+
+      this.dailyActiveUsersData = {
+        labels: charts.labels || [],
+        datasets: [{
+          label: 'Active Users',
+          data: charts.activeUsers || [],
+          borderColor: 'rgb(168, 85, 247)',
+          backgroundColor: 'rgba(168, 85, 247, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      }
+    }
+  },
+  computed: {
+    loading() {
+      return this.adminStore.loadingAnalytics
+    },
+    error() {
+      return this.adminStore.analyticsError
+    },
+    summary() {
+      return this.adminStore.analytics?.summary || {
+        totalUsers: 0,
+        totalPlayers: 0,
+        newUsers: 0,
+        totalVisits: 0,
+        activeUsers: 0
+      }
+    }
+  },
+  watch: {
+    selectedPeriod(newPeriod) {
+      this.loadAnalytics()
+    },
+    // Watch for changes in analytics data from store
+    'adminStore.analytics': {
+      handler() {
+        this.updateChartData()
+      },
+      deep: true
     }
   }
 }

@@ -2,17 +2,22 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier les fichiers package
-COPY package*.json ./
+# Copy shared directory first (from parent context)
+COPY shared ./shared
 
-# Installer les dépendances
+# Copy package files
+COPY api-gateway/package*.json ./
+
+# Install dependencies
 RUN npm install --production --omit=dev
 
-# Copier le code source
-COPY . .
+# Copy api-gateway files
+COPY api-gateway/server.js ./
+COPY api-gateway/config ./config
+COPY api-gateway/src ./src
 
-# Exposer le port
+# Expose port
 EXPOSE 3000
 
-# Commande de démarrage
+# Start command
 CMD ["node", "server.js"]

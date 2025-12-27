@@ -4,10 +4,14 @@ import { ref, computed } from 'vue'
 const translations = {
   fr: {
     // Admin Navbar
+    'admin.nav.navigation': 'Navigation',
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.questions': 'Questions',
     'admin.nav.users': 'Utilisateurs',
+    'admin.nav.settings': 'Paramètres',
+    'admin.nav.analytics': 'Analytique',
     'admin.nav.logout': 'Déconnexion',
+    'admin.nav.lastUpdated': 'Dernière mise à jour',
     
     // Admin Dashboard
     'admin.dashboard.title': '🎯 Dashboard Administrateur',
@@ -85,6 +89,7 @@ const translations = {
     'admin.questions.addError': 'Erreur lors de l\'ajout de la question',
     'admin.questions.loadError': 'Erreur lors du chargement des questions',
     'admin.questions.deleteError': 'Erreur lors de la suppression',
+    'admin.questions.comingSoon': 'Page de gestion des questions - À venir',
     
     // Admin User Management
     'admin.users.title': '👥 Gestion des Utilisateurs',
@@ -117,14 +122,40 @@ const translations = {
     'admin.users.unblockError': 'Erreur lors du déblocage',
     'admin.users.showing': 'Affichage de {from} à {to} sur {total}',
     'admin.users.previous': 'Précédent',
-    'admin.users.next': 'Suivant'
+    'admin.users.next': 'Suivant',
+    
+    // Admin Settings
+    'admin.settings.title': '⚙️ Paramètres',
+    'admin.settings.subtitle': 'Configurer les paramètres de l\'application',
+    'admin.settings.comingSoon': 'Page des paramètres - À venir',
+    
+    // Admin Analytics
+    'admin.analytics.title': '📊 Analytique',
+    'admin.analytics.subtitle': 'Voir les analyses et rapports détaillés',
+    'admin.analytics.totalPlayers': 'Total des Joueurs',
+    'admin.analytics.newUsers': 'Nouveaux Utilisateurs',
+    'admin.analytics.totalVisits': 'Total des Visites',
+    'admin.analytics.activeUsers': 'Utilisateurs Actifs',
+    'admin.analytics.userGrowth': 'Croissance des Utilisateurs',
+    'admin.analytics.siteVisits': 'Visites du Site',
+    'admin.analytics.userRegistrations': 'Inscriptions Utilisateurs',
+    'admin.analytics.dailyActiveUsers': 'Utilisateurs Actifs Quotidiens',
+    'admin.analytics.loading': 'Chargement de l\'analytique...',
+    'admin.analytics.period.7': '7 derniers jours',
+    'admin.analytics.period.30': '30 derniers jours',
+    'admin.analytics.period.90': '90 derniers jours',
+    'admin.analytics.period.365': 'Dernière année'
   },
   en: {
     // Admin Navbar
+    'admin.nav.navigation': 'Navigation',
     'admin.nav.dashboard': 'Dashboard',
     'admin.nav.questions': 'Questions',
     'admin.nav.users': 'Users',
+    'admin.nav.settings': 'Settings',
+    'admin.nav.analytics': 'Analytics',
     'admin.nav.logout': 'Logout',
+    'admin.nav.lastUpdated': 'Last updated',
     
     // Admin Dashboard
     'admin.dashboard.title': '🎯 Administrator Dashboard',
@@ -202,6 +233,7 @@ const translations = {
     'admin.questions.addError': 'Error adding question',
     'admin.questions.loadError': 'Error loading questions',
     'admin.questions.deleteError': 'Error deleting question',
+    'admin.questions.comingSoon': 'Questions management page - Coming soon',
     
     // Admin User Management
     'admin.users.title': '👥 User Management',
@@ -234,14 +266,40 @@ const translations = {
     'admin.users.unblockError': 'Error unblocking user',
     'admin.users.showing': 'Showing {from} to {to} of {total}',
     'admin.users.previous': 'Previous',
-    'admin.users.next': 'Next'
+    'admin.users.next': 'Next',
+    
+    // Admin Settings
+    'admin.settings.title': '⚙️ Settings',
+    'admin.settings.subtitle': 'Configure application settings',
+    'admin.settings.comingSoon': 'Settings page - Coming soon',
+    
+    // Admin Analytics
+    'admin.analytics.title': '📊 Analytics',
+    'admin.analytics.subtitle': 'View detailed analytics and reports',
+    'admin.analytics.totalPlayers': 'Total Players',
+    'admin.analytics.newUsers': 'New Users',
+    'admin.analytics.totalVisits': 'Total Visits',
+    'admin.analytics.activeUsers': 'Active Users',
+    'admin.analytics.userGrowth': 'User Growth',
+    'admin.analytics.siteVisits': 'Site Visits',
+    'admin.analytics.userRegistrations': 'User Registrations',
+    'admin.analytics.dailyActiveUsers': 'Daily Active Users',
+    'admin.analytics.loading': 'Loading analytics...',
+    'admin.analytics.period.7': 'Last 7 days',
+    'admin.analytics.period.30': 'Last 30 days',
+    'admin.analytics.period.90': 'Last 90 days',
+    'admin.analytics.period.365': 'Last year'
   },
   ru: {
     // Admin Navbar
+    'admin.nav.navigation': 'Навигация',
     'admin.nav.dashboard': 'Панель управления',
     'admin.nav.questions': 'Вопросы',
     'admin.nav.users': 'Пользователи',
+    'admin.nav.settings': 'Настройки',
+    'admin.nav.analytics': 'Аналитика',
     'admin.nav.logout': 'Выход',
+    'admin.nav.lastUpdated': 'Последнее обновление',
     
     // Admin Dashboard
     'admin.dashboard.title': '🎯 Панель администратора',
@@ -319,6 +377,7 @@ const translations = {
     'admin.questions.addError': 'Ошибка при добавлении вопроса',
     'admin.questions.loadError': 'Ошибка при загрузке вопросов',
     'admin.questions.deleteError': 'Ошибка при удалении вопроса',
+    'admin.questions.comingSoon': 'Страница управления вопросами - Скоро',
     
     // Admin User Management
     'admin.users.title': '👥 Управление пользователями',
@@ -351,7 +410,29 @@ const translations = {
     'admin.users.unblockError': 'Ошибка при разблокировке',
     'admin.users.showing': 'Показано {from} - {to} из {total}',
     'admin.users.previous': 'Предыдущая',
-    'admin.users.next': 'Следующая'
+    'admin.users.next': 'Следующая',
+    
+    // Admin Settings
+    'admin.settings.title': '⚙️ Настройки',
+    'admin.settings.subtitle': 'Настройка приложения',
+    'admin.settings.comingSoon': 'Страница настроек - Скоро',
+    
+    // Admin Analytics
+    'admin.analytics.title': '📊 Аналитика',
+    'admin.analytics.subtitle': 'Просмотр детальной аналитики и отчетов',
+    'admin.analytics.totalPlayers': 'Всего игроков',
+    'admin.analytics.newUsers': 'Новые пользователи',
+    'admin.analytics.totalVisits': 'Всего посещений',
+    'admin.analytics.activeUsers': 'Активные пользователи',
+    'admin.analytics.userGrowth': 'Рост пользователей',
+    'admin.analytics.siteVisits': 'Посещения сайта',
+    'admin.analytics.userRegistrations': 'Регистрации пользователей',
+    'admin.analytics.dailyActiveUsers': 'Ежедневные активные пользователи',
+    'admin.analytics.loading': 'Загрузка аналитики...',
+    'admin.analytics.period.7': 'Последние 7 дней',
+    'admin.analytics.period.30': 'Последние 30 дней',
+    'admin.analytics.period.90': 'Последние 90 дней',
+    'admin.analytics.period.365': 'Последний год'
   }
 }
 

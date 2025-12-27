@@ -46,6 +46,14 @@ const options = {
       {
         name: 'WebSocket',
         description: 'WebSocket events for real-time game updates'
+      },
+      {
+        name: 'Parties',
+        description: 'Game party/session management endpoints'
+      },
+      {
+        name: 'Upload',
+        description: 'File upload endpoints (images and audio)'
       }
     ],
     components: {
@@ -406,6 +414,226 @@ const options = {
           items: {
             $ref: '#/components/schemas/LeaderboardEntry'
           }
+        },
+        GameSession: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Game session ID',
+              example: 'session123'
+            },
+            name: {
+              type: 'string',
+              description: 'Party name',
+              example: 'Christmas Quiz 2024'
+            },
+            description: {
+              type: 'string',
+              description: 'Party description',
+              example: 'A fun quiz for the holidays'
+            },
+            gameCode: {
+              type: 'string',
+              description: 'Game access code',
+              example: 'ABC123'
+            },
+            questionIds: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'List of question IDs for this party'
+            },
+            questionDuration: {
+              type: 'number',
+              description: 'Duration per question in milliseconds',
+              example: 30000
+            },
+            scheduledStartTime: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Scheduled start time (optional)',
+              nullable: true
+            },
+            imageUrl: {
+              type: 'string',
+              description: 'URL of uploaded image (optional)',
+              nullable: true
+            },
+            audioUrl: {
+              type: 'string',
+              description: 'URL of uploaded audio file (optional)',
+              nullable: true
+            },
+            status: {
+              type: 'string',
+              enum: ['draft', 'scheduled', 'active', 'completed', 'cancelled'],
+              description: 'Party status',
+              example: 'draft'
+            },
+            createdBy: {
+              type: 'string',
+              description: 'User ID who created the party',
+              example: 'u1234567890'
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation date'
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update date'
+            }
+          }
+        },
+        CreatePartyRequest: {
+          type: 'object',
+          required: ['name', 'questionIds'],
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Party name',
+              example: 'Christmas Quiz 2024'
+            },
+            description: {
+              type: 'string',
+              description: 'Party description',
+              example: 'A fun quiz for the holidays'
+            },
+            questionIds: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              minItems: 1,
+              description: 'List of question IDs'
+            },
+            questionDuration: {
+              type: 'number',
+              description: 'Duration per question in milliseconds',
+              default: 30000,
+              example: 30000
+            },
+            scheduledStartTime: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Scheduled start time (optional)',
+              nullable: true
+            },
+            imageUrl: {
+              type: 'string',
+              description: 'URL of uploaded image (optional)',
+              nullable: true
+            },
+            audioUrl: {
+              type: 'string',
+              description: 'URL of uploaded audio file (optional)',
+              nullable: true
+            }
+          }
+        },
+        UpdatePartyRequest: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              example: 'Christmas Quiz 2024'
+            },
+            description: {
+              type: 'string',
+              example: 'A fun quiz for the holidays'
+            },
+            questionIds: {
+              type: 'array',
+              items: {
+                type: 'string'
+              }
+            },
+            questionDuration: {
+              type: 'number',
+              example: 30000
+            },
+            scheduledStartTime: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true
+            },
+            imageUrl: {
+              type: 'string',
+              nullable: true
+            },
+            audioUrl: {
+              type: 'string',
+              nullable: true
+            }
+          }
+        },
+        VerifyCodeResponseWithParty: {
+          type: 'object',
+          properties: {
+            valid: {
+              type: 'boolean',
+              description: 'Whether the code is valid'
+            },
+            gameCode: {
+              type: 'string',
+              description: 'Current game code'
+            },
+            isStarted: {
+              type: 'boolean',
+              description: 'Whether the game has started'
+            },
+            message: {
+              type: 'string',
+              description: 'Verification message'
+            },
+            partyInfo: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  example: 'Christmas Quiz 2024'
+                },
+                description: {
+                  type: 'string',
+                  example: 'A fun quiz for the holidays'
+                },
+                imageUrl: {
+                  type: 'string',
+                  nullable: true
+                },
+                audioUrl: {
+                  type: 'string',
+                  nullable: true
+                },
+                scheduledStartTime: {
+                  type: 'string',
+                  format: 'date-time',
+                  nullable: true
+                }
+              }
+            }
+          }
+        },
+        UploadResponse: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'URL of the uploaded file',
+              example: '/api/files/image-1234567890.jpg'
+            }
+          }
+        }
+      },
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
         }
       }
     }

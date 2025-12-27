@@ -250,7 +250,8 @@ router.get("/verify/:id", quizController.verifyAnswer);
  *     summary: Get questions created by the current user
  *     tags: [Questions]
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
+ *     description: Returns all questions created by the authenticated user (user or admin role)
  *     responses:
  *       200:
  *         description: List of user's questions
@@ -259,11 +260,19 @@ router.get("/verify/:id", quizController.verifyAnswer);
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/QuestionPublic'
+ *                 $ref: '#/components/schemas/Question'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get("/user/questions", authenticateAdmin, quizController.getUserQuestions);
 
