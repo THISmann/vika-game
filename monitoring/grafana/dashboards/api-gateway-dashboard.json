@@ -1,0 +1,144 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "api-gateway-dashboard",
+    "title": "API Gateway Monitoring",
+    "tags": ["api-gateway", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "HTTP Request Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{service=\"api-gateway\"}[5m])",
+            "legendFormat": "{{method}} {{route}} - {{status_code}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ],
+        "xaxis": {"mode": "time", "show": true}
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "HTTP Request Duration (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"api-gateway\"}[5m]))",
+            "legendFormat": "{{method}} {{route}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ],
+        "xaxis": {"mode": "time", "show": true}
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "graph",
+        "title": "HTTP Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_request_errors_total{service=\"api-gateway\"}[5m])",
+            "legendFormat": "{{method}} {{route}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Errors/sec"},
+          {"format": "short"}
+        ],
+        "xaxis": {"mode": "time", "show": true}
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "stat",
+        "title": "Total Requests",
+        "targets": [
+          {
+            "expr": "sum(http_requests_total{service=\"api-gateway\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "type": "stat",
+        "title": "Active Connections",
+        "targets": [
+          {
+            "expr": "http_active_connections{service=\"api-gateway\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "type": "table",
+        "title": "Error Log Summary",
+        "targets": [
+          {
+            "expr": "topk(10, rate(http_request_errors_total{service=\"api-gateway\"}[5m]))",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true},
+              "indexByName": {},
+              "renameByName": {
+                "method": "Method",
+                "route": "Route",
+                "status_code": "Status",
+                "error_type": "Error Type",
+                "Value": "Error Rate"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "timepicker": {},
+    "templating": {"list": []},
+    "annotations": {"list": []},
+    "links": []
+  }
+}
+

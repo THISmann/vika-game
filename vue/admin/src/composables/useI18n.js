@@ -123,6 +123,9 @@ const translations = {
     'admin.users.showing': 'Affichage de {from} à {to} sur {total}',
     'admin.users.previous': 'Précédent',
     'admin.users.next': 'Suivant',
+    'admin.users.changeRoleTitle': 'Changer le rôle',
+    'admin.users.changeRoleMessage': 'Êtes-vous sûr de vouloir changer le rôle de {name} de {oldRole} à {newRole} ?',
+    'admin.users.confirmChange': 'Confirmer le changement',
     
     // Admin Settings
     'admin.settings.title': '⚙️ Paramètres',
@@ -267,6 +270,9 @@ const translations = {
     'admin.users.showing': 'Showing {from} to {to} of {total}',
     'admin.users.previous': 'Previous',
     'admin.users.next': 'Next',
+    'admin.users.changeRoleTitle': 'Change Role',
+    'admin.users.changeRoleMessage': 'Are you sure you want to change {name} role from {oldRole} to {newRole}?',
+    'admin.users.confirmChange': 'Confirm Change',
     
     // Admin Settings
     'admin.settings.title': '⚙️ Settings',
@@ -411,6 +417,9 @@ const translations = {
     'admin.users.showing': 'Показано {from} - {to} из {total}',
     'admin.users.previous': 'Предыдущая',
     'admin.users.next': 'Следующая',
+    'admin.users.changeRoleTitle': 'Изменить роль',
+    'admin.users.changeRoleMessage': 'Вы уверены, что хотите изменить роль {name} с {oldRole} на {newRole}?',
+    'admin.users.confirmChange': 'Подтвердить изменение',
     
     // Admin Settings
     'admin.settings.title': '⚙️ Настройки',

@@ -6,6 +6,7 @@ const loggerMiddleware = require('./src/middleware/logger');
 const logger = loggerMiddleware.logger;
 const errorLogger = loggerMiddleware.errorLogger;
 const errorHandler = require('./src/middleware/errorHandler');
+const { metricsMiddleware, trackError, getMetrics } = require('./src/middleware/metrics');
 const rateLimiter = require('./src/middleware/rateLimiter');
 const SERVICES = require('./config/services');
 const swaggerUi = require('swagger-ui-express');
@@ -26,6 +27,7 @@ app.use(cors({
 // IMPORTANT: Ne pas utiliser express.json() globalement car il consomme le body
 // et le proxy ne peut plus le lire. On l'utilisera seulement pour les routes non-proxy
 app.use(express.urlencoded({ extended: true }));
+app.use(metricsMiddleware); // Prometheus metrics collection
 app.use(loggerMiddleware); // Request logging
 
 // Swagger UI
@@ -49,12 +51,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Prometheus metrics endpoint
+app.get('/metrics', getMetrics);
+
 // Rate limiting (augmenté à 300 requêtes par minute par IP pour éviter les erreurs 429)
-// Exclure /health et certaines routes de jeu du rate limiting
+// Exclure /health, /metrics et certaines routes de jeu du rate limiting
 const limiter = rateLimiter(60000, 300); // Augmenté de 100 à 300
 app.use((req, res, next) => {
-  // Skip rate limiting for health checks et routes de jeu fréquemment pollées
+  // Skip rate limiting for health checks, metrics et routes de jeu fréquemment pollées
   if (req.path === '/health' || 
+      req.path === '/metrics' ||
       req.path === '/game/state' || 
       req.path === '/game/players/count' || 
       req.path === '/game/players') {
@@ -69,7 +75,10 @@ app.use('/test', express.json(), gatewayRoutes);
 app.use('/', gatewayRoutes); // Les routes proxifiées n'utilisent pas express.json() ici
 
 // Error logging middleware (before error handler)
-app.use(errorLogger);
+app.use((err, req, res, next) => {
+  trackError(err, req);
+  errorLogger(err, req, res, next);
+});
 
 // Middleware de gestion des erreurs (doit être en dernier)
 app.use(errorHandler);
