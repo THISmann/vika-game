@@ -208,6 +208,11 @@ export const API_URLS = {
           : isProduction
             ? `${API_CONFIG.GAME_SERVICE}/parties`
             : `${API_CONFIG.GAME_SERVICE}/game/parties`,
+        getParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
         updateParty: (partyId) => useApiGateway
           ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
           : isProduction

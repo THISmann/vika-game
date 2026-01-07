@@ -41,50 +41,59 @@ export function isUserAuthenticated() {
       // Décoder le token base64 pour vérifier l'expiration
       const decoded = atob(token)
       // Format du token: "userId-role-timestamp" (séparé par des tirets)
-      const parts = decoded.split('-')
+      // Le userId peut être un UUID avec des tirets, donc on doit parser depuis la fin
       
-      if (parts.length >= 3) {
-        // Format: userId-role-timestamp
-        const userId = parts[0]
-        const role = parts[1]
-        const timestamp = parseInt(parts[2], 10)
-        
-        // Vérifier que le rôle correspond
-        if (role !== 'user' && role !== 'admin') {
-          console.log('🔒 Auth check failed: invalid role in token', role)
-          localStorage.removeItem('authToken')
-          localStorage.removeItem('userInfo')
-          return false
-        }
-        
-        // Vérifier que le timestamp est valide
-        if (isNaN(timestamp) || timestamp <= 0) {
-          console.log('🔒 Auth check failed: invalid timestamp')
-          localStorage.removeItem('authToken')
-          localStorage.removeItem('userInfo')
-          return false
-        }
-        
-        // Vérifier l'expiration (24 heures)
-        const now = Date.now()
-        const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
-        
-        if (now - timestamp > TOKEN_EXPIRY) {
-          console.log('🔒 Auth check failed: token expired')
-          // Token expiré, nettoyer le localStorage
-          localStorage.removeItem('authToken')
-          localStorage.removeItem('userInfo')
-          return false
-        }
-        
-        // Token valide
-        return true
-      } else {
-        console.log('🔒 Auth check failed: invalid token format', 'parts:', parts.length)
+      const lastDashIndex = decoded.lastIndexOf('-')
+      if (lastDashIndex === -1) {
+        console.log('🔒 Auth check failed: no dash found in token')
         localStorage.removeItem('authToken')
         localStorage.removeItem('userInfo')
         return false
       }
+      
+      // Extraire le timestamp (dernier segment)
+      const timestamp = parseInt(decoded.substring(lastDashIndex + 1), 10)
+      
+      // Extraire le role (avant-dernier segment)
+      const beforeLastPart = decoded.substring(0, lastDashIndex)
+      const secondLastDashIndex = beforeLastPart.lastIndexOf('-')
+      let role
+      if (secondLastDashIndex === -1) {
+        role = beforeLastPart
+      } else {
+        role = decoded.substring(secondLastDashIndex + 1, lastDashIndex)
+      }
+      
+      // Vérifier que le rôle correspond
+      if (role !== 'user' && role !== 'admin') {
+        console.log('🔒 Auth check failed: invalid role in token', role)
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
+        return false
+      }
+      
+      // Vérifier que le timestamp est valide
+      if (isNaN(timestamp) || timestamp <= 0) {
+        console.log('🔒 Auth check failed: invalid timestamp')
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
+        return false
+      }
+      
+      // Vérifier l'expiration (24 heures)
+      const now = Date.now()
+      const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
+      
+      if (now - timestamp > TOKEN_EXPIRY) {
+        console.log('🔒 Auth check failed: token expired')
+        // Token expiré, nettoyer le localStorage
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
+        return false
+      }
+      
+      // Token valide
+      return true
     } catch (error) {
       console.error('🔒 Error verifying token:', error)
       // En cas d'erreur de décodage, considérer comme non authentifié

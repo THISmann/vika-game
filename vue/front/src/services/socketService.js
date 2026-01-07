@@ -38,46 +38,38 @@ class SocketService {
 
     this.isConnecting = true
 
-    // Utiliser API_URLS.ws.game qui gère automatiquement dev/prod
-    let wsUrl = API_URLS.ws.game
-    
-    // En local avec Minikube/Kubernetes, utiliser le proxy Nginx via l'URL du navigateur
-    // Le proxy Nginx route /api/game/socket.io vers game-service
+    // En développement Docker Compose, se connecter directement au game-service
+    // L'API Gateway ne supporte pas les WebSockets, donc on ne peut pas l'utiliser
     const isLocalDev = typeof window !== 'undefined' && 
                       (window.location.hostname === 'localhost' || 
                        window.location.hostname === '127.0.0.1' ||
                        window.location.hostname.startsWith('192.168.') ||
                        window.location.hostname.startsWith('10.'))
     
-    // Si on est en local avec Kubernetes (via proxy), utiliser l'URL du navigateur
-    // Cela permet d'utiliser le proxy Nginx qui route /api/game vers game-service
-    if (isLocalDev && typeof window !== 'undefined') {
-      // Utiliser l'URL de base du navigateur (via proxy Nginx)
-      wsUrl = `${window.location.protocol}//${window.location.host}`
-      console.log('🏠 Local Kubernetes mode - Using WebSocket URL via proxy:', wsUrl)
-    } else if (isLocalDev) {
-      // Fallback pour développement sans Kubernetes
+    let wsUrl
+    let socketPath = '/socket.io'
+    
+    if (isLocalDev) {
+      // En développement local, se connecter directement au game-service
+      // L'API Gateway (port 3000) ne supporte pas les WebSockets
       wsUrl = 'http://localhost:3003'
+      socketPath = '/socket.io'
       console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     } else {
+      // En production, utiliser l'URL de base du navigateur (via proxy Nginx)
+      wsUrl = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : ''
+      socketPath = '/socket.io' // En production, le proxy Nginx route /socket.io vers game-service
       console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
     }
 
     console.log('🔌 Creating WebSocket connection:', wsUrl)
+    console.log('🔌 Socket path:', socketPath)
     console.log('🔌 Connection options:', {
-      path: '/socket.io',
+      path: socketPath,
       transports: ['polling', 'websocket'],
       autoConnect: true,
       timeout: 20000
     })
-
-    // En local avec Kubernetes (via proxy Nginx), utiliser le chemin /api/game/socket.io
-    // En développement direct (localhost:3003), utiliser /socket.io
-    // Si l'URL est celle du navigateur (localhost:5173), c'est via proxy Kubernetes
-    const isKubernetesLocal = isLocalDev && typeof window !== 'undefined' && 
-                              window.location.port === '5173'
-    const socketPath = isKubernetesLocal ? '/api/game/socket.io' : '/socket.io'
-    console.log('🔌 Socket path:', socketPath, '(Kubernetes local:', isKubernetesLocal, ')')
     
     this.socket = io(wsUrl, {
       path: socketPath,
@@ -201,49 +193,70 @@ class SocketService {
   // Enregistrer un joueur (sans créer de nouvelle connexion)
   registerPlayer(playerId) {
     if (!playerId) {
-      console.error('❌ Cannot register player: playerId is required')
+      console.error('🔵 [socketService] ❌ Cannot register player: playerId is required')
       return
     }
 
+    console.log('🔵 [socketService] registerPlayer called with playerId:', playerId)
+
     if (!this.socket) {
-      console.log('🔌 No socket found, creating connection...')
+      console.log('🔵 [socketService] No socket found, creating connection...')
       this.connect()
+      // Après connect(), le socket peut ne pas être immédiatement disponible
+      // On attend un peu puis on réessaye
+      setTimeout(() => {
+        if (this.socket && this.socket.connected) {
+          console.log('🔵 [socketService] Socket now connected, registering player:', playerId)
+          this.socket.emit('register', playerId)
+        }
+      }, 500)
+      return
     }
 
     // Si le socket est connecté, enregistrer immédiatement
     if (this.socket.connected) {
-      console.log('📝 Registering player (socket connected):', playerId)
+      console.log('🔵 [socketService] Socket connected, registering player:', playerId, 'Socket ID:', this.socket.id)
       this.socket.emit('register', playerId)
+      console.log('🔵 [socketService] Register event emitted')
       return
     }
 
     // Si le socket est en train de se connecter, attendre
     if (this.socket.connecting) {
-      console.log('⏳ Socket is connecting, will register after connection...')
-      this.socket.once('connect', () => {
-        console.log('📝 Registering player after connection:', playerId)
+      console.log('🔵 [socketService] Socket is connecting, will register after connection...')
+      const connectHandler = () => {
+        console.log('🔵 [socketService] Socket connected (was connecting), registering player:', playerId, 'Socket ID:', this.socket.id)
         this.socket.emit('register', playerId)
-      })
+        console.log('🔵 [socketService] Register event emitted after connection')
+        this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
+      }
+      this.socket.once('connect', connectHandler)
       return
     }
 
     // Si le socket est déconnecté, le reconnecter puis enregistrer
     if (this.socket.disconnected) {
-      console.log('🔄 Socket disconnected, reconnecting...')
+      console.log('🔵 [socketService] Socket disconnected, calling connect()...')
       this.socket.connect()
-      this.socket.once('connect', () => {
-        console.log('📝 Registering player after reconnection:', playerId)
+      const connectHandler = () => {
+        console.log('🔵 [socketService] Socket connected after reconnect, registering player:', playerId, 'Socket ID:', this.socket.id)
         this.socket.emit('register', playerId)
-      })
+        console.log('🔵 [socketService] Register event emitted after reconnect')
+        this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
+      }
+      this.socket.once('connect', connectHandler)
       return
     }
 
     // Par défaut, attendre la connexion
-    console.log('⏳ Waiting for socket connection to register player...')
-    this.socket.once('connect', () => {
-      console.log('📝 Registering player after connection:', playerId)
+    console.log('🔵 [socketService] Waiting for socket connection to register player...')
+    const connectHandler = () => {
+      console.log('🔵 [socketService] Socket connected (default handler), registering player:', playerId, 'Socket ID:', this.socket.id)
       this.socket.emit('register', playerId)
-    })
+      console.log('🔵 [socketService] Register event emitted after connection')
+      this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
+    }
+    this.socket.once('connect', connectHandler)
   }
 
   // Ajouter un listener pour un composant

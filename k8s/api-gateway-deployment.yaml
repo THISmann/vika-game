@@ -37,6 +37,8 @@ spec:
           value: "http://game-service:3003"
         - name: TELEGRAM_SERVICE_URL
           value: "http://telegram-bot:3004"
+        - name: PORT
+          value: "3000"
         livenessProbe:
           httpGet:
             path: /health

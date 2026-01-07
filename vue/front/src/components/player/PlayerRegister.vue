@@ -295,6 +295,7 @@ export default {
       try {
         const res = await axios.post(API_URLS.auth.registerPlayer, {
           name: this.name.trim(),
+          gameCode: this.gameCode.toUpperCase()
         })
 
         localStorage.setItem('playerId', res.data.id)
@@ -316,60 +317,16 @@ export default {
           url: API_URLS.ws.game
         })
         
-        // Fonction pour enregistrer le joueur de manière fiable
-        const registerPlayerOnSocket = async () => {
-          // Si le socket est connecté, enregistrer immédiatement
-          if (this.socket.connected) {
-            console.log('✅ Socket connected, registering player:', res.data.id)
-            socketService.registerPlayer(res.data.id)
-            return true
-          }
-          
-          // Si le socket n'est pas connecté, attendre la connexion
-          console.log('⏳ Socket not connected, waiting for connection...')
-          
-          return new Promise((resolve) => {
-            // Si le socket est déjà en train de se connecter, attendre
-            if (this.socket.connecting) {
-              console.log('⏳ Socket is connecting, waiting...')
-              this.socket.once('connect', () => {
-                console.log('✅ WebSocket connected after wait, registering player:', res.data.id)
-                socketService.registerPlayer(res.data.id)
-                resolve(true)
-              })
-              // Timeout de sécurité
-              setTimeout(() => {
-                console.warn('⚠️ Connection timeout, trying to register anyway...')
-                socketService.registerPlayer(res.data.id)
-                resolve(false)
-              }, 10000)
-              return
-            }
-            
-            // Si le socket est déconnecté, le reconnecter
-            if (this.socket.disconnected) {
-              console.log('🔄 Socket disconnected, reconnecting...')
-              this.socket.connect()
-            }
-            
-            // Attendre la connexion
-            this.socket.once('connect', () => {
-              console.log('✅ WebSocket connected, registering player:', res.data.id)
-              socketService.registerPlayer(res.data.id)
-              resolve(true)
-            })
-            
-            // Timeout de sécurité
-            setTimeout(() => {
-              console.warn('⚠️ Connection timeout after 10s, trying to register anyway...')
-              socketService.registerPlayer(res.data.id)
-              resolve(false)
-            }, 10000)
-          })
-        }
-        
-        // Enregistrer le joueur
-        await registerPlayerOnSocket()
+        // Enregistrer le joueur via socketService qui gère automatiquement la connexion
+        console.log('🔵 [PlayerRegister] About to register player on socket:', res.data.id)
+        console.log('🔵 [PlayerRegister] Socket state before register:', {
+          connected: this.socket.connected,
+          disconnected: this.socket.disconnected,
+          connecting: this.socket.connecting,
+          id: this.socket.id
+        })
+        socketService.registerPlayer(res.data.id)
+        console.log('🔵 [PlayerRegister] registerPlayer called (socketService handles connection automatically)')
 
         // Écouter le démarrage du jeu
         socketService.on('game:started', (data) => {

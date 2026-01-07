@@ -342,7 +342,11 @@ export default {
     const message = computed(() => gameStore.message)
     const error = computed(() => gameStore.error || questionsStore.error)
 
+    // Polling interval for refreshing players list
+    let playersPollingInterval = null
+
     onMounted(async () => {
+      console.log('🟠 [AdminDashboard] Component mounted, loading initial data...')
       // Load initial data
       await Promise.all([
         questionsStore.loadQuestions(),
@@ -350,14 +354,28 @@ export default {
         gameStore.loadGameCode(),
         gameStore.loadConnectedPlayers()
       ])
+      console.log('🟠 [AdminDashboard] Initial data loaded. Connected players:', connectedPlayers.value)
       
       // Setup socket listeners for real-time updates
       gameStore.setupSocketListeners()
+      
+      // Poll for connected players every 5 seconds to ensure the list stays up to date
+      playersPollingInterval = setInterval(async () => {
+        console.log('🟠 [AdminDashboard] Polling for connected players...')
+        await gameStore.loadConnectedPlayers()
+        console.log('🟠 [AdminDashboard] Polling completed. Connected players:', connectedPlayers.value)
+      }, 5000)
     })
 
     onUnmounted(() => {
       // Cleanup socket listeners
       gameStore.removeSocketListeners()
+      
+      // Clear polling interval
+      if (playersPollingInterval) {
+        clearInterval(playersPollingInterval)
+        playersPollingInterval = null
+      }
     })
 
     const startGame = async () => {

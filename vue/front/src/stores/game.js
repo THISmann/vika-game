@@ -74,11 +74,22 @@ export const useGameStore = defineStore('game', () => {
 
   async function loadConnectedPlayers() {
     try {
+      console.log('🟣 [game store] Loading connected players from:', API_URLS.game.players)
       const res = await apiClient.get(API_URLS.game.players)
+      console.log('🟣 [game store] Response received:', {
+        players: res.data.players,
+        count: res.data.count,
+        fullResponse: res.data
+      })
       connectedPlayers.value = res.data.players || []
       gameState.value.connectedPlayersCount = res.data.count || 0
+      console.log('🟣 [game store] Connected players updated:', {
+        connectedPlayers: connectedPlayers.value,
+        count: gameState.value.connectedPlayersCount
+      })
     } catch (err) {
-      console.error('Error loading connected players:', err)
+      console.error('🟣 [game store] ❌ Error loading connected players:', err)
+      console.error('🟣 [game store] Error details:', err.response?.data || err.message)
     }
   }
 
@@ -252,8 +263,10 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handlePlayersCount(data) {
-    console.log('📊 Game store received players:count event:', data)
+    console.log('🟣 [game store] 📊 Received players:count event:', data)
+    console.log('🟣 [game store] Current connectedPlayers before update:', connectedPlayers.value)
     updatePlayersCountFromSocket(data.count)
+    console.log('🟣 [game store] ConnectedPlayers after update:', connectedPlayers.value)
   }
 
   function handleGameStarted(data) {

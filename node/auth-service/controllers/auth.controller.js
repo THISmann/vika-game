@@ -64,16 +64,45 @@ exports.adminLogin = async (req, res) => {
 };
 
 exports.registerPlayer = async (req, res) => {
-    const { name, email, password, contact, useCase, country } = req.body;
+    const { name, email, password, contact, useCase, country, gameCode } = req.body;
 
     if (!name) return res.status(400).json({ error: "Name is required" });
 
     try {
-        // Check if player name already exists
-        const existingPlayer = await User.findOne({ name: name.trim() });
-        if (existingPlayer) {
-            return res.status(409).json({ error: "Player name already exists" });
+        // If gameCode is provided, check if name exists in current game session
+        if (gameCode) {
+            try {
+                const GAME_SERVICE_URL = process.env.GAME_SERVICE_URL || 'http://localhost:3003';
+                const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+                
+                // Get connected players for this game code
+                const gameStateRes = await axios.get(`${GAME_SERVICE_URL}/game/state`);
+                const gameState = gameStateRes.data;
+                
+                // Only check if the game code matches and game hasn't started
+                if (gameState.gameCode === gameCode.toUpperCase() && !gameState.isStarted) {
+                    // Get list of connected player IDs
+                    const connectedPlayerIds = gameState.connectedPlayers || [];
+                    
+                    if (connectedPlayerIds.length > 0) {
+                        // Get player names from auth service
+                        const playersRes = await axios.get(`${AUTH_SERVICE_URL}/auth/players`);
+                        const connectedPlayers = playersRes.data.filter(p => connectedPlayerIds.includes(p.id));
+                        
+                        // Check if name already exists in connected players
+                        const nameExists = connectedPlayers.some(p => p.name && p.name.trim().toLowerCase() === name.trim().toLowerCase());
+                        if (nameExists) {
+                            return res.status(409).json({ error: "Ce nom est déjà utilisé dans cette partie" });
+                        }
+                    }
+                }
+            } catch (gameServiceError) {
+                // If game service is unavailable, allow registration (fail open)
+                console.warn("Could not check name in game service, allowing registration:", gameServiceError.message);
+            }
         }
+        
+        // Allow same name in different games - only check within the same game session
 
         // Check if email already exists (if provided)
         if (email) {
@@ -184,6 +213,38 @@ exports.updateLastLogin = async (req, res) => {
         res.json({ success: true, lastLoginAt: user.lastLoginAt });
     } catch (error) {
         console.error('Error updating lastLoginAt:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Delete a player by ID (called by game-service when game ends or is deleted)
+ */
+exports.deletePlayer = async (req, res) => {
+    try {
+        const playerId = req.params.id;
+        
+        const user = await User.findOne({ id: playerId });
+        if (!user) {
+            // Player not found, return success (idempotent)
+            return res.json({ success: true, message: "Player not found, already deleted" });
+        }
+
+        // Only delete players (not users or admins)
+        if (user.role !== 'player') {
+            return res.status(403).json({ error: "Cannot delete non-player users" });
+        }
+
+        await User.deleteOne({ id: playerId });
+        
+        // Invalidate cache
+        await cache.del(CACHE_KEYS.PLAYER(playerId));
+        await cache.del(CACHE_KEYS.ALL_PLAYERS);
+        
+        console.log(`✅ Deleted player: ${playerId}`);
+        res.json({ success: true, message: "Player deleted successfully" });
+    } catch (error) {
+        console.error('Error deleting player:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: game-service
+  namespace: intelectgame
   labels:
     app: game-service
 spec:
@@ -53,6 +54,31 @@ spec:
             configMapKeyRef:
               name: app-config
               key: NODE_ENV
+        - name: MINIO_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MINIO_ENDPOINT
+        - name: MINIO_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MINIO_PORT
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MINIO_SECRET_KEY
+        - name: MINIO_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MINIO_BUCKET_NAME
         volumeMounts:
         - name: data-volume
           mountPath: /app/data
@@ -64,6 +90,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: game-service
+  namespace: intelectgame
   labels:
     app: game-service
 spec:

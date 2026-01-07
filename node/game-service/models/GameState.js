@@ -53,6 +53,10 @@ const gameStateSchema = new mongoose.Schema({
     type: Date,
     default: null,
     index: true
+  },
+  questionIds: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: false,

@@ -137,6 +137,7 @@ router.post("/players/register", authController.registerPlayer);
  */
 router.get("/players/:id", authController.getPlayer);
 router.put("/players/:id/update-last-login", authController.updateLastLogin);
+router.delete("/players/:id", authController.deletePlayer);
 
 /**
  * @swagger

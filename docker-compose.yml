@@ -1,4 +1,4 @@
-version: "3.8"
+ 
 
 # Note: Si vous rencontrez des erreurs "lease does not exist" avec BuildKit,
 # utilisez: DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up --build
@@ -16,11 +16,11 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })' 2>&1 | grep -q 'ok: 1' || exit 1"]
-      interval: 15s
-      timeout: 8s
-      retries: 5
-      start_period: 180s
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' 2>&1 | grep -q '^1$' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
     networks:
       - app-network
 
@@ -87,10 +87,10 @@ services:
       - app-network
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/auth/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 10s
-      timeout: 5s
+      interval: 15s
+      timeout: 10s
       retries: 5
-      start_period: 40s
+      start_period: 60s
 
   # Quiz Service
   quiz:

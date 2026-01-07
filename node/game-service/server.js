@@ -6,6 +6,7 @@ const app = express();
 const gameRoutes = require("./routes/game.routes");
 const websocketRoutes = require("./routes/websocket.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const filesRoutes = require("./routes/files.routes");
 const minioService = require("./services/minioService");
 const path = require("path"); 
 const cors = require('cors');
@@ -66,30 +67,8 @@ const io = new Server(server, {
     origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
   },
-  path: "/socket.io",
-  transports: ['polling', 'websocket'],
-  allowEIO3: true,
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  // Désactiver la vérification stricte pour éviter les erreurs 400
-  allowRequest: (req, callback) => {
-    // Logger pour debug
-    const sid = req.url?.split('sid=')[1]?.split('&')[0];
-    if (sid) {
-      logger.debug('Socket.io request', {
-        sid: sid.substring(0, 10),
-        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
-      });
-    }
-    // Accepter toutes les requêtes (la vérification sera faite dans les handlers)
-    // Le sessionAffinity dans Kubernetes garantit que le même client va au même pod
-    callback(null, true);
-  },
-  // Désactiver la vérification stricte des origins
-  connectTimeout: 45000,
-  // Permettre les requêtes cross-origin
+  path: "/socket.io", // IMPORTANT: path doit être "/socket.io" (sans slash final)
   serveClient: false
 });
 
@@ -99,336 +78,19 @@ app.use("/game", (req, res, next) => {
   next();
 }, gameRoutes);
 
-// WebSocket documentation routes
-app.use("/game", websocketRoutes);
-
-// Upload routes
 app.use("/game/upload", uploadRoutes);
 
-/**
- * @swagger
- * /api/files/{filePath}:
- *   get:
- *     summary: Serve uploaded files (images and audio) from MinIO
- *     tags: [Upload]
- *     parameters:
- *       - in: path
- *         name: filePath
- *         required: true
- *         schema:
- *           type: string
- *         description: File path (e.g., image-1234567890.jpg or audio-1234567890.mp3)
- *     responses:
- *       200:
- *         description: File content
- *         content:
- *           image/jpeg:
- *             schema:
- *               type: string
- *               format: binary
- *           image/png:
- *             schema:
- *               type: string
- *               format: binary
- *           image/gif:
- *             schema:
- *               type: string
- *               format: binary
- *           image/webp:
- *             schema:
- *               type: string
- *               format: binary
- *           audio/mpeg:
- *             schema:
- *               type: string
- *               format: binary
- *           audio/wav:
- *             schema:
- *               type: string
- *               format: binary
- *           audio/ogg:
- *             schema:
- *               type: string
- *               format: binary
- *       400:
- *         description: Invalid file path
- *       404:
- *         description: File not found
- *       500:
- *         description: Error serving file
- */
 // Serve files from MinIO
-app.get("/api/files/*", async (req, res) => {
-  try {
-    // Extract the object name from the path (everything after /api/files/)
-    const pathMatch = req.path.match(/\/api\/files\/(.+)/);
-    if (!pathMatch) {
-      return res.status(400).json({ error: 'Invalid file path' });
-    }
-    const objectName = pathMatch[1];
-    
-    const stream = await minioService.minioClient.getObject(minioService.BUCKET_NAME, objectName);
-    const stat = await minioService.minioClient.statObject(minioService.BUCKET_NAME, objectName);
-    
-    res.setHeader('Content-Type', stat.metaData['content-type'] || 'application/octet-stream');
-    res.setHeader('Content-Length', stat.size);
-    stream.pipe(res);
-  } catch (error) {
-    logger.error('Error serving file', error, {
-      path: req.path
-    });
-    res.status(404).json({ error: 'File not found' });
-  }
-});
+app.use("/api/files", filesRoutes);
 
-// Player socket map
+// Error logging middleware (must be after routes)
+app.use(errorLogger(logger));
+
+// Store player socket IDs
 const playersSockets = new Map();
 
-// Gérer les erreurs de connexion avant le handshake
-io.engine.on("connection_error", (err) => {
-  logger.warn('Socket.io connection error', {
-    remoteAddress: err.req?.socket?.remoteAddress,
-    message: err.message,
-    context: err.context,
-    description: err.description,
-    type: err.type
-  });
-  // Ne pas rejeter la connexion pour les erreurs mineures
-  // Le client va réessayer automatiquement
-});
-
-io.on("connection", (socket) => {
-  const clientIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
-  const userAgent = socket.handshake.headers['user-agent'] || 'unknown';
-  logger.info('WebSocket client connected', {
-    socketId: socket.id,
-    ip: clientIP,
-    userAgent: userAgent.substring(0, 50),
-    totalClients: io.sockets.sockets.size
-  });
-  
-  // Logger les erreurs de connexion
-  socket.on("error", (error) => {
-    logger.error('Socket error', error, {
-      socketId: socket.id
-    });
-    // Ne pas envoyer d'erreur au client pour éviter les boucles d'erreur
-  });
-  
-  // Logger les tentatives de reconnexion
-  socket.on("reconnect_attempt", (attemptNumber) => {
-    logger.debug('Reconnection attempt', {
-      socketId: socket.id,
-      attemptNumber
-    });
-  });
-  
-  // Gérer les erreurs non capturées pour éviter les "server error" génériques
-  socket.on("disconnect", (reason) => {
-    if (reason === "transport close" || reason === "transport error") {
-      logger.debug('Socket disconnected due to transport issue', {
-        socketId: socket.id,
-        reason
-      });
-    } else {
-      logger.info('Socket disconnected', {
-        socketId: socket.id,
-        reason
-      });
-    }
-  });
-
-  socket.on("register", async (playerId) => {
-    try {
-      if (!playerId) {
-        logger.error('Register called without playerId', null, { socketId: socket.id });
-        socket.emit("error", { 
-          message: "Player ID is required",
-          code: "INVALID_PLAYER_ID"
-        });
-        return;
-      }
-
-      logger.debug('Register player request', {
-        playerId,
-        socketId: socket.id
-      });
-      
-      const state = await gameState.getState();
-      logger.debug('Current game state', {
-        isStarted: state.isStarted,
-        connectedPlayersCount: state.connectedPlayers?.length || 0
-      });
-      
-      // Vérifier si le joueur est déjà dans la liste des joueurs connectés
-      const isAlreadyConnected = state.connectedPlayers && state.connectedPlayers.includes(playerId);
-      
-      // Si le jeu a déjà commencé, vérifier si le joueur était déjà enregistré
-      // Si le joueur était déjà enregistré, permettre la reconnexion (par exemple après une déconnexion temporaire)
-      if (state.isStarted && !isAlreadyConnected) {
-        // Vérifier si le joueur avait déjà été enregistré dans une session précédente
-        // En regardant les scores ou autres données persistantes
-        // Pour l'instant, on rejette seulement les nouveaux joueurs
-        logger.warn('Game already started, rejecting new player', { playerId });
-        socket.emit("error", { 
-          message: "Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.",
-          code: "GAME_ALREADY_STARTED"
-        });
-        return;
-      }
-      
-      // Si le joueur était déjà connecté et que le jeu a commencé, c'est une reconnexion
-      if (state.isStarted && isAlreadyConnected) {
-        logger.info('Player reconnecting during active game', { playerId });
-      }
-      
-      // Enregistrer le socket du joueur
-      playersSockets.set(playerId, socket.id);
-      socket.playerId = playerId;
-      logger.info('Socket registered for player', { playerId, socketId: socket.id });
-      
-      // Ajouter le joueur à la liste des connectés seulement s'il n'y est pas déjà
-      if (!isAlreadyConnected) {
-        await gameState.addConnectedPlayer(playerId);
-        
-        // Vérifier que le joueur a bien été ajouté
-        const updatedState = await gameState.getState();
-        const isNowConnected = updatedState.connectedPlayers && updatedState.connectedPlayers.includes(playerId);
-        if (!isNowConnected) {
-          logger.error('Failed to add player to connectedPlayers', null, { playerId });
-        } else {
-          logger.debug('Player added to connectedPlayers', { playerId });
-        }
-        
-        // Initialiser le score du joueur s'il n'existe pas encore
-        // Et mettre à jour lastLoginAt dans auth-service
-        try {
-          const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
-          const player = playersRes.data.find(p => p.id === playerId);
-          const playerName = player ? player.name : 'Joueur anonyme';
-          logger.debug('Player name from auth-service', { playerId, playerName });
-          
-          // Update lastLoginAt in auth-service
-          try {
-            await axios.put(`${services.AUTH_SERVICE_URL}/auth/players/${playerId}/update-last-login`);
-            logger.debug('Updated lastLoginAt for player', { playerId });
-          } catch (loginUpdateErr) {
-            logger.warn('Could not update lastLoginAt for player', { playerId, error: loginUpdateErr.message });
-            // Continue even if update fails
-          }
-          
-          let score = await Score.findOne({ playerId });
-          if (!score) {
-            score = new Score({
-              playerId,
-              playerName,
-              score: 0
-            });
-            await score.save();
-            logger.info('Initialized score for new player', { playerId, playerName, score: 0 });
-          } else {
-            // Mettre à jour le nom si nécessaire
-            if (score.playerName !== playerName) {
-              score.playerName = playerName;
-              await score.save();
-              logger.debug('Updated player name', { playerId, playerName });
-            }
-          }
-        } catch (err) {
-          logger.error('Error initializing score for player', err, { playerId });
-          // Continue même si l'initialisation échoue
-        }
-      }
-      
-      // Envoyer le nombre de joueurs connectés à tous
-      const connectedCount = await gameState.getConnectedPlayersCount();
-      const currentState = await gameState.getState();
-      
-      logger.debug('Emitting players:count event', { count: connectedCount, totalClients: io.sockets.sockets.size });
-      io.emit("players:count", { count: connectedCount });
-      
-      // Envoyer le code de jeu au joueur qui vient de se connecter
-      socket.emit("game:code", { gameCode: currentState.gameCode });
-      
-      // Si le jeu a déjà commencé, envoyer l'état actuel au joueur qui se reconnecte
-      if (currentState.isStarted) {
-        logger.info('Player reconnecting during active game', { playerId });
-        
-        // Envoyer l'événement de jeu démarré
-        socket.emit("game:started", {
-          questionIndex: currentState.currentQuestionIndex,
-          totalQuestions: 0, // Sera mis à jour si nécessaire
-          gameCode: currentState.gameCode
-        });
-        
-        // Si une question est active, envoyer la question actuelle
-        if (currentState.currentQuestionId) {
-          try {
-            const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-            const questions = quiz.data;
-            const currentQuestion = questions.find(q => q.id === currentState.currentQuestionId);
-            
-            if (currentQuestion) {
-              socket.emit("question:next", {
-                question: {
-                  id: currentQuestion.id,
-                  question: currentQuestion.question,
-                  choices: currentQuestion.choices
-                },
-                questionIndex: currentState.currentQuestionIndex,
-                totalQuestions: questions.length,
-                startTime: currentState.questionStartTime,
-                duration: currentState.questionDuration
-              });
-            }
-          } catch (err) {
-            logger.error('Error fetching current question for reconnecting player', err, { playerId });
-          }
-        }
-      }
-      
-      logger.info('Player registered successfully', {
-        playerId,
-        totalConnected: connectedCount,
-        gameStarted: currentState.isStarted
-      });
-    } catch (error) {
-      logger.error('Error registering player', error, {
-        playerId,
-        socketId: socket.id
-      });
-      // Envoyer une erreur plus détaillée en développement
-      const errorMessage = process.env.NODE_ENV === 'development' 
-        ? `Erreur lors de l'enregistrement: ${error.message}`
-        : "Erreur lors de l'enregistrement";
-      socket.emit("error", { 
-        message: errorMessage,
-        code: "REGISTRATION_ERROR"
-      });
-    }
-  });
-
-  // Handler de déconnexion
-  socket.on("disconnect", async (reason) => {
-    if (socket.playerId) {
-      logger.info('Player disconnecting', {
-        playerId: socket.playerId,
-        socketId: socket.id,
-        reason
-      });
-      playersSockets.delete(socket.playerId);
-      await gameState.removeConnectedPlayer(socket.playerId);
-      
-      // Envoyer le nombre de joueurs connectés à tous
-      const connectedCount = await gameState.getConnectedPlayersCount();
-      io.emit("players:count", { count: connectedCount });
-    }
-    logger.info('Socket disconnected', {
-      socketId: socket.id,
-      reason
-    });
-  });
-});
+// WebSocket routes setup (Express routes for WebSocket info)
+app.use("/game", websocketRoutes);
 
 // Emit helper
 function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
@@ -440,30 +102,99 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
 // Scheduled game checker - vérifie toutes les 10 secondes si un jeu doit être lancé
 async function checkScheduledGames() {
   try {
-    const scheduled = await gameState.getScheduledGame();
-    if (scheduled && scheduled.scheduledStartTime) {
-      const now = new Date();
-      const scheduledTime = new Date(scheduled.scheduledStartTime);
-      
-      // Si la date planifiée est passée ou égale à maintenant, lancer le jeu
-      if (scheduledTime <= now) {
-        logger.info('Launching scheduled game', {
-          scheduledTime: scheduledTime.toISOString(),
+    const GameSession = require('./models/GameSession');
+    const now = new Date();
+    
+    // Trouver toutes les parties programmées qui doivent être lancées
+    // On vérifie que scheduledStartTime existe, n'est pas null, et est <= maintenant
+    const scheduledParties = await GameSession.find({
+      status: 'scheduled',
+      scheduledStartTime: { 
+        $exists: true,
+        $ne: null,
+        $lte: now 
+      },
+      isStarted: false // S'assurer que la partie n'a pas déjà été démarrée
+    }).limit(1); // Ne traiter qu'une partie à la fois
+    
+    if (scheduledParties.length === 0) {
+      // Log seulement toutes les 60 secondes pour éviter le spam
+      const lastLogTime = checkScheduledGames.lastLogTime || 0;
+      const nowTime = now.getTime();
+      if (nowTime - lastLogTime > 60000) {
+        // Vérifier combien de parties sont programmées pour le debug
+        const totalScheduled = await GameSession.countDocuments({ 
+          status: 'scheduled',
+          scheduledStartTime: { $exists: true, $ne: null }
+        });
+        logger.debug('No scheduled parties to launch', {
           currentTime: now.toISOString(),
-          gameSessionId: party.id
+          ioAvailable: !!io,
+          totalScheduled: totalScheduled
+        });
+        checkScheduledGames.lastLogTime = nowTime;
+      }
+      return;
+    }
+    
+    logger.info(`Found ${scheduledParties.length} scheduled party(ies) to launch`);
+    
+    for (const party of scheduledParties) {
+      logger.info('Launching scheduled party', {
+        partyId: party.id,
+        partyName: party.name,
+        scheduledTime: party.scheduledStartTime?.toISOString(),
+        currentTime: now.toISOString(),
+        questionIds: party.questionIds?.length || 0,
+        timeDiff: party.scheduledStartTime ? (now.getTime() - party.scheduledStartTime.getTime()) / 1000 : null
+      });
+      
+      // Lancer la partie programmatiquement en utilisant la logique de startParty
+      try {
+        // Mettre à jour le statut de la partie
+        party.status = 'active';
+        party.isStarted = true;
+        party.startedAt = new Date();
+        await party.save();
+        
+        // Mettre à jour GameState pour utiliser cette partie
+        await gameState.setState({
+          gameSessionId: party.id,
+          gameCode: party.gameCode,
+          createdBy: party.createdBy,
+          questionDuration: party.questionDuration,
+          scheduledStartTime: null, // Clear scheduled time when starting
+          isStarted: true,
+          currentQuestionIndex: 0,
+          questionIds: party.questionIds // Store questionIds in gameState
         });
         
-        // Lancer le jeu programmatiquement
-        await launchScheduledGame(scheduled.questionDuration);
+        // Lancer le jeu avec les questions de la partie
+        await launchScheduledGameFromParty(party, io);
+        
+        logger.info('Scheduled party started successfully', {
+          partyId: party.id,
+          gameCode: party.gameCode
+        });
+      } catch (partyError) {
+        logger.error('Error starting scheduled party', partyError, {
+          partyId: party.id,
+          errorMessage: partyError.message,
+          errorStack: partyError.stack
+        });
+        // Ne pas arrêter la boucle si une partie échoue
       }
     }
   } catch (error) {
-    logger.error('Error checking scheduled games', error);
+    logger.error('Error checking scheduled games', error, {
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
   }
 }
 
-// Fonction pour lancer un jeu planifié programmatiquement
-async function launchScheduledGame(questionDurationMs) {
+// Fonction pour lancer un jeu planifié programmatiquement depuis une GameSession
+async function launchScheduledGameFromParty(party, ioInstance) {
   try {
     const Score = require('./models/Score');
     
@@ -487,89 +218,112 @@ async function launchScheduledGame(questionDurationMs) {
       }
     }
     
-    // Récupérer les questions (sans auth pour le lancement automatique - utiliser /quiz/all qui est public)
+    // Récupérer les questions depuis quiz-service en utilisant les questionIds de la partie
     let questions = [];
     try {
-      const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
-      questions = quiz.data || [];
-      logger.info('Fetched questions for scheduled game', { count: questions.length, gameSessionId: party.id });
-    } catch (quizError) {
-      logger.error('Error fetching questions for scheduled game', quizError, { gameSessionId: party.id });
-      return;
-    }
-
-    if (questions.length === 0) {
-      logger.error('No questions available for scheduled game', null, { gameSessionId: party.id });
-      return;
-    }
-
-    // Démarrer le jeu
-    await gameState.startGame();
-    const state = await gameState.getState();
-    
-    // Initialiser les scores pour tous les joueurs connectés
-      logger.info('Initializing scores for connected players', { count: state.connectedPlayers.length });
-    try {
-      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
-      for (const playerId of state.connectedPlayers) {
-        const player = playersRes.data.find(p => p.id === playerId);
-        if (player) {
-          await initializePlayerScore(playerId, player.name);
-        } else {
-          await initializePlayerScore(playerId, 'Joueur anonyme');
-        }
+      if (party.questionIds && party.questionIds.length > 0) {
+        // Récupérer toutes les questions et filtrer par questionIds
+        const questionsRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+        const allQuestions = questionsRes.data || [];
+        questions = allQuestions.filter(q => party.questionIds.includes(q.id));
+      } else {
+        logger.warn('Party has no questionIds', { partyId: party.id });
+        return;
       }
-      logger.info('Scores initialized for all connected players', { count: state.connectedPlayers.length });
     } catch (err) {
-      logger.error('Error initializing scores', err);
+      logger.error('Error fetching questions for scheduled party', err, { partyId: party.id });
+      return;
     }
-
-    // Démarrer avec la première question
-    if (questions.length > 0 && io) {
+    
+    if (questions.length === 0) {
+      logger.warn('No questions found for scheduled party', { partyId: party.id, questionIds: party.questionIds });
+      return;
+    }
+    
+    // Réinitialiser les scores
+    await Score.deleteMany({});
+    
+    // Initialiser les scores pour les joueurs connectés
+    const currentState = await gameState.getState();
+    if (currentState.connectedPlayers && currentState.connectedPlayers.length > 0) {
+      try {
+        const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+        for (const playerId of currentState.connectedPlayers) {
+          const player = playersRes.data.find(p => p.id === playerId);
+          if (player) {
+            await initializePlayerScore(playerId, player.name);
+          }
+        }
+        logger.info('Scores initialized for connected players', { count: currentState.connectedPlayers.length });
+      } catch (err) {
+        logger.error('Error initializing scores', err);
+      }
+    }
+    
+    // Démarrer le jeu avec la première question
+    if (questions.length > 0 && ioInstance) {
       const firstQuestion = questions[0];
-      await gameState.setCurrentQuestion(firstQuestion.id, questionDurationMs);
-      const newState = await gameState.getState();
-
-      const connectedClients = io.sockets.sockets.size;
-      const connectedPlayersCount = await gameState.getConnectedPlayersCount();
-      console.log(`🚀 Connected WebSocket clients: ${connectedClients}`);
-      console.log(`🚀 Connected players in gameState: ${connectedPlayersCount}`);
-
-      // Émettre l'événement de début de jeu
-      io.emit("game:started", {
-        questionIndex: newState.currentQuestionIndex,
-        totalQuestions: questions.length,
-        gameCode: newState.gameCode
-      });
-
-      io.emit("question:next", {
-        question: {
-          id: firstQuestion.id,
-          question: firstQuestion.question,
-          choices: firstQuestion.choices
-        },
-        questionIndex: newState.currentQuestionIndex,
-        totalQuestions: questions.length,
-        startTime: newState.questionStartTime,
-        duration: newState.questionDuration
-      });
-
-      // Programmer le timer pour passer automatiquement à la question suivante
-      const gameController = require('./controllers/game.controller');
-      gameController.scheduleNextQuestion(io, questionDurationMs);
+      await gameState.setCurrentQuestion(firstQuestion.id, party.questionDuration);
       
-      logger.info('Scheduled game started successfully', {
-        gameSessionId: party.id,
+      ioInstance.emit("game:started", {
+        questionIndex: 0,
+        totalQuestions: questions.length,
         gameCode: party.gameCode
       });
+      
+      ioInstance.emit("question:next", {
+        question: firstQuestion,
+        questionIndex: 0,
+        totalQuestions: questions.length,
+        duration: party.questionDuration
+      });
+      
+      // Programmer la question suivante en utilisant la fonction exportée du controller
+      const gameController = require('./controllers/game.controller');
+      gameController.scheduleNextQuestion(ioInstance, party.questionDuration);
     }
+    
+    logger.info('Scheduled party launched successfully', {
+      partyId: party.id,
+      gameCode: party.gameCode,
+      questionsCount: questions.length
+    });
   } catch (error) {
-    logger.error('Error launching scheduled game', error);
+    logger.error('Error launching scheduled party', error, {
+      partyId: party?.id
+    });
   }
 }
 
 // Vérifier les jeux planifiés toutes les 10 secondes
-setInterval(checkScheduledGames, 10000);
+// IMPORTANT: S'assurer que io est défini avant de démarrer le checker
+let scheduledGamesInterval = null;
+
+// Démarrer le checker après que le serveur soit prêt
+function startScheduledGamesChecker() {
+  if (scheduledGamesInterval) {
+    clearInterval(scheduledGamesInterval);
+  }
+  
+  logger.info('Starting scheduled games checker (every 10 seconds)');
+  
+  // Exécuter immédiatement une première vérification
+  checkScheduledGames().catch(err => {
+    logger.error('Error in initial scheduled games check', err);
+  });
+  
+  // Puis vérifier toutes les 10 secondes
+  scheduledGamesInterval = setInterval(() => {
+    checkScheduledGames().catch(err => {
+      logger.error('Error in scheduled games check', err);
+    });
+  }, 10000);
+  
+  logger.info('Scheduled games checker started successfully');
+}
+
+// Démarrer le checker après que le serveur soit prêt
+startScheduledGamesChecker();
 
 // WebSocket connection logging
 io.on("connection", (socket) => {
@@ -581,11 +335,106 @@ io.on("connection", (socket) => {
     totalClients: io.sockets.sockets.size
   });
   
-  socket.on('disconnect', (reason) => {
+  // Handler pour l'enregistrement des joueurs
+  socket.on('register', async (playerId) => {
+    try {
+      logger.info('Player registration request', {
+        socketId: socket.id,
+        playerId: playerId
+      });
+      
+      if (!playerId) {
+        socket.emit('error', {
+          code: 'INVALID_PLAYER_ID',
+          message: 'Player ID is required'
+        });
+        return;
+      }
+      
+      // Vérifier l'état du jeu
+      const state = await gameState.getState();
+      
+      // Si le jeu a déjà commencé, ne pas permettre l'enregistrement
+      if (state.isStarted) {
+        logger.warn('Registration rejected: game already started', {
+          playerId: playerId,
+          socketId: socket.id
+        });
+        socket.emit('error', {
+          code: 'GAME_ALREADY_STARTED',
+          message: 'Le jeu a déjà commencé. Vous ne pouvez plus vous connecter.'
+        });
+        return;
+      }
+      
+      // Ajouter le joueur à la liste des joueurs connectés
+      await gameState.addConnectedPlayer(playerId);
+      
+      // Stocker le socket ID pour ce joueur
+      playersSockets.set(playerId, socket.id);
+      
+      // Récupérer le gameCode actuel
+      const currentState = await gameState.getState();
+      const gameCode = currentState.gameCode;
+      
+      // Récupérer le nombre de joueurs connectés
+      const connectedCount = await gameState.getConnectedPlayersCount();
+      
+      // Envoyer le gameCode au joueur
+      if (gameCode) {
+        socket.emit('game:code', { gameCode });
+      }
+      
+      // Émettre le comptage des joueurs à tous les clients
+      io.emit('players:count', { count: connectedCount });
+      
+      logger.info('Player registered successfully', {
+        playerId: playerId,
+        socketId: socket.id,
+        gameCode: gameCode,
+        connectedCount: connectedCount
+      });
+    } catch (error) {
+      logger.error('Error registering player', error, {
+        playerId: playerId,
+        socketId: socket.id
+      });
+      socket.emit('error', {
+        code: 'REGISTRATION_ERROR',
+        message: 'Erreur lors de l\'enregistrement du joueur'
+      });
+    }
+  });
+  
+  socket.on('disconnect', async (reason) => {
     logger.info('WebSocket client disconnected', {
       socketId: socket.id,
       reason: reason
     });
+    
+    // Trouver le playerId associé à ce socket et le retirer
+    for (const [playerId, socketId] of playersSockets.entries()) {
+      if (socketId === socket.id) {
+        try {
+          await gameState.removeConnectedPlayer(playerId);
+          playersSockets.delete(playerId);
+          
+          // Émettre le nouveau comptage à tous les clients
+          const connectedCount = await gameState.getConnectedPlayersCount();
+          io.emit('players:count', { count: connectedCount });
+          
+          logger.info('Player removed from connected players', {
+            playerId: playerId,
+            connectedCount: connectedCount
+          });
+        } catch (error) {
+          logger.error('Error removing player on disconnect', error, {
+            playerId: playerId
+          });
+        }
+        break;
+      }
+    }
   });
   
   socket.on('error', (error) => {
