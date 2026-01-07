@@ -187,6 +187,37 @@ jobs:
           labels: ${{ steps.meta-api-gateway.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Extract metadata for admin-frontend
+        id: meta-admin-frontend
+        uses: docker/metadata-action@v5
+        continue-on-error: true
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKER_USERNAME }}/gamev2-admin-frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+          context: workflow
+
+      - name: Build and push admin-frontend
+        uses: docker/build-push-action@v5
+        continue-on-error: true
+        with:
+          context: ./vue
+          file: ./vue/admin/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-admin-frontend.outputs.tags }}
+          labels: ${{ steps.meta-admin-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
 
       - name: Summary
         if: github.event_name != 'pull_request'
@@ -200,6 +231,7 @@ jobs:
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-telegram-bot\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-api-gateway\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-frontend\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCKER_USERNAME }}/gamev2-admin-frontend\` (optional)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View on DockerHub: https://hub.docker.com/u/${{ env.DOCKER_USERNAME }}" >> $GITHUB_STEP_SUMMARY
 

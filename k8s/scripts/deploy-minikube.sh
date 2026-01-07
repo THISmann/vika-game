@@ -48,7 +48,11 @@ info "Namespace créé"
 # Déployer MongoDB en premier
 info "Déploiement de MongoDB..."
 if [ -f "k8s/mongodb-deployment.yaml" ]; then
-  kubectl apply -f k8s/mongodb-deployment.yaml
+  # Utiliser --validate=false pour éviter les problèmes de timeout OpenAPI
+  kubectl apply --validate=false -f k8s/mongodb-deployment.yaml || {
+    warn "Erreur lors du déploiement de MongoDB, réessai sans validation..."
+    kubectl apply --validate=false --force -f k8s/mongodb-deployment.yaml
+  }
   echo "⏳ Attente que MongoDB soit prêt..."
   kubectl wait --for=condition=available --timeout=300s deployment/mongodb -n intelectgame || {
     warn "MongoDB prend plus de temps que prévu"
@@ -62,7 +66,11 @@ echo ""
 # Déployer Redis
 info "Déploiement de Redis..."
 if [ -f "k8s/redis-deployment.yaml" ]; then
-  kubectl apply -f k8s/redis-deployment.yaml
+  # Utiliser --validate=false pour éviter les problèmes de timeout OpenAPI
+  kubectl apply --validate=false -f k8s/redis-deployment.yaml || {
+    warn "Erreur lors du déploiement de Redis, réessai sans validation..."
+    kubectl apply --validate=false --force -f k8s/redis-deployment.yaml
+  }
   echo "⏳ Attente que Redis soit prêt..."
   kubectl wait --for=condition=available --timeout=120s deployment/redis -n intelectgame || {
     warn "Redis prend plus de temps que prévu"
@@ -76,7 +84,11 @@ echo ""
 # Déployer MinIO
 info "Déploiement de MinIO..."
 if [ -f "k8s/minio-deployment.yaml" ]; then
-  kubectl apply -f k8s/minio-deployment.yaml
+  # Utiliser --validate=false pour éviter les problèmes de timeout OpenAPI
+  kubectl apply --validate=false -f k8s/minio-deployment.yaml || {
+    warn "Erreur lors du déploiement de MinIO, réessai sans validation..."
+    kubectl apply --validate=false --force -f k8s/minio-deployment.yaml
+  }
   echo "⏳ Attente que MinIO soit prêt..."
   kubectl wait --for=condition=available --timeout=120s deployment/minio -n intelectgame || {
     warn "MinIO prend plus de temps que prévu"
@@ -90,7 +102,10 @@ echo ""
 # Déployer le ConfigMap
 info "Déploiement du ConfigMap..."
 if [ -f "k8s/configmap.yaml" ]; then
-  kubectl apply -f k8s/configmap.yaml
+  kubectl apply --validate=false -f k8s/configmap.yaml || {
+    warn "Erreur lors du déploiement du ConfigMap, réessai sans validation..."
+    kubectl apply --validate=false --force -f k8s/configmap.yaml
+  }
   info "ConfigMap déployé"
 else
   warn "Fichier configmap.yaml non trouvé"
@@ -119,7 +134,9 @@ info "Déploiement des services backend..."
 
 # Auth Service
 if [ -f "k8s/auth-service-deployment.yaml" ]; then
-  kubectl apply -f k8s/auth-service-deployment.yaml
+  kubectl apply --validate=false -f k8s/auth-service-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/auth-service-deployment.yaml
+  }
   info "Auth Service déployé"
 else
   warn "Fichier auth-service-deployment.yaml non trouvé"
@@ -127,7 +144,9 @@ fi
 
 # Quiz Service
 if [ -f "k8s/quiz-service-deployment.yaml" ]; then
-  kubectl apply -f k8s/quiz-service-deployment.yaml
+  kubectl apply --validate=false -f k8s/quiz-service-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/quiz-service-deployment.yaml
+  }
   info "Quiz Service déployé"
 else
   warn "Fichier quiz-service-deployment.yaml non trouvé"
@@ -135,7 +154,9 @@ fi
 
 # Game Service
 if [ -f "k8s/game-service-deployment.yaml" ]; then
-  kubectl apply -f k8s/game-service-deployment.yaml
+  kubectl apply --validate=false -f k8s/game-service-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/game-service-deployment.yaml
+  }
   info "Game Service déployé"
 else
   warn "Fichier game-service-deployment.yaml non trouvé"
@@ -143,7 +164,9 @@ fi
 
 # API Gateway
 if [ -f "k8s/api-gateway-deployment.yaml" ]; then
-  kubectl apply -f k8s/api-gateway-deployment.yaml
+  kubectl apply --validate=false -f k8s/api-gateway-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/api-gateway-deployment.yaml
+  }
   info "API Gateway déployé"
 else
   warn "Fichier api-gateway-deployment.yaml non trouvé"
@@ -152,7 +175,9 @@ fi
 # Telegram Bot (si le secret existe)
 if kubectl get secret telegram-bot-secret -n intelectgame &> /dev/null; then
   if [ -f "k8s/telegram-bot-deployment.yaml" ]; then
-    kubectl apply -f k8s/telegram-bot-deployment.yaml
+    kubectl apply --validate=false -f k8s/telegram-bot-deployment.yaml || {
+      kubectl apply --validate=false --force -f k8s/telegram-bot-deployment.yaml
+    }
     info "Telegram Bot déployé"
   else
     warn "Fichier telegram-bot-deployment.yaml non trouvé"
@@ -170,7 +195,9 @@ info "Déploiement des frontends..."
 
 # Frontend (User)
 if [ -f "k8s/frontend-deployment.yaml" ]; then
-  kubectl apply -f k8s/frontend-deployment.yaml
+  kubectl apply --validate=false -f k8s/frontend-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/frontend-deployment.yaml
+  }
   info "Frontend (User) déployé"
 else
   warn "Fichier frontend-deployment.yaml non trouvé"
@@ -178,7 +205,9 @@ fi
 
 # Admin Frontend (si existe)
 if [ -f "k8s/admin-frontend-deployment.yaml" ]; then
-  kubectl apply -f k8s/admin-frontend-deployment.yaml
+  kubectl apply --validate=false -f k8s/admin-frontend-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/admin-frontend-deployment.yaml
+  }
   info "Admin Frontend déployé"
 else
   warn "Fichier admin-frontend-deployment.yaml non trouvé (optionnel)"
@@ -191,7 +220,9 @@ info "Déploiement du monitoring..."
 
 # Prometheus
 if [ -f "k8s/monitoring/prometheus-deployment.yaml" ]; then
-  kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
+  kubectl apply --validate=false -f k8s/monitoring/prometheus-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/monitoring/prometheus-deployment.yaml
+  }
   info "Prometheus déployé"
 else
   warn "Fichier prometheus-deployment.yaml non trouvé"
@@ -199,7 +230,9 @@ fi
 
 # cAdvisor
 if [ -f "k8s/monitoring/cadvisor-deployment.yaml" ]; then
-  kubectl apply -f k8s/monitoring/cadvisor-deployment.yaml
+  kubectl apply --validate=false -f k8s/monitoring/cadvisor-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/monitoring/cadvisor-deployment.yaml
+  }
   info "cAdvisor déployé"
 else
   warn "Fichier cadvisor-deployment.yaml non trouvé"
@@ -207,7 +240,9 @@ fi
 
 # Node Exporter
 if [ -f "k8s/monitoring/node-exporter-deployment.yaml" ]; then
-  kubectl apply -f k8s/monitoring/node-exporter-deployment.yaml
+  kubectl apply --validate=false -f k8s/monitoring/node-exporter-deployment.yaml || {
+    kubectl apply --validate=false --force -f k8s/monitoring/node-exporter-deployment.yaml
+  }
   info "Node Exporter déployé"
 else
   warn "Fichier node-exporter-deployment.yaml non trouvé"
@@ -215,7 +250,9 @@ fi
 
 # Grafana
 if [ -f "k8s/monitoring/grafana-deployment-updated.yaml" ]; then
-  kubectl apply -f k8s/monitoring/grafana-deployment-updated.yaml
+  kubectl apply --validate=false -f k8s/monitoring/grafana-deployment-updated.yaml || {
+    kubectl apply --validate=false --force -f k8s/monitoring/grafana-deployment-updated.yaml
+  }
   info "Grafana déployé"
 else
   warn "Fichier grafana-deployment-updated.yaml non trouvé"
