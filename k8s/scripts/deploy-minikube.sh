@@ -30,9 +30,30 @@ error() {
 # Vérifier que Minikube est démarré
 if ! minikube status &> /dev/null; then
     warn "Minikube n'est pas démarré. Démarrage de Minikube..."
-    minikube start
+    # Démarrer Minikube avec des options pour éviter les problèmes de réseau
+    minikube start --driver=docker --container-runtime=docker || {
+        error "Impossible de démarrer Minikube"
+        warn "Tentative avec des options alternatives..."
+        minikube start --driver=docker --container-runtime=docker --image-mirror-country=fr || {
+            error "Échec du démarrage de Minikube"
+            exit 1
+        }
+    }
     info "Minikube démarré"
+else
+    info "Minikube est déjà démarré"
 fi
+
+# Vérifier la connexion à l'API Kubernetes
+info "Vérification de la connexion à Kubernetes..."
+if ! kubectl cluster-info &> /dev/null; then
+    warn "Problème de connexion à Kubernetes, tentative de réparation..."
+    minikube update-context || {
+        error "Impossible de se connecter à Kubernetes"
+        exit 1
+    }
+fi
+info "Connexion Kubernetes OK"
 
 # Vérifier que kubectl est disponible
 if ! command -v kubectl &> /dev/null; then
