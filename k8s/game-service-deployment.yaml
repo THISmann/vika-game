@@ -15,12 +15,51 @@ spec:
       labels:
         app: game-service
     spec:
+      initContainers:
+      - name: wait-for-mongodb
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z mongodb.intelectgame.svc.cluster.local 27017; do echo waiting for mongodb; sleep 2; done;']
+      - name: wait-for-redis
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z redis.intelectgame.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
+      - name: wait-for-quiz
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z quiz-service.intelectgame.svc.cluster.local 3002; do echo waiting for quiz-service; sleep 2; done;']
+      - name: wait-for-auth
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z auth-service.intelectgame.svc.cluster.local 3001; do echo waiting for auth-service; sleep 2; done;']
+      - name: wait-for-minio
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z minio.intelectgame.svc.cluster.local 9000; do echo waiting for minio; sleep 2; done;']
       containers:
       - name: game-service
         image: thismann17/gamev2-game-service:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3003
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /game/test
+            port: 3003
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /game/test
+            port: 3003
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
         env:
         - name: PORT
           value: "3003"

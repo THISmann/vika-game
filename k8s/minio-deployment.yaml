@@ -14,7 +14,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: standard  # Pour Minikube, utilisez 'standard' ou 'hostpath'
+  storageClassName: hostpath  # Pour Minikube, utilisez 'hostpath' pour le stockage local
 ---
 # MinIO Deployment
 apiVersion: apps/v1

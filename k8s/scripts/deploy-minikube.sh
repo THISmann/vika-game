@@ -31,17 +31,33 @@ error() {
 if ! minikube status &> /dev/null; then
     warn "Minikube n'est pas démarré. Démarrage de Minikube..."
     # Démarrer Minikube avec des options pour éviter les problèmes de réseau
-    minikube start --driver=docker --container-runtime=docker || {
-        error "Impossible de démarrer Minikube"
-        warn "Tentative avec des options alternatives..."
-        minikube start --driver=docker --container-runtime=docker --image-mirror-country=fr || {
-            error "Échec du démarrage de Minikube"
-            exit 1
+    # Utiliser --image-mirror-country pour utiliser des mirrors régionaux
+    # --skip-image-download évite de télécharger les images du registry.k8s.io qui échoue souvent
+    minikube start --driver=docker --container-runtime=docker \
+        --image-mirror-country=fr \
+        --image-repository='registry.aliyuncs.com/google_containers' \
+        --kubernetes-version=stable || {
+        warn "Première tentative échouée, essai avec des options alternatives..."
+        # Essayer sans spécifier de version Kubernetes
+        minikube start --driver=docker --container-runtime=docker \
+            --image-mirror-country=fr \
+            --image-repository='registry.aliyuncs.com/google_containers' || {
+            warn "Essai avec registry local..."
+            # Dernière tentative : utiliser le registry local ou ignorer les erreurs de registry
+            minikube start --driver=docker --container-runtime=docker \
+                --skip-image-download \
+                --kubernetes-version=stable || {
+                error "Impossible de démarrer Minikube"
+                warn "Vérifiez votre connexion Internet et les paramètres de proxy"
+                exit 1
+            }
         }
     }
     info "Minikube démarré"
 else
     info "Minikube est déjà démarré"
+    # Mettre à jour le contexte même si Minikube est déjà démarré
+    minikube update-context || true
 fi
 
 # Vérifier la connexion à l'API Kubernetes
