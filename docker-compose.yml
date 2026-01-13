@@ -195,7 +195,6 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.dashboard.address=:8080"
     ports:
       - "80:80"
       - "8080:8080"  # Dashboard
@@ -205,11 +204,6 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`82.202.141.248`) && PathPrefix(`/traefik`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$8K8m8K8m$$8K8m8K8m8K8m8K8m"  # admin:admin (généré avec htpasswd)
 
   # API Gateway
   api-gateway:
