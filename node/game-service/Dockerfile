@@ -4,8 +4,8 @@ WORKDIR /app
 COPY shared ./shared
 # Copy package files
 COPY game-service/package*.json ./
-# Use npm ci for reproducible builds (requires package-lock.json)
-RUN npm install --production --omit=dev --omit=dev
+# Use npm install (package-lock.json may be out of sync)
+RUN npm install --production --omit=dev
 # Copy game-service files individually (excluding shared symlink)
 COPY game-service/controllers ./controllers
 COPY game-service/routes ./routes

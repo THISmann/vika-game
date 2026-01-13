@@ -4,8 +4,8 @@ WORKDIR /app
 COPY shared ./shared
 # Copy package files
 COPY quiz-service/package*.json ./
-# Use npm ci for reproducible builds (requires package-lock.json)
-RUN npm install --production --omit=dev --omit=dev
+# Use npm install (package-lock.json may be out of sync)
+RUN npm install --production --omit=dev
 # Copy quiz-service files individually (excluding shared symlink)
 COPY quiz-service/controllers ./controllers
 COPY quiz-service/routes ./routes

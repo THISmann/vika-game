@@ -4,8 +4,8 @@ WORKDIR /app
 COPY shared ./shared
 # Copy package files
 COPY auth-service/package*.json ./
-# Use npm ci for reproducible builds (requires package-lock.json)
-RUN npm install --production --omit=dev --omit=dev
+# Use npm install (package-lock.json may be out of sync)
+RUN npm install --production --omit=dev
 # Copy auth-service files individually (excluding shared symlink)
 COPY auth-service/controllers ./controllers
 COPY auth-service/routes ./routes
