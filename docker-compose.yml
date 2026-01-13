@@ -257,7 +257,7 @@ services:
       - VITE_AUTH_SERVICE_URL=/vika-game/api
       - VITE_QUIZ_SERVICE_URL=/vika-game/api
       - VITE_GAME_SERVICE_URL=/vika-game/api
-    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --force"
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base /vika-game/ --force"
     depends_on:
       api-gateway:
         condition: service_healthy
