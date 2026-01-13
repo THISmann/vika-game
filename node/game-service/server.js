@@ -103,10 +103,9 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
 async function checkScheduledGames() {
   try {
     const GameSession = require('./models/GameSession');
-      const now = new Date();
+    const now = new Date();
     
-    // Trouver toutes les parties programmées qui doivent être lancées
-    // On vérifie que scheduledStartTime existe, n'est pas null, et est <= maintenant
+    // 1. Vérifier les GameSession programmées (parties créées via createParty)
     const scheduledParties = await GameSession.find({
       status: 'scheduled',
       scheduledStartTime: { 
@@ -117,7 +116,14 @@ async function checkScheduledGames() {
       isStarted: false // S'assurer que la partie n'a pas déjà été démarrée
     }).limit(1); // Ne traiter qu'une partie à la fois
     
-    if (scheduledParties.length === 0) {
+    // 2. Vérifier aussi GameState pour les jeux programmés via startGame avec scheduledStartTime
+    const currentState = await gameState.getState();
+    const hasScheduledGameState = currentState && 
+                                   currentState.scheduledStartTime && 
+                                   !currentState.isStarted &&
+                                   new Date(currentState.scheduledStartTime) <= now;
+    
+    if (scheduledParties.length === 0 && !hasScheduledGameState) {
       // Log seulement toutes les 60 secondes pour éviter le spam
       const lastLogTime = checkScheduledGames.lastLogTime || 0;
       const nowTime = now.getTime();
@@ -130,59 +136,158 @@ async function checkScheduledGames() {
         logger.debug('No scheduled parties to launch', {
           currentTime: now.toISOString(),
           ioAvailable: !!io,
-          totalScheduled: totalScheduled
+          totalScheduled: totalScheduled,
+          gameStateScheduled: !!currentState?.scheduledStartTime
         });
         checkScheduledGames.lastLogTime = nowTime;
       }
       return;
     }
     
-    logger.info(`Found ${scheduledParties.length} scheduled party(ies) to launch`);
+    // Traiter les GameSession programmées
+    if (scheduledParties.length > 0) {
+      logger.info(`Found ${scheduledParties.length} scheduled party(ies) to launch`);
+      
+      for (const party of scheduledParties) {
+        logger.info('Launching scheduled party', {
+          partyId: party.id,
+          partyName: party.name,
+          scheduledTime: party.scheduledStartTime?.toISOString(),
+          currentTime: now.toISOString(),
+          questionIds: party.questionIds?.length || 0,
+          timeDiff: party.scheduledStartTime ? (now.getTime() - party.scheduledStartTime.getTime()) / 1000 : null
+        });
+        
+        // Lancer la partie programmatiquement en utilisant la logique de startParty
+        try {
+          // Mettre à jour le statut de la partie
+          party.status = 'active';
+          party.isStarted = true;
+          party.startedAt = new Date();
+          await party.save();
+          
+          // Mettre à jour GameState pour utiliser cette partie
+          await gameState.setState({
+            gameSessionId: party.id,
+            gameCode: party.gameCode,
+            createdBy: party.createdBy,
+            questionDuration: party.questionDuration,
+            scheduledStartTime: null, // Clear scheduled time when starting
+            isStarted: true,
+            currentQuestionIndex: 0,
+            questionIds: party.questionIds // Store questionIds in gameState
+          });
+          
+          // Lancer le jeu avec les questions de la partie
+          await launchScheduledGameFromParty(party, io);
+          
+          logger.info('Scheduled party started successfully', {
+            partyId: party.id,
+            gameCode: party.gameCode
+          });
+        } catch (partyError) {
+          logger.error('Error starting scheduled party', partyError, {
+            partyId: party.id,
+            errorMessage: partyError.message,
+            errorStack: partyError.stack
+          });
+          // Ne pas arrêter la boucle si une partie échoue
+        }
+      }
+    }
     
-    for (const party of scheduledParties) {
-      logger.info('Launching scheduled party', {
-        partyId: party.id,
-        partyName: party.name,
-        scheduledTime: party.scheduledStartTime?.toISOString(),
+    // Traiter les jeux programmés via GameState (startGame avec scheduledStartTime)
+    if (hasScheduledGameState) {
+      logger.info('Launching scheduled game from GameState', {
+        scheduledTime: currentState.scheduledStartTime?.toISOString(),
         currentTime: now.toISOString(),
-        questionIds: party.questionIds?.length || 0,
-        timeDiff: party.scheduledStartTime ? (now.getTime() - party.scheduledStartTime.getTime()) / 1000 : null
+        gameCode: currentState.gameCode,
+        timeDiff: currentState.scheduledStartTime ? (now.getTime() - new Date(currentState.scheduledStartTime).getTime()) / 1000 : null
       });
       
-      // Lancer la partie programmatiquement en utilisant la logique de startParty
       try {
-        // Mettre à jour le statut de la partie
-        party.status = 'active';
-        party.isStarted = true;
-        party.startedAt = new Date();
-        await party.save();
+        // Récupérer les questions depuis quiz-service
+        let questions = [];
+        try {
+          const questionsRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+          questions = questionsRes.data || [];
+        } catch (err) {
+          logger.error('Error fetching questions for scheduled game', err);
+          return; // Ne pas démarrer si on ne peut pas récupérer les questions
+        }
+
+        if (questions.length === 0) {
+          logger.warn('No questions found for scheduled game');
+          return;
+        }
+
+        // Réinitialiser les scores
+        const Score = require('./models/Score');
+        await Score.deleteMany({});
         
-        // Mettre à jour GameState pour utiliser cette partie
-        await gameState.setState({
-          gameSessionId: party.id,
-          gameCode: party.gameCode,
-          createdBy: party.createdBy,
-          questionDuration: party.questionDuration,
-          scheduledStartTime: null, // Clear scheduled time when starting
-          isStarted: true,
-          currentQuestionIndex: 0,
-          questionIds: party.questionIds // Store questionIds in gameState
+        // Initialiser les scores pour les joueurs connectés
+        if (currentState.connectedPlayers && currentState.connectedPlayers.length > 0) {
+          try {
+            const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+            for (const playerId of currentState.connectedPlayers) {
+              const player = playersRes.data.find(p => p.id === playerId);
+              if (player) {
+                const score = new Score({
+                  playerId,
+                  playerName: player.name,
+                  score: 0
+                });
+                await score.save();
+              }
+            }
+            logger.info('Scores initialized for connected players', { count: currentState.connectedPlayers.length });
+          } catch (err) {
+            logger.error('Error initializing scores', err);
+          }
+        }
+
+        // Démarrer le jeu avec la première question
+        if (questions.length > 0 && io) {
+          const firstQuestion = questions[0];
+          const questionDuration = currentState.questionDuration || 30000;
+          
+          // Mettre à jour GameState pour démarrer le jeu
+          await gameState.setState({
+            scheduledStartTime: null, // Clear scheduled time when starting
+            isStarted: true,
+            currentQuestionIndex: 0,
+            questionIds: questions.map(q => q.id)
+          });
+          
+          await gameState.setCurrentQuestion(firstQuestion.id, questionDuration);
+          
+          io.emit("game:started", {
+            questionIndex: 0,
+            totalQuestions: questions.length,
+            gameCode: currentState.gameCode
+          });
+          
+          io.emit("question:next", {
+            question: firstQuestion,
+            questionIndex: 0,
+            totalQuestions: questions.length,
+            duration: questionDuration
+          });
+
+          // Programmer la question suivante
+          const gameController = require('./controllers/game.controller');
+          gameController.scheduleNextQuestion(io, questionDuration);
+          
+          logger.info('Scheduled game from GameState started successfully', {
+            gameCode: currentState.gameCode,
+            questionsCount: questions.length
+          });
+        }
+      } catch (gameStateError) {
+        logger.error('Error starting scheduled game from GameState', gameStateError, {
+          errorMessage: gameStateError.message,
+          errorStack: gameStateError.stack
         });
-        
-        // Lancer le jeu avec les questions de la partie
-        await launchScheduledGameFromParty(party, io);
-        
-        logger.info('Scheduled party started successfully', {
-          partyId: party.id,
-          gameCode: party.gameCode
-        });
-      } catch (partyError) {
-        logger.error('Error starting scheduled party', partyError, {
-          partyId: party.id,
-          errorMessage: partyError.message,
-          errorStack: partyError.stack
-        });
-        // Ne pas arrêter la boucle si une partie échoue
       }
     }
   } catch (error) {
