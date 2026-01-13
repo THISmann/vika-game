@@ -191,9 +191,11 @@ services:
     container_name: intelectgame-traefik
     command:
       - "--api.insecure=true"
+      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.dashboard.address=:8080"
     ports:
       - "80:80"
       - "8080:8080"  # Dashboard
@@ -203,6 +205,11 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`82.202.141.248`) && PathPrefix(`/traefik`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$8K8m8K8m$$8K8m8K8m8K8m8K8m"  # admin:admin (généré avec htpasswd)
 
   # API Gateway
   api-gateway:
@@ -286,12 +293,21 @@ services:
       - VITE_AUTH_SERVICE_URL=/vika-game/api
       - VITE_QUIZ_SERVICE_URL=/vika-game/api
       - VITE_GAME_SERVICE_URL=/vika-game/api
-    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --force"
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --base /vika-admin/ --force"
     depends_on:
       api-gateway:
         condition: service_healthy
+      traefik:
+        condition: service_started
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-frontend.rule=PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend.entrypoints=web"
+      - "traefik.http.services.admin-frontend.loadbalancer.server.port=5174"
+      - "traefik.http.routers.admin-frontend.priority=10"
+      - "traefik.docker.network=user1_app-network"
 
   # Prometheus
   prometheus:
