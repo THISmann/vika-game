@@ -270,8 +270,6 @@ services:
       - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`)"
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
-      - "traefik.http.middlewares.frontend-stripprefix.stripprefix.prefixes=/vika-game"
-      - "traefik.http.routers.frontend.middlewares=frontend-stripprefix"
       - "traefik.http.routers.frontend.priority=10"
       - "traefik.docker.network=user1_app-network"
 
