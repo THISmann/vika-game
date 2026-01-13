@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+    app: app-config
+  annotations:
+    {{- include "app.annotations" . | nindent 4 }}
+data:
+  MONGODB_URI: "mongodb://{{ .Values.externalServices.mongodb.host }}:{{ .Values.externalServices.mongodb.port }}/intelectgame"
+  REDIS_HOST: "{{ .Values.externalServices.redis.host }}"
+  REDIS_PORT: "{{ .Values.externalServices.redis.port }}"
+  AUTH_SERVICE_URL: "http://auth-service:{{ .Values.authService.service.port }}"
+  QUIZ_SERVICE_URL: "http://quiz-service:{{ .Values.quizService.service.port }}"
+  GAME_SERVICE_URL: "http://game-service:{{ .Values.gameService.service.port }}"
+  AUTH_SERVICE_PORT: "{{ .Values.authService.service.port }}"
+  QUIZ_SERVICE_PORT: "{{ .Values.quizService.service.port }}"
+  GAME_SERVICE_PORT: "{{ .Values.gameService.service.port }}"
+  NODE_ENV: "production"
+

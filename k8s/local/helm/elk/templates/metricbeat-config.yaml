@@ -1,0 +1,110 @@
+{{- if .Values.metricbeat.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metricbeat-config
+  namespace: elk
+data:
+  metricbeat.yml: |
+    metricbeat.config.modules:
+      path: ${path.config}/modules.d/*.yml
+      reload.enabled: false
+    
+    # Modules système
+    metricbeat.modules:
+    # Module système
+    - module: system
+      metricsets:
+        - cpu
+        - load
+        - memory
+        - network
+        - process
+        - process_summary
+        - socket_summary
+        - filesystem
+        - fsstat
+      enabled: true
+      period: 10s
+      processes: ['.*']
+      cpu.metrics: ["percentages", "normalized_percentages"]
+      core.metrics: ["percentages"]
+    
+    # Module Docker
+    - module: docker
+      metricsets:
+        - container
+        - cpu
+        - diskio
+        - healthcheck
+        - info
+        - memory
+        - network
+      hosts: ["unix:///var/run/docker.sock"]
+      period: 10s
+      enabled: true
+    
+    # Module Kubernetes
+    - module: kubernetes
+      metricsets:
+        - node
+        - system
+        - pod
+        - container
+        - volume
+        - state_node
+        - state_deployment
+        - state_replicaset
+        - state_pod
+        - state_container
+      period: 10s
+      enabled: true
+      hosts: ["https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"]
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      ssl.certificate_authorities:
+        - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    
+    # Processeurs
+    processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          default_indexers:
+            - ip_port
+          default_matchers:
+            - format
+          indexers:
+            - container:
+                enabled: true
+          matchers:
+            - logs_path:
+                logs_path: "/var/log/pods/"
+                resource_type: pod
+      
+      - add_fields:
+          target: kubernetes
+          fields:
+            cluster_name: "minikube"
+            environment: "local"
+    
+    # Output vers Elasticsearch
+    output.elasticsearch:
+      hosts: ["${ELASTICSEARCH_HOST}:${ELASTICSEARCH_PORT}"]
+      index: "metricbeat-%{+yyyy.MM.dd}"
+    
+    # Configuration du template
+    setup.template.name: "metricbeat"
+    setup.template.pattern: "metricbeat-*"
+    setup.template.settings:
+      index.number_of_shards: 1
+      index.codec: best_compression
+    
+    # Configuration de logging
+    logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/metricbeat
+      name: metricbeat
+      keepfiles: 7
+      permissions: 0644
+{{- end }}
+

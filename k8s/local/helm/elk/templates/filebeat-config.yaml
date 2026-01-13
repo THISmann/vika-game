@@ -1,0 +1,148 @@
+{{- if .Values.filebeat.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: elk
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+    - type: container
+      paths:
+        - '/var/lib/docker/containers/*/*.log'
+        - '/var/log/pods/*/*/*.log'
+      # Inclure tous les conteneurs
+      stream: all
+      # Parser JSON si possible
+      json.keys_under_root: true
+      json.add_error_key: true
+      processors:
+        - add_kubernetes_metadata:
+            host: ${NODE_NAME}
+            default_indexers:
+              - ip_port
+            default_matchers:
+              - format
+            indexers:
+              - container:
+                  enabled: true
+            matchers:
+              - logs_path:
+                  logs_path: "/var/log/pods/"
+                  resource_type: pod
+            # Inclure tous les namespaces
+            include_labels:
+              - app
+              - component
+              - tier
+            exclude_labels:
+              - ""
+            # Inclure tous les pods
+            include_annotations:
+              - ""
+            exclude_annotations:
+              - ""
+    
+    # Configuration Kubernetes pour collecter les logs de tous les pods
+    processors:
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          default_indexers:
+            - ip_port
+          default_matchers:
+            - format
+          indexers:
+            - container:
+                enabled: true
+          matchers:
+            - logs_path:
+                logs_path: "/var/log/pods/"
+                resource_type: pod
+      
+      # Ajouter des champs pour faciliter le filtrage
+      - add_fields:
+          target: kubernetes
+          fields:
+            cluster_name: "minikube"
+            environment: "local"
+      
+      # Parser JSON si possible
+      - decode_json_fields:
+          fields: ["message"]
+          target: ""
+          overwrite_keys: true
+      
+      # Tag les erreurs (utiliser add_tags au pluriel)
+      - if:
+          contains:
+            message: "error"
+        then:
+          - add_tags:
+              tags: ["error"]
+        else:
+          - if:
+              contains:
+                message: "ERROR"
+            then:
+              - add_tags:
+                  tags: ["error"]
+      
+      # Tag par service (si le label app existe)
+      - if:
+          has_fields:
+            - "kubernetes.labels.app"
+        then:
+          - add_fields:
+              target: service
+              fields:
+                name: "${kubernetes.labels.app}"
+    
+    # Output vers Logstash
+    output.logstash:
+      hosts: ["${LOGSTASH_HOST}:${LOGSTASH_PORT}"]
+      index: "filebeat"
+      worker: 1
+      bulk_max_size: 2048
+      timeout: 30s
+    
+    # Configuration de logging Filebeat (désactivé car système de fichiers en lecture seule)
+    logging.level: info
+    logging.to_files: false
+    logging.to_syslog: false
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: elk
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: elk
+{{- end }}
+

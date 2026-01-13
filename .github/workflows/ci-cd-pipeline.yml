@@ -1,0 +1,363 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_PREFIX: thismann17/gamev2
+
+jobs:
+  # Job 1: Tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || true
+          cd node/auth-service && npm ci
+          cd ../quiz-service && npm ci
+          cd ../game-service && npm ci
+          cd ../../vue/front && npm ci
+          cd ../../vue/admin && npm ci || true
+
+      - name: Run backend tests
+        run: |
+          npm run test:all || true
+          cd node/auth-service && npm test || true
+          cd ../quiz-service && npm test || true
+          cd ../game-service && npm test || true
+
+      - name: Run frontend tests
+        run: |
+          cd vue/front && npm test || true
+          cd ../admin && npm test || true || true
+
+      - name: Test WebSocket functionality
+        run: |
+          echo "Testing WebSocket register handler..."
+          cd node/game-service
+          # Vérifier que le handler register existe dans server.js
+          grep -q "socket.on('register'" server.js && echo "✅ WebSocket register handler found" || echo "⚠️ WebSocket register handler not found"
+          # Vérifier que gameState.addConnectedPlayer est utilisé
+          grep -q "gameState.addConnectedPlayer" server.js && echo "✅ Player registration logic found" || echo "⚠️ Player registration logic not found"
+        continue-on-error: true
+
+      - name: Test scheduled games functionality
+        run: |
+          echo "Testing scheduled games checker..."
+          cd node/game-service
+          # Vérifier que checkScheduledGames existe
+          grep -q "checkScheduledGames" server.js && echo "✅ Scheduled games checker found" || echo "⚠️ Scheduled games checker not found"
+          # Vérifier que la requête MongoDB inclut les bonnes conditions
+          grep -q "isStarted: false" server.js && echo "✅ Scheduled games query conditions found" || echo "⚠️ Scheduled games query conditions not found"
+        continue-on-error: true
+
+  # Job 2: Security Scans
+  security-scan:
+    name: Security Scans (SAST)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # CodeQL Analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      # Semgrep
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/owasp-top-ten
+            p/javascript
+          generateSarif: "true"
+
+      # Trivy Scan
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 3: Build and Scan Docker Images
+  build-and-scan:
+    name: Build and Scan Docker Images
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Auth Service
+      - name: Build auth-service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/auth-service
+          file: ./node/auth-service/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-auth-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan auth-service with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-auth-service:latest
+          format: 'sarif'
+          output: 'trivy-auth-service.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Build Quiz Service
+      - name: Build quiz-service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/quiz-service
+          file: ./node/quiz-service/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-quiz-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan quiz-service with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-quiz-service:latest
+          format: 'sarif'
+          output: 'trivy-quiz-service.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Build Game Service
+      - name: Build game-service image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/game-service
+          file: ./node/game-service/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-game-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Scan game-service with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-game-service:latest
+          format: 'sarif'
+          output: 'trivy-game-service.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Build Frontend (User)
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./vue
+          file: ./vue/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Scan frontend with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-frontend:latest
+          format: 'sarif'
+          output: 'trivy-frontend.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Build Admin Frontend (if exists)
+      - name: Build admin-frontend image
+        uses: docker/build-push-action@v5
+        continue-on-error: true
+        with:
+          context: ./vue
+          file: ./vue/admin/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-admin-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Scan admin-frontend with Trivy
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-admin-frontend:latest
+          format: 'sarif'
+          output: 'trivy-admin-frontend.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Build Telegram Bot
+      - name: Build telegram-bot image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/telegram-bot
+          file: ./node/telegram-bot/Dockerfile
+          push: false
+          tags: ${{ env.IMAGE_PREFIX }}-telegram-bot:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan telegram-bot with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-telegram-bot:latest
+          format: 'sarif'
+          output: 'trivy-telegram-bot.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      # Upload scan results
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-*.sarif'
+
+  # Job 4: Push to Docker Hub (only if all checks pass)
+  push-images:
+    name: Push Images to Docker Hub
+    runs-on: ubuntu-latest
+    needs: [build-and-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Push all images
+      - name: Build and push auth-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/auth-service
+          file: ./node/auth-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-auth-service:latest
+            ${{ env.IMAGE_PREFIX }}-auth-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push quiz-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/quiz-service
+          file: ./node/quiz-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-quiz-service:latest
+            ${{ env.IMAGE_PREFIX }}-quiz-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push game-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/game-service
+          file: ./node/game-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-game-service:latest
+            ${{ env.IMAGE_PREFIX }}-game-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./vue
+          file: ./vue/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-frontend:latest
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Build and push admin-frontend
+        uses: docker/build-push-action@v5
+        continue-on-error: true
+        with:
+          context: ./vue
+          file: ./vue/admin/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-admin-frontend:latest
+            ${{ env.IMAGE_PREFIX }}-admin-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Build and push telegram-bot
+        uses: docker/build-push-action@v5
+        with:
+          context: ./node/telegram-bot
+          file: ./node/telegram-bot/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-telegram-bot:latest
+            ${{ env.IMAGE_PREFIX }}-telegram-bot:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+

@@ -1,0 +1,154 @@
+{
+    "uid": "api-gateway-dashboard",
+    "title": "API Gateway Monitoring",
+    "tags": ["api-gateway", "monitoring"],
+    "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 0,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "type": "timeseries",
+        "title": "HTTP Request Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{service=\"api-gateway\"}[5m])",
+          "legendFormat": "{{method}} {{route}}",
+            "refId": "A"
+          }
+        ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "type": "timeseries",
+        "title": "HTTP Request Duration (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"api-gateway\"}[5m]))",
+            "legendFormat": "{{method}} {{route}}",
+            "refId": "A"
+          }
+        ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "type": "timeseries",
+        "title": "HTTP Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_request_errors_total{service=\"api-gateway\"}[5m])",
+            "legendFormat": "{{method}} {{route}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "stat",
+        "title": "Total Requests",
+        "targets": [
+          {
+            "expr": "sum(http_requests_total{service=\"api-gateway\"})",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+        "graphMode": "area"
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "type": "stat",
+        "title": "Active Connections",
+        "targets": [
+          {
+            "expr": "http_active_connections{service=\"api-gateway\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "type": "table",
+      "title": "Error Log Summary (Last 24h)",
+        "targets": [
+          {
+          "expr": "topk(10, sum by (method, route, status_code, error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h])))",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "type": "stat",
+      "title": "Total Errors",
+      "targets": [
+        {
+          "expr": "sum(http_request_errors_total{service=\"api-gateway\"})",
+          "refId": "A"
+        }
+      ],
+            "options": {
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 8,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "type": "timeseries",
+      "title": "Errors by Type",
+      "targets": [
+        {
+          "expr": "sum by (error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h]))",
+          "legendFormat": "{{error_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    }
+  ],
+  "time": {"from": "now-1h", "to": "now"}
+}

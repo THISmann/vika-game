@@ -37,7 +37,8 @@ module.exports = {
         gameSessionId: null,
         gameCode: null,
         answers: {},
-        results: {}
+        results: {},
+        questionIds: []
       };
     } catch (error) {
       console.error("Error getting game state:", error);
@@ -51,7 +52,8 @@ module.exports = {
         gameSessionId: null,
         gameCode: null,
         answers: {},
-        results: {}
+        results: {},
+        questionIds: []
       };
     }
   },
@@ -66,7 +68,7 @@ module.exports = {
     }
   },
   
-  resetGame: async () => {
+  resetGame: async (userId = null) => {
     try {
       const newGameCode = generateGameCode();
       const updates = {
@@ -79,7 +81,9 @@ module.exports = {
         gameSessionId: `session_${Date.now()}`,
         gameCode: newGameCode,
         answers: {},
-        results: {}
+        results: {},
+        createdBy: userId || null,
+        createdAt: new Date()
       };
       const state = await GameState.updateCurrent(updates);
       return toPlainObject(state);
@@ -112,32 +116,43 @@ module.exports = {
   
   addConnectedPlayer: async (playerId) => {
     try {
-      console.log(`\n➕ ========== ADD CONNECTED PLAYER ==========`);
-      console.log(`➕ Player ID: ${playerId}`);
+      console.log(`\n🟡 [gameState] ========== ADD CONNECTED PLAYER ==========`);
+      console.log(`🟡 [gameState] Player ID: ${playerId}`);
       
       const state = await GameState.getCurrent();
-      console.log(`➕ Current connectedPlayers before:`, state.connectedPlayers || []);
+      console.log(`🟡 [gameState] Current connectedPlayers before:`, state.connectedPlayers || []);
+      console.log(`🟡 [gameState] State document ID:`, state._id);
+      console.log(`🟡 [gameState] State key:`, state.key);
       
+      // Vérifier si le joueur est déjà dans la liste
+      if (state.connectedPlayers && state.connectedPlayers.includes(playerId)) {
+        console.log(`🟡 [gameState] Player already in connectedPlayers list`);
+        return;
+      }
+      
+      // Ajouter le joueur à la liste
       if (!state.connectedPlayers) {
+        console.log(`🟡 [gameState] Initializing empty connectedPlayers array`);
         state.connectedPlayers = [];
       }
+      state.connectedPlayers.push(playerId);
+      console.log(`🟡 [gameState] Player pushed to array. New array:`, state.connectedPlayers);
       
-      if (!state.connectedPlayers.includes(playerId)) {
-        state.connectedPlayers.push(playerId);
-        await state.save();
-        console.log(`➕ Player added successfully`);
-      } else {
-        console.log(`➕ Player already in connectedPlayers list`);
-      }
+      // Sauvegarder le document
+      console.log(`🟡 [gameState] Saving state document...`);
+      const savedState = await state.save();
+      console.log(`🟡 [gameState] Document saved. Saved connectedPlayers:`, savedState.connectedPlayers);
+      console.log(`🟡 [gameState] Player added successfully`);
       
-      // Vérifier que le joueur a bien été ajouté
+      // Vérifier que le joueur a bien été ajouté en rechargeant depuis la DB
+      console.log(`🟡 [gameState] Reloading state from DB to verify...`);
       const updatedState = await GameState.getCurrent();
-      console.log(`➕ Current connectedPlayers after:`, updatedState.connectedPlayers || []);
-      console.log(`➕ Player is in list: ${updatedState.connectedPlayers?.includes(playerId) || false}`);
-      console.log(`========================================\n`);
+      console.log(`🟡 [gameState] Current connectedPlayers after reload:`, updatedState.connectedPlayers || []);
+      console.log(`🟡 [gameState] Player is in list: ${updatedState.connectedPlayers?.includes(playerId) || false}`);
+      console.log(`🟡 [gameState] ========================================\n`);
     } catch (error) {
-      console.error("❌ Error adding connected player:", error);
-      console.error("❌ Error stack:", error.stack);
+      console.error("🟡 [gameState] ❌ Error adding connected player:", error);
+      console.error("🟡 [gameState] ❌ Error stack:", error.stack);
       throw error;
     }
   },
@@ -179,7 +194,8 @@ module.exports = {
       const updates = {
         isStarted: true,
         currentQuestionIndex: 0,
-        results: {}
+        results: {},
+        scheduledStartTime: null // Clear scheduled time when game starts
         // answers: {} - REMOVED: ne pas effacer les réponses existantes
       };
       const state = await GameState.updateCurrent(updates);
@@ -187,6 +203,37 @@ module.exports = {
     } catch (error) {
       console.error("Error starting game:", error);
       throw error;
+    }
+  },
+  
+  scheduleGame: async (scheduledStartTime, questionDuration = 30000) => {
+    try {
+      const updates = {
+        scheduledStartTime: scheduledStartTime,
+        questionDuration: questionDuration,
+        isStarted: false // Game is not started yet
+      };
+      const state = await GameState.updateCurrent(updates);
+      return toPlainObject(state);
+    } catch (error) {
+      console.error("Error scheduling game:", error);
+      throw error;
+    }
+  },
+  
+  getScheduledGame: async () => {
+    try {
+      const state = await GameState.getCurrent();
+      if (state && state.scheduledStartTime && !state.isStarted) {
+        return {
+          scheduledStartTime: state.scheduledStartTime,
+          questionDuration: state.questionDuration || 30000
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error getting scheduled game:", error);
+      return null;
     }
   },
   
@@ -291,7 +338,8 @@ module.exports = {
         isStarted: false,
         currentQuestionIndex: -1,
         currentQuestionId: null,
-        questionStartTime: null
+        questionStartTime: null,
+        connectedPlayers: [] // Clear connected players when game ends
       };
       const state = await GameState.updateCurrent(updates);
       return toPlainObject(state);

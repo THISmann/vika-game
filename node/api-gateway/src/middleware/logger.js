@@ -1,8 +1,15 @@
-// Middleware de logging des requêtes
+// Middleware de logging des requêtes pour API Gateway
+const { createLogger, requestLogger, errorLogger } = require("../../shared/logger");
 
-const logger = (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} from ${req.ip}`);
-  next();
-};
+// Create logger instance
+const logger = createLogger('api-gateway');
 
-module.exports = logger;
+// Request logging middleware
+const requestLoggerMiddleware = requestLogger(logger);
+
+// Error logging middleware
+const errorLoggerMiddleware = errorLogger(logger);
+
+module.exports = requestLoggerMiddleware;
+module.exports.errorLogger = errorLoggerMiddleware;
+module.exports.logger = logger;

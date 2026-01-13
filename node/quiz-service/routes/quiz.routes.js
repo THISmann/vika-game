@@ -5,6 +5,20 @@ const { authenticateAdmin } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
+ * /quiz/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ */
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'quiz-service' });
+});
+
+/**
+ * @swagger
  * /quiz/test:
  *   get:
  *     summary: Test endpoint
@@ -242,5 +256,38 @@ router.get("/full", authenticateAdmin, quizController.getFullQuestions);
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/verify/:id", quizController.verifyAnswer);
+
+/**
+ * @swagger
+ * /quiz/user/questions:
+ *   get:
+ *     summary: Get questions created by the current user
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns all questions created by the authenticated user (user or admin role)
+ *     responses:
+ *       200:
+ *         description: List of user's questions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Question'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get("/user/questions", authenticateAdmin, quizController.getUserQuestions);
 
 module.exports = router;

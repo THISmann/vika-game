@@ -16,8 +16,8 @@ const apiClient = axios.create({
 // Intercepteur pour ajouter le token d'authentification aux requêtes
 apiClient.interceptors.request.use(
   (config) => {
-    // Récupérer le token depuis localStorage
-    const token = localStorage.getItem('adminToken')
+    // Récupérer le token depuis localStorage (authToken pour les users)
+    const token = localStorage.getItem('authToken')
     
     // Si un token existe, l'ajouter au header Authorization
     if (token) {
@@ -27,8 +27,8 @@ apiClient.interceptors.request.use(
     } else {
       // Log si pas de token (toujours actif pour diagnostiquer)
       if (config.url && (config.url.includes('/quiz/') || config.url.includes('/game/'))) {
-        console.warn('⚠️ No auth token found for admin request:', config.url)
-        console.warn('⚠️ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken'))
+        console.warn('⚠️ No auth token found for user request:', config.url)
+        console.warn('⚠️ localStorage.getItem("authToken"):', localStorage.getItem('authToken'))
       }
     }
     
@@ -59,28 +59,28 @@ apiClient.interceptors.response.use(
       
       if (isTokenError) {
         // Nettoyer le localStorage
-        localStorage.removeItem('adminToken')
-        localStorage.removeItem('admin')
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
         
         // Rediriger vers la page de login en utilisant le router Vue
         // Éviter window.location.href pour ne pas forcer un rechargement complet
         const currentPath = window.location.pathname
-        if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
+        if (currentPath.startsWith('/user') && currentPath !== '/user/login') {
           // Utiliser le router si disponible, sinon fallback sur window.location
           try {
             // Importer le router dynamiquement pour éviter les dépendances circulaires
             const router = (await import('@/router')).default
             if (router) {
               router.push({
-                path: '/admin/login',
+                path: '/user/login',
                 query: { redirect: currentPath }
               })
             } else {
-              window.location.href = '/admin/login'
+              window.location.href = '/user/login'
             }
           } catch (routerError) {
             console.error('Error importing router:', routerError)
-            window.location.href = '/admin/login'
+            window.location.href = '/user/login'
           }
         }
       }
@@ -95,30 +95,30 @@ apiClient.interceptors.response.use(
  */
 export const authService = {
   /**
-   * Connexion admin
-   * @param {string} username 
+   * Connexion utilisateur (user login)
+   * @param {string} email 
    * @param {string} password 
-   * @returns {Promise} Token d'authentification
+   * @returns {Promise} Token d'authentification et user info
    */
-  async login(username, password) {
+  async login(email, password) {
     // Utiliser l'URL complète depuis API_URLS qui gère correctement les chemins
-    // API_URLS.auth.login gère automatiquement les chemins pour production/dev
-    const loginUrl = API_URLS.auth.login
+    // API_URLS.auth.userLogin gère automatiquement les chemins pour production/dev
+    const loginUrl = API_URLS.auth.userLogin
     
-    console.log('🔑 Attempting login to:', loginUrl)
+    console.log('🔑 Attempting user login to:', loginUrl)
     
     const response = await axios.post(loginUrl, {
-      username,
+      email,
       password
     })
     
-    if (response.data.token) {
-      // Stocker le token et le flag admin
-      localStorage.setItem('adminToken', response.data.token)
-      localStorage.setItem('admin', '1')
+    if (response.data.token && response.data.user) {
+      // Stocker le token et les infos utilisateur
+      localStorage.setItem('authToken', response.data.token)
+      localStorage.setItem('userInfo', JSON.stringify(response.data.user))
       console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...')
-      console.log('✅ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken'))
-      return response.data.token
+      console.log('✅ localStorage.getItem("authToken"):', localStorage.getItem('authToken'))
+      return response.data
     }
     
     throw new Error('No token received')
@@ -128,8 +128,8 @@ export const authService = {
    * Déconnexion
    */
   logout() {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('admin')
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userInfo')
   },
 
   /**
@@ -137,7 +137,15 @@ export const authService = {
    * @returns {boolean}
    */
   isAuthenticated() {
-    return !!localStorage.getItem('adminToken') && localStorage.getItem('admin') === '1'
+    const token = localStorage.getItem('authToken')
+    const userInfo = localStorage.getItem('userInfo')
+    if (!token || !userInfo) return false
+    try {
+      const user = JSON.parse(userInfo)
+      return user.status === 'approved' && (user.role === 'user' || user.role === 'admin')
+    } catch {
+      return false
+    }
   },
 
   /**
@@ -145,7 +153,7 @@ export const authService = {
    * @returns {string|null}
    */
   getToken() {
-    return localStorage.getItem('adminToken')
+    return localStorage.getItem('authToken')
   }
 }
 
@@ -193,10 +201,12 @@ export const gameService = {
   /**
    * Démarre le jeu
    */
-  async startGame(questionDuration = 30) {
-    const response = await apiClient.post(API_URLS.game.start, {
-      questionDuration
-    })
+  async startGame(questionDuration = 30, scheduledStartTime = null) {
+    const body = { questionDuration }
+    if (scheduledStartTime) {
+      body.scheduledStartTime = scheduledStartTime
+    }
+    const response = await apiClient.post(API_URLS.game.start, body)
     return response.data
   },
 

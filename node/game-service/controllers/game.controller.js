@@ -372,6 +372,7 @@ exports.getGameState = async (req, res) => {
       questionStartTime: state.questionStartTime,
       questionDuration: state.questionDuration,
       connectedPlayersCount: connectedCount,
+      scheduledStartTime: state.scheduledStartTime || null,
       gameSessionId: state.gameSessionId,
       gameCode: state.gameCode
     });
@@ -403,24 +404,62 @@ exports.verifyGameCode = async (req, res) => {
     }
 
     const state = await gameState.getState();
+    const GameSession = require("../models/GameSession");
     
     console.log(`🔍 Vérification du code: "${code}"`);
     console.log(`🔍 Code du jeu actuel: "${state.gameCode}"`);
     
-    const isValid = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase().trim();
+    // Vérifier d'abord dans GameState (ancien système)
+    const isValidState = state.gameCode && state.gameCode.toUpperCase() === code.toUpperCase().trim();
     
-    console.log(`🔍 Code valide: ${isValid}`);
+    // Vérifier aussi dans GameSession (nouveau système de parties)
+    const party = await GameSession.findOne({ gameCode: code.toUpperCase().trim() });
+    const isValidParty = !!party;
     
-    res.json({ 
-      valid: isValid,
-      gameCode: state.gameCode,
-      isStarted: state.isStarted || false,
-      message: isValid 
-        ? (state.isStarted 
-            ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
-            : "Code valide. Vous pouvez continuer.")
-        : "Code invalide"
-    });
+    const isValid = isValidState || isValidParty;
+    
+    console.log(`🔍 Code valide: ${isValid} (state: ${isValidState}, party: ${isValidParty})`);
+    
+    // Si c'est une partie, retourner les informations de la partie
+    if (isValidParty && party) {
+      // Vérifier si le jeu est vraiment démarré
+      // Pour une partie, on vérifie uniquement si la partie elle-même est active et démarrée
+      // On ne prend pas en compte le GameState global car il peut être d'une autre partie
+      const isGameStarted = party.status === 'active' && party.isStarted;
+      
+      res.json({ 
+        valid: true,
+        gameCode: party.gameCode,
+        isStarted: isGameStarted,
+        isParty: true,
+        party: {
+          name: party.name,
+          description: party.description,
+          imageUrl: party.imageUrl,
+          audioUrl: party.audioUrl,
+          scheduledStartTime: party.scheduledStartTime,
+          status: party.status
+        },
+        message: isGameStarted
+          ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
+          : party.status === 'scheduled' && party.scheduledStartTime
+            ? `Code valide. La partie commencera le ${new Date(party.scheduledStartTime).toLocaleString('fr-FR')}.`
+            : "Code valide. Vous pouvez continuer."
+      });
+    } else {
+      // Ancien système (GameState)
+      res.json({ 
+        valid: isValid,
+        gameCode: state.gameCode,
+        isStarted: state.isStarted || false,
+        isParty: false,
+        message: isValid 
+          ? (state.isStarted 
+              ? "Le jeu a déjà commencé. Vous pouvez vous connecter si vous étiez déjà enregistré."
+              : "Code valide. Vous pouvez continuer.")
+          : "Code invalide"
+      });
+    }
   } catch (error) {
     console.error("Error verifying game code:", error);
     console.error("Error stack:", error.stack);
@@ -440,10 +479,10 @@ exports.getConnectedPlayersCount = async (req, res) => {
 
 exports.getConnectedPlayers = async (req, res) => {
   try {
-    console.log(`\n📋 ========== GET CONNECTED PLAYERS ==========`);
+    console.log(`\n🔴 [game.controller] ========== GET CONNECTED PLAYERS ==========`);
     
     const playerIds = await gameState.getConnectedPlayers();
-    console.log(`📋 Found ${playerIds.length} player IDs in gameState:`, playerIds);
+    console.log(`🔴 [game.controller] Found ${playerIds.length} player IDs in gameState:`, playerIds);
     
     // Récupérer les noms des joueurs depuis auth-service
     const axios = require('axios');
@@ -458,36 +497,19 @@ exports.getConnectedPlayers = async (req, res) => {
       
       for (const playerId of playerIds) {
         const player = playersRes.data.find(p => p.id === playerId);
-        if (player) {
+        if (player && player.name && player.name.trim() !== '' && player.name.trim() !== 'Joueur anonyme') {
+          // Seulement ajouter si le joueur existe dans auth-service ET a un nom valide
           players.push({
             id: playerId,
-            name: player.name || 'Joueur anonyme'
+            name: player.name.trim()
           });
-          console.log(`✅ Found player in auth-service: ${player.name} (${playerId})`);
+          console.log(`🔴 [game.controller] ✅ Found player in auth-service: ${player.name} (${playerId})`);
+        } else if (player && (!player.name || player.name.trim() === '' || player.name.trim() === 'Joueur anonyme')) {
+          // Le joueur existe mais n'a pas de nom valide, ne pas l'ajouter
+          console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} exists in auth-service but has invalid name, skipping`);
         } else {
-          // Si le joueur n'existe pas dans auth-service, essayer de le récupérer depuis les scores
-          try {
-            const score = await Score.findOne({ playerId });
-            if (score && score.playerName) {
-              players.push({
-                id: playerId,
-                name: score.playerName
-              });
-              console.log(`✅ Found player in scores: ${score.playerName} (${playerId})`);
-            } else {
-              players.push({
-                id: playerId,
-                name: 'Joueur anonyme'
-              });
-              console.warn(`⚠️ Player ${playerId} not found in auth-service or scores`);
-            }
-          } catch (scoreErr) {
-            players.push({
-              id: playerId,
-              name: 'Joueur anonyme'
-            });
-            console.warn(`⚠️ Player ${playerId} not found, using default name`);
-          }
+          // Si le joueur n'existe pas dans auth-service, ne pas l'ajouter (joueurs non enregistrés)
+          console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} not found in auth-service, skipping (unregistered player)`);
         }
       }
     } catch (err) {
@@ -496,31 +518,26 @@ exports.getConnectedPlayers = async (req, res) => {
       for (const playerId of playerIds) {
         try {
           const score = await Score.findOne({ playerId });
-          if (score && score.playerName) {
+          if (score && score.playerName && score.playerName.trim() !== '') {
             players.push({
               id: playerId,
-              name: score.playerName
+              name: score.playerName.trim()
             });
-            console.log(`✅ Found player in scores (fallback): ${score.playerName} (${playerId})`);
+            console.log(`🔴 [game.controller] ✅ Found player in scores (fallback): ${score.playerName} (${playerId})`);
           } else {
-            players.push({
-              id: playerId,
-              name: 'Joueur anonyme'
-            });
-            console.warn(`⚠️ Player ${playerId} not found in scores, using default name`);
+            // Ne pas ajouter de joueur sans nom
+            console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} not found in scores or has no name, skipping`);
           }
         } catch (scoreErr) {
-          players.push({
-            id: playerId,
-            name: 'Joueur anonyme'
-          });
-          console.warn(`⚠️ Error fetching score for ${playerId}, using default name`);
+          console.warn(`🔴 [game.controller] ⚠️ Error fetching score for ${playerId}:`, scoreErr.message);
+          // Ne pas ajouter de joueur sans nom
         }
       }
     }
     
-    console.log(`✅ Returning ${players.length} connected players:`, players.map(p => `${p.name} (${p.id})`).join(', '));
-    console.log(`========================================\n`);
+    console.log(`🔴 [game.controller] ✅ Returning ${players.length} connected players:`, players.map(p => `${p.name} (${p.id})`).join(', '));
+    console.log(`🔴 [game.controller] Full response:`, JSON.stringify({ players, count: players.length }, null, 2));
+    console.log(`🔴 [game.controller] ========================================\n`);
     res.json({ players, count: players.length });
   } catch (error) {
     console.error("❌ Error getting connected players:", error);
@@ -577,26 +594,28 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
         return;
       }
       
-      // Utiliser la logique de nextQuestion
-      // Note: scheduleNextQuestion est appelé depuis un timer, donc on n'a pas accès à req
-      // On doit utiliser /quiz/all qui est public, ou stocker le token dans le gameState
-      // Pour l'instant, on utilise /quiz/all qui ne contient pas les réponses, mais c'est OK
-      // car les scores sont déjà calculés dans answerQuestion
+      // Récupérer les questionIds depuis le gameState (si disponibles)
+      const stateQuestionIds = freshState.questionIds;
+      
+      // Utiliser /quiz/all qui est public pour récupérer les questions
       let quiz;
       try {
         quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
       } catch (err) {
-        console.error("⏰ Error fetching questions from /quiz/all, trying /quiz/full without auth:", err.message);
-        // Si /quiz/all échoue, essayer /quiz/full (peut échouer si auth requise)
-        try {
-          quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`);
-        } catch (fullErr) {
-          console.error("⏰ Error fetching questions from /quiz/full:", fullErr.message);
+        console.error("⏰ Error fetching questions from /quiz/all:", err.message);
           // Continuer sans questions - on ne peut pas passer à la question suivante
           return;
         }
+      
+      let questions = quiz.data || [];
+      
+      // Si questionIds sont stockés dans le gameState, filtrer les questions
+      if (stateQuestionIds && Array.isArray(stateQuestionIds) && stateQuestionIds.length > 0) {
+        questions = questions.filter(q => stateQuestionIds.includes(q.id));
+        console.log(`⏰ Filtered to ${questions.length} questions from ${stateQuestionIds.length} questionIds`);
+      } else {
+        console.log(`⏰ Using all ${questions.length} questions (no questionIds in gameState)`);
       }
-      const questions = quiz.data;
 
       // NOTE: Les scores sont maintenant calculés immédiatement dans answerQuestion
       // On n'a plus besoin de recalculer ici, mais on peut émettre les scores mis à jour
@@ -655,6 +674,9 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
   }, state.questionDuration);
 }
 
+// Exporter scheduleNextQuestion pour utilisation dans server.js
+exports.scheduleNextQuestion = scheduleNextQuestion;
+
 exports.startGame = async (req, res) => {
   try {
     console.log(`\n🚀 ========== START GAME REQUEST ==========`);
@@ -682,6 +704,16 @@ exports.startGame = async (req, res) => {
     // Récupérer le temps par question (en secondes) depuis le body, défaut 30 secondes
     const questionDurationSeconds = req.body.questionDuration || 30;
     const questionDurationMs = questionDurationSeconds * 1000; // Convertir en millisecondes
+    
+    // Récupérer la date/heure planifiée (optionnelle)
+    const scheduledStartTime = req.body.scheduledStartTime ? new Date(req.body.scheduledStartTime) : null;
+    
+    // Si une date est fournie, vérifier qu'elle est dans le futur
+    if (scheduledStartTime && scheduledStartTime <= new Date()) {
+      return res.status(400).json({ 
+        error: "La date de lancement planifiée doit être dans le futur" 
+      });
+    }
 
     // Récupérer les questions (nécessite l'authentification admin)
     // Transmettre le token d'authentification depuis la requête originale
@@ -743,6 +775,17 @@ exports.startGame = async (req, res) => {
       return res.status(400).json({ error: "Aucune question disponible" });
     }
 
+    // Si une date est planifiée, sauvegarder la date et retourner sans lancer le jeu
+    if (scheduledStartTime) {
+      await gameState.scheduleGame(scheduledStartTime, questionDurationMs);
+      return res.json({
+        message: "Jeu planifié avec succès",
+        scheduledStartTime: scheduledStartTime.toISOString(),
+        state: await gameState.getState()
+      });
+    }
+
+    // Sinon, lancer le jeu immédiatement
     await gameState.startGame();
     const state = await gameState.getState();
     
@@ -856,6 +899,9 @@ exports.nextQuestion = async (req, res) => {
       questionTimer = null;
     }
 
+    // Récupérer les questionIds depuis le gameState (si disponibles)
+    const stateQuestionIds = state.questionIds;
+
     // Récupérer les questions (nécessite l'authentification admin)
     // Transmettre le token d'authentification depuis la requête originale
     let questions = [];
@@ -865,6 +911,7 @@ exports.nextQuestion = async (req, res) => {
       
       console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
       console.log(`📋 Auth header present: ${!!authHeader}`);
+      console.log(`📋 QuestionIds in gameState: ${stateQuestionIds ? stateQuestionIds.length + ' questions' : 'none (using all)'}`);
       
       if (!authHeader) {
         console.error("❌ No authorization header in request");
@@ -886,8 +933,16 @@ exports.nextQuestion = async (req, res) => {
         },
         timeout: 10000 // 10 secondes de timeout
       });
-      questions = quiz.data || [];
-      console.log(`✅ Fetched ${questions.length} questions`);
+      const allQuestions = quiz.data || [];
+      
+      // Si questionIds sont stockés dans le gameState, filtrer les questions
+      if (stateQuestionIds && Array.isArray(stateQuestionIds) && stateQuestionIds.length > 0) {
+        questions = allQuestions.filter(q => stateQuestionIds.includes(q.id));
+        console.log(`✅ Filtered to ${questions.length} questions from ${stateQuestionIds.length} questionIds`);
+      } else {
+        questions = allQuestions;
+        console.log(`✅ Using all ${questions.length} questions (no questionIds in gameState)`);
+      }
     } catch (quizError) {
       console.error("❌ Error fetching questions:", quizError.message);
       console.error("❌ Error response:", quizError.response?.data);
@@ -1016,6 +1071,9 @@ exports.endGame = async (req, res) => {
     // NOTE: Les scores sont maintenant calculés immédiatement dans answerQuestion
     // On n'a plus besoin de recalculer ici
 
+    // Récupérer les IDs des joueurs avant de terminer le jeu
+    const playerIds = state.connectedPlayers || [];
+
     await gameState.endGame();
 
     // Récupérer les scores finaux et les émettre
@@ -1033,7 +1091,28 @@ exports.endGame = async (req, res) => {
         leaderboard: mappedScores
       });
       req.io.emit('leaderboard:update', mappedScores);
+      // Émettre players:count avec 0 pour mettre à jour les dashboards
+      req.io.emit("players:count", { count: 0 });
       console.log(`📢 Emitted final leaderboard update with ${mappedScores.length} players`);
+    }
+
+    // Supprimer les joueurs de la base de données auth-service
+    if (playerIds.length > 0) {
+      try {
+        const axios = require('axios');
+        const services = require('../config/services');
+        for (const playerId of playerIds) {
+          try {
+            await axios.delete(`${services.AUTH_SERVICE_URL}/auth/players/${playerId}`);
+            console.log(`🗑️ Deleted player ${playerId} from auth-service`);
+          } catch (deleteErr) {
+            console.warn(`⚠️ Could not delete player ${playerId} from auth-service:`, deleteErr.message);
+          }
+        }
+      } catch (err) {
+        console.error("❌ Error deleting players from auth-service:", err);
+        // Continue even if deletion fails
+      }
     }
 
     res.json({ message: "Jeu terminé" });
@@ -1045,16 +1124,41 @@ exports.endGame = async (req, res) => {
 
 exports.deleteGame = async (req, res) => {
   try {
+    // Récupérer les IDs des joueurs avant de supprimer le jeu
+    const state = await gameState.getState();
+    const playerIds = state.connectedPlayers || [];
+
     // Réinitialiser les scores pour cette session
     await Score.deleteMany({});
     
-    // Réinitialiser l'état du jeu
+    // Réinitialiser l'état du jeu (cela vide aussi connectedPlayers)
     await gameState.resetGame();
+
+    // Supprimer les joueurs de la base de données auth-service
+    if (playerIds.length > 0) {
+      try {
+        const axios = require('axios');
+        const services = require('../config/services');
+        for (const playerId of playerIds) {
+          try {
+            await axios.delete(`${services.AUTH_SERVICE_URL}/auth/players/${playerId}`);
+            console.log(`🗑️ Deleted player ${playerId} from auth-service`);
+          } catch (deleteErr) {
+            console.warn(`⚠️ Could not delete player ${playerId} from auth-service:`, deleteErr.message);
+          }
+        }
+      } catch (err) {
+        console.error("❌ Error deleting players from auth-service:", err);
+        // Continue even if deletion fails
+      }
+    }
 
     if (req.io) {
       req.io.emit("game:deleted", {
         message: "Partie supprimée"
       });
+      // Émettre players:count avec 0 pour mettre à jour les dashboards
+      req.io.emit("players:count", { count: 0 });
     }
 
     res.json({ message: "Partie supprimée avec succès" });
@@ -1073,3 +1177,397 @@ exports.getQuestionResults = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Game Sessions (Parties) Controllers
+const GameSession = require("../models/GameSession");
+
+// Helper function to generate unique party ID
+function generatePartyId() {
+  return `party_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Helper function to generate game code
+function generateGameCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Get current user ID from token
+function getCurrentUserId(req) {
+  // The authenticateAdmin middleware should set req.user
+  return req.user?.userId || null;
+}
+
+exports.createParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { name, description, questionIds, scheduledStartTime, questionDuration, imageUrl, audioUrl } = req.body;
+
+    if (!name || !questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.status(400).json({ error: "Name and at least one question are required" });
+    }
+
+    // Validate scheduled time if provided
+    if (scheduledStartTime) {
+      const scheduledDate = new Date(scheduledStartTime);
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ error: "Scheduled time must be in the future" });
+      }
+    }
+
+    const party = new GameSession({
+      id: generatePartyId(),
+      name,
+      description: description || '',
+      createdBy: userId,
+      questionIds,
+      questionDuration: questionDuration || 30000,
+      scheduledStartTime: scheduledStartTime ? new Date(scheduledStartTime) : null,
+      status: scheduledStartTime ? 'scheduled' : 'draft',
+      gameCode: generateGameCode(),
+      imageUrl: imageUrl || null,
+      audioUrl: audioUrl || null
+    });
+
+    await party.save();
+
+    res.status(201).json(party.toObject());
+  } catch (error) {
+    console.error("Error creating party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getUserParties = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const parties = await GameSession.find({ createdBy: userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json(parties);
+  } catch (error) {
+    console.error("Error getting user parties:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.getParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    res.json(party.toObject());
+  } catch (error) {
+    console.error("Error getting party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.updateParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const { name, description, questionIds, scheduledStartTime, questionDuration, imageUrl, audioUrl, status } = req.body;
+
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    // Store original status before any updates
+    const originalStatus = party.status;
+
+    // Allow status update (for deactivation/reactivation)
+    if (status !== undefined) {
+      if (status === 'cancelled' && (party.status === 'active' || party.status === 'scheduled')) {
+        party.status = 'cancelled';
+        party.isStarted = false; // Also stop the game if it was started
+        party.updatedAt = new Date();
+        await party.save();
+        console.log(`✅ Party ${partyId} deactivated (status changed to cancelled)`);
+        // Re-fetch to ensure we have the latest data
+        const updatedParty = await GameSession.findOne({ id: partyId }).lean();
+        console.log(`✅ Updated party status: ${updatedParty?.status}`);
+        return res.json(updatedParty);
+      } else if (status === 'draft' && party.status === 'cancelled') {
+        party.status = 'draft';
+        party.updatedAt = new Date();
+        await party.save();
+        console.log(`✅ Party ${partyId} reactivated (status changed to draft)`);
+        // Re-fetch to ensure we have the latest data
+        const updatedParty = await GameSession.findOne({ id: partyId }).lean();
+        console.log(`✅ Updated party status: ${updatedParty?.status}`);
+        return res.json(updatedParty);
+      }
+    }
+
+    // Don't allow updating certain fields if party is active
+    // But allow updating description, imageUrl, audioUrl even if active
+    // Skip this check if we're only updating status (already handled above)
+    if (originalStatus === 'active' && (status === undefined || status === originalStatus)) {
+      // Only allow updating non-critical fields when party is active
+      const allowedFieldsForActive = ['description', 'imageUrl', 'audioUrl'];
+      const requestedFields = Object.keys(req.body).filter(key => {
+        // Only check fields that are actually being updated (not undefined)
+        return req.body[key] !== undefined;
+      });
+      const hasRestrictedFields = requestedFields.some(field => !allowedFieldsForActive.includes(field));
+      
+      if (hasRestrictedFields) {
+        console.log(`❌ Attempted to update restricted fields for active party: ${requestedFields.join(', ')}`);
+        return res.status(400).json({ 
+          error: "Cannot update name, questions, duration, or schedule for an active party. Only description, image, and audio can be updated." 
+        });
+      }
+    }
+
+    // Update fields
+    if (name) party.name = name;
+    if (description !== undefined) party.description = description;
+    if (questionIds && Array.isArray(questionIds) && questionIds.length > 0) {
+      party.questionIds = questionIds;
+    }
+    if (questionDuration) party.questionDuration = questionDuration;
+    if (imageUrl !== undefined) party.imageUrl = imageUrl;
+    if (audioUrl !== undefined) party.audioUrl = audioUrl;
+    if (scheduledStartTime !== undefined) {
+      if (scheduledStartTime === null) {
+        // Supprimer la date programmée
+        party.scheduledStartTime = null;
+        if (party.status === 'scheduled') {
+          party.status = 'draft';
+        }
+      } else {
+        // Nouvelle date programmée - doit être dans le futur
+      const scheduledDate = new Date(scheduledStartTime);
+        if (isNaN(scheduledDate.getTime())) {
+          return res.status(400).json({ error: "Invalid scheduled time format" });
+        }
+        // Vérifier seulement si c'est une nouvelle date (différente de l'actuelle)
+        const currentScheduledTime = party.scheduledStartTime ? new Date(party.scheduledStartTime).getTime() : null;
+        const newScheduledTime = scheduledDate.getTime();
+        if (currentScheduledTime !== newScheduledTime && scheduledDate <= new Date()) {
+        return res.status(400).json({ error: "Scheduled time must be in the future" });
+      }
+      party.scheduledStartTime = scheduledDate;
+      party.status = 'scheduled';
+      }
+    }
+
+    party.updatedAt = new Date();
+    await party.save();
+
+    res.json(party.toObject());
+  } catch (error) {
+    console.error("Error updating party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.deleteParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    // Don't allow deleting if party is active
+    if (party.status === 'active') {
+      return res.status(400).json({ error: "Cannot delete an active party" });
+    }
+
+    await GameSession.deleteOne({ id: partyId, createdBy: userId });
+
+    res.json({ message: "Party deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.startParty = async (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const { partyId } = req.params;
+    const party = await GameSession.findOne({ id: partyId, createdBy: userId });
+
+    if (!party) {
+      return res.status(404).json({ error: "Party not found" });
+    }
+
+    if (party.status === 'active') {
+      return res.status(400).json({ error: "Party is already active" });
+    }
+
+    if (party.questionIds.length === 0) {
+      return res.status(400).json({ error: "Party has no questions" });
+    }
+
+    // Update party status
+    party.status = 'active';
+    party.isStarted = true;
+    party.startedAt = new Date();
+    await party.save();
+
+    // Update GameState to use this party
+    await gameState.setState({
+      gameSessionId: party.id,
+      gameCode: party.gameCode,
+      createdBy: userId,
+      questionDuration: party.questionDuration,
+      scheduledStartTime: null, // Clear scheduled time when starting
+      questionIds: party.questionIds // Store questionIds in gameState
+    });
+
+    // Launch the game with party's questions
+    await launchGameWithQuestions(party.questionIds, party.questionDuration, party.gameCode, req.io);
+
+    res.json({
+      message: "Party started successfully",
+      party: party.toObject(),
+      gameCode: party.gameCode
+    });
+  } catch (error) {
+    console.error("Error starting party:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Helper function to launch game with specific questions
+async function launchGameWithQuestions(questionIds, questionDuration, gameCode, ioInstance) {
+  try {
+    const Score = require('./models/Score');
+    
+    // Helper function to initialize player score
+    async function initializePlayerScore(playerId, playerName) {
+      try {
+        let score = await Score.findOne({ playerId });
+        if (!score) {
+          score = new Score({
+            playerId,
+            playerName,
+            score: 0
+          });
+          await score.save();
+        }
+        return score.toObject();
+      } catch (error) {
+        console.error('Error initializing player score', error, { playerId });
+        throw error;
+      }
+    }
+    
+    // Fetch questions from quiz-service using questionIds
+    let questions = [];
+    try {
+      if (questionIds && questionIds.length > 0) {
+        const questionsRes = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
+        const allQuestions = questionsRes.data || [];
+        questions = allQuestions.filter(q => questionIds.includes(q.id));
+        console.log(`✅ Fetched ${questions.length} questions from ${questionIds.length} questionIds`);
+      } else {
+        console.warn('No questionIds provided');
+        return;
+      }
+    } catch (err) {
+      console.error('Error fetching questions for party', err);
+      return;
+    }
+    
+    if (questions.length === 0) {
+      console.warn('No questions found for party', { questionIds });
+      return;
+    }
+    
+    // Reset scores
+    await Score.deleteMany({});
+    
+    // Initialize scores for connected players
+    const currentState = await gameState.getState();
+    if (currentState.connectedPlayers && currentState.connectedPlayers.length > 0) {
+      try {
+        const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+        for (const playerId of currentState.connectedPlayers) {
+          const player = playersRes.data.find(p => p.id === playerId);
+          if (player) {
+            await initializePlayerScore(playerId, player.name);
+          }
+        }
+        console.log('Scores initialized for connected players', { count: currentState.connectedPlayers.length });
+      } catch (err) {
+        console.error('Error initializing scores', err);
+      }
+    }
+    
+    // Store questionIds in gameState
+    await gameState.setState({ questionIds });
+    
+    // Start the game with the first question
+    if (questions.length > 0 && ioInstance) {
+      const firstQuestion = questions[0];
+      await gameState.setCurrentQuestion(firstQuestion.id, questionDuration);
+      
+      ioInstance.emit("game:started", {
+        questionIndex: 0,
+        totalQuestions: questions.length,
+        gameCode: gameCode
+      });
+      
+      ioInstance.emit("question:next", {
+        question: firstQuestion,
+        questionIndex: 0,
+        totalQuestions: questions.length,
+        duration: questionDuration
+      });
+      
+      // Schedule next question using exported function
+      exports.scheduleNextQuestion(ioInstance, questionDuration);
+    }
+    
+    console.log('Game launched successfully with party questions', {
+      gameCode: gameCode,
+      questionsCount: questions.length
+    });
+  } catch (error) {
+    console.error('Error launching game with questions', error);
+    throw error;
+  }
+}

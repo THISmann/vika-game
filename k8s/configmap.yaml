@@ -14,4 +14,9 @@ data:
   QUIZ_SERVICE_PORT: "3002"
   GAME_SERVICE_PORT: "3003"
   NODE_ENV: "production"
+  MINIO_ENDPOINT: "minio"
+  MINIO_PORT: "9000"
+  MINIO_ACCESS_KEY: "minioadmin"
+  MINIO_SECRET_KEY: "minioadmin"
+  MINIO_BUCKET_NAME: "game-files"
 

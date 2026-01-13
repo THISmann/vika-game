@@ -1,0 +1,6 @@
+apiVersion: v2
+name: loki-stack
+description: A Helm chart for Loki, Promtail, and Grafana
+version: 0.1.0
+type: application
+

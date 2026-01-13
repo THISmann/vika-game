@@ -26,6 +26,14 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },
+  createdBy: {
+    type: String, // User ID who created this question
+    index: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: false, // Keep same structure as JSON
@@ -38,6 +46,7 @@ questionSchema.index({ id: 1 }, { unique: true });
 const Question = mongoose.model('Question', questionSchema);
 
 module.exports = Question;
+
 
 
 

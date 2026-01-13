@@ -205,6 +205,7 @@
 import axios from 'axios'
 import { io } from 'socket.io-client'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import apiClient from '@/services/api'
 import socketService from '@/services/socketService'
 import { useI18n } from '@/composables/useI18n'
 
@@ -704,7 +705,8 @@ export default {
         const allResults = resultsRes.data
 
         // Charger les questions pour obtenir les bonnes réponses
-        const questionsRes = await axios.get(API_URLS.quiz.full)
+        // Utiliser apiClient pour avoir l'authentification automatique
+        const questionsRes = await apiClient.get(API_URLS.quiz.full)
         const questions = questionsRes.data
 
         // Construire les résultats pour ce joueur

@@ -1,0 +1,94 @@
+{{- if .Values.logstash.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: elk
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.enabled: false
+    xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch.elk.svc.cluster.local:9200"]
+  pipeline.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+    
+    filter {
+      # Parse les logs JSON si possible
+      if [fields][log_type] == "json" {
+        json {
+          source => "message"
+        }
+      }
+      
+      # Ajouter des métadonnées Kubernetes
+      if [kubernetes] {
+        mutate {
+          add_field => {
+            "namespace" => "%{[kubernetes][namespace]}"
+            "pod_name" => "%{[kubernetes][pod][name]}"
+            "container_name" => "%{[kubernetes][container][name]}"
+          }
+        }
+      }
+      
+      # Parse les timestamps
+      date {
+        match => [ "timestamp", "ISO8601", "yyyy-MM-dd HH:mm:ss.SSS" ]
+        target => "@timestamp"
+      }
+      
+      # Enrichir avec des tags selon le service
+      if [kubernetes][labels][app] {
+        mutate {
+          add_tag => [ "%{[kubernetes][labels][app]}" ]
+        }
+      }
+      
+      # Filtrer les logs par niveau (optionnel)
+      if [level] == "ERROR" or [level] == "error" {
+        mutate {
+          add_tag => [ "error" ]
+        }
+      }
+      
+      # Détecter les erreurs dans le message
+      if [message] =~ /(?i)(error|exception|failed|failure|fatal|critical)/ {
+        mutate {
+          add_tag => [ "error", "alert" ]
+          add_field => {
+            "error_detected" => "true"
+          }
+        }
+      }
+      
+      # Extraire le code de statut HTTP si présent
+      if [message] =~ /HTTP\/\d\.\d\s+(\d{3})/ {
+        grok {
+          match => { "message" => "HTTP/%{NUMBER:http_version}\s+%{NUMBER:http_status_code}" }
+        }
+        if [http_status_code] >= "400" {
+          mutate {
+            add_tag => [ "http_error" ]
+          }
+        }
+      }
+    }
+    
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch.elk.svc.cluster.local:9200"]
+        index => "logstash-%{+YYYY.MM.dd}"
+        # Pas de template personnalisé - utiliser les templates par défaut
+      }
+      
+      # Log de débogage (optionnel, à retirer en production)
+      # stdout {
+      #   codec => rubydebug
+      # }
+    }
+{{- end }}
+

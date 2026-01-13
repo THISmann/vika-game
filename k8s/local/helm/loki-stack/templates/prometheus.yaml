@@ -1,0 +1,78 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  serviceName: prometheus
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: {{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}
+        imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--storage.tsdb.retention.time={{ .Values.prometheus.retention }}'
+          - '--web.console.libraries=/etc/prometheus/console_libraries'
+          - '--web.console.templates=/etc/prometheus/consoles'
+          - '--web.enable-lifecycle'
+        ports:
+        - containerPort: 9090
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        {{- if .Values.prometheus.persistence.enabled }}
+        - name: data
+          mountPath: /prometheus
+        {{- end }}
+        resources:
+          {{- toYaml .Values.prometheus.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      {{- if .Values.prometheus.persistence.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - port: {{ .Values.prometheus.service.port }}
+    targetPort: 9090
+  selector:
+    app: prometheus
+---
+{{- if .Values.prometheus.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.persistence.size }}
+{{- end }}
+{{- end }}
+

@@ -40,6 +40,23 @@ const gameStateSchema = new mongoose.Schema({
   results: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
+  },
+  createdBy: {
+    type: String, // User ID who created this game session
+    index: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  scheduledStartTime: {
+    type: Date,
+    default: null,
+    index: true
+  },
+  questionIds: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: false,

@@ -1,4 +1,9 @@
-version: "3.8"
+ 
+
+# Note: Si vous rencontrez des erreurs "lease does not exist" avec BuildKit,
+# utilisez: DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose up --build
+# ou utilisez le script: ./docker-compose.up.sh
+
 services:
   # MongoDB
   mongodb:
@@ -11,10 +16,11 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.runCommand({ ping: 1 }).ok\" 2>&1 | grep -q \"^1$$\" || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 3
+      start_period: 300s
     networks:
       - app-network
 
@@ -32,6 +38,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
+
+  # MinIO S3 Storage
+  minio:
+    image: minio/minio:latest
+    container_name: intelectgame-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     networks:
       - app-network
 
@@ -58,6 +85,12 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/auth/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # Quiz Service
   quiz:
@@ -104,10 +137,17 @@ services:
       - QUIZ_SERVICE_URL=http://quiz:3002
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=game-files
     depends_on:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
       auth:
         condition: service_started
@@ -145,9 +185,30 @@ services:
     networks:
       - app-network
 
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v2.11
+    container_name: intelectgame-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+
   # API Gateway
   api-gateway:
-    build: ./node/api-gateway
+    build:
+      context: ./node
+      dockerfile: api-gateway/Dockerfile
     container_name: intelectgame-api-gateway
     ports:
       - "3000:3000"
@@ -161,7 +222,7 @@ services:
       - TELEGRAM_SERVICE_URL=http://telegram-bot:3004
     depends_on:
       auth:
-        condition: service_started
+        condition: service_healthy
       quiz:
         condition: service_started
       game:
@@ -175,27 +236,150 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=PathPrefix(`/vika-game/api`)"
+      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/vika-game/api"
+      - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
 
-  # Frontend
+  # Frontend (Mode Dev pour contourner le problème de build UTF-8)
   frontend:
-    build:
-      context: ./vue
-      args:
-        - VITE_AUTH_SERVICE_URL=http://localhost:3000
-        - VITE_QUIZ_SERVICE_URL=http://localhost:3000
-        - VITE_GAME_SERVICE_URL=http://localhost:3000
+    image: node:20-alpine
     container_name: intelectgame-frontend
+    working_dir: /app
+    volumes:
+      - ./vue/front:/app
     ports:
       - "5173:5173"
+    environment:
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --force"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.middlewares.frontend-stripprefix.stripprefix.prefixes=/vika-game"
+      - "traefik.http.routers.frontend.middlewares=frontend-stripprefix"
+      - "traefik.http.routers.frontend.priority=10"
+      - "traefik.docker.network=user1_app-network"
+
+  # Admin Frontend (Mode Dev pour contourner le problème de build UTF-8)
+  admin-frontend:
+    image: node:20-alpine
+    container_name: intelectgame-admin-frontend
+    working_dir: /app
+    volumes:
+      - ./vue/admin:/app
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --force"
     depends_on:
       api-gateway:
         condition: service_healthy
     networks:
       - app-network
 
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: intelectgame-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: intelectgame-grafana
+    ports:
+      - "3005:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3005
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # cAdvisor for container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: intelectgame-cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: intelectgame-node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
 volumes:
   mongodb-data:
   redis-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
 
 networks:
   app-network:

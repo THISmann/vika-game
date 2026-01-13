@@ -72,10 +72,41 @@ const getApiUrl = (service) => {
   }
 }
 
+// Helper pour obtenir l'URL de base pour l'API Gateway si on est sur localhost
+const getBaseApiUrl = (service) => {
+  const baseUrl = getApiUrl(service)
+  
+  // Détecter si on est accédé via localhost/127.0.0.1 (port-forward depuis Kubernetes)
+  // Dans ce cas, on doit utiliser des URLs absolues vers l'API Gateway
+  const isLocalhostAccess = typeof window !== 'undefined' && 
+                            (window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1')
+  
+  if (isLocalhostAccess) {
+    // Si on est sur localhost avec des chemins relatifs (/api/auth), utiliser l'API Gateway via port-forward
+    if (baseUrl.startsWith('/api/')) {
+      console.log('🌐 Frontend: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
+      return 'http://127.0.0.1:3000'
+    }
+    // Si l'URL est absolue mais pointe vers un autre hôte (192.168.x.x, etc.), utiliser localhost
+    if (baseUrl.startsWith('http://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
+      console.log('🌐 Frontend: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
+      return 'http://127.0.0.1:3000'
+    }
+    // Si l'URL est vide ou invalide, utiliser localhost
+    if (!baseUrl || baseUrl === '' || baseUrl === '/') {
+      console.log('🌐 Frontend: Détection localhost: URL vide, utilisation de http://127.0.0.1:3000')
+      return 'http://127.0.0.1:3000'
+    }
+  }
+  
+  return baseUrl
+}
+
 export const API_CONFIG = {
-  AUTH_SERVICE: getApiUrl('auth'),
-  QUIZ_SERVICE: getApiUrl('quiz'),
-  GAME_SERVICE: getApiUrl('game'),
+  get AUTH_SERVICE() { return getBaseApiUrl('auth') },
+  get QUIZ_SERVICE() { return getBaseApiUrl('quiz') },
+  get GAME_SERVICE() { return getBaseApiUrl('game') },
 }
 
 // Helper pour construire les URLs complètes
@@ -83,7 +114,6 @@ export const API_CONFIG = {
 const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
 
 // Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
-// IMPORTANT: En production Kubernetes, les URLs sont relatives (/api/auth), donc useApiGateway sera false
 const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE && 
                       API_CONFIG.QUIZ_SERVICE === API_CONFIG.GAME_SERVICE &&
                       API_CONFIG.AUTH_SERVICE !== '' &&
@@ -95,10 +125,30 @@ const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE &&
 export const API_URLS = {
   auth: {
     register: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/register`
+      : isProduction 
+        ? `${API_CONFIG.AUTH_SERVICE}/users/register`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/register`,
+    registerPlayer: useApiGateway
       ? `${API_CONFIG.AUTH_SERVICE}/auth/players/register`
       : isProduction 
         ? `${API_CONFIG.AUTH_SERVICE}/players/register`
         : `${API_CONFIG.AUTH_SERVICE}/auth/players/register`,
+    userLogin: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/login`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/login`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/login`,
+    forgotPassword: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/forgot-password`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/forgot-password`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/forgot-password`,
+    resetPassword: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/users/reset-password`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/users/reset-password`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/users/reset-password`,
     players: useApiGateway
       ? `${API_CONFIG.AUTH_SERVICE}/auth/players`
       : isProduction
@@ -109,6 +159,36 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`,
+    users: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users`,
+    usersStats: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/stats`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/stats`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/stats`,
+    approveUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/approve`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/approve`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/approve`,
+    rejectUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/reject`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/reject`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/reject`,
+    blockUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/block`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/block`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/block`,
+    unblockUser: (userId) => useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/unblock`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/unblock`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/unblock`,
   },
   quiz: {
     // En production, API_CONFIG.QUIZ_SERVICE est déjà /api/quiz
@@ -147,7 +227,47 @@ export const API_URLS = {
         ? `${API_CONFIG.QUIZ_SERVICE}/${id}`
         : `${API_CONFIG.QUIZ_SERVICE}/quiz/${id}`,
   },
-  game: {
+      game: {
+        createParty: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties`,
+        userParties: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties`,
+        getParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
+        updateParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
+        deleteParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}`,
+        startParty: (partyId) => useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}/start`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/parties/${partyId}/start`
+            : `${API_CONFIG.GAME_SERVICE}/game/parties/${partyId}/start`,
+        uploadImage: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/upload/image`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/upload/image`
+            : `${API_CONFIG.GAME_SERVICE}/game/upload/image`,
+        uploadAudio: useApiGateway
+          ? `${API_CONFIG.GAME_SERVICE}/game/upload/audio`
+          : isProduction
+            ? `${API_CONFIG.GAME_SERVICE}/upload/audio`
+            : `${API_CONFIG.GAME_SERVICE}/game/upload/audio`,
     answer: useApiGateway
       ? `${API_CONFIG.GAME_SERVICE}/game/answer`
       : isProduction
@@ -244,14 +364,16 @@ export const API_URLS = {
         }
         return ''
       } else {
-        // En développement, TOUJOURS utiliser localhost:3003 directement (game-service)
-        // Même si on utilise l'API Gateway pour les requêtes HTTP
-        // L'API Gateway ne gère pas les WebSockets
-        // IGNORER VITE_GAME_SERVICE_URL pour les WebSockets car il peut pointer vers l'API Gateway
-        const url = 'http://localhost:3003'
-        console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', url)
-        console.log('🏠 Note: Ignoring VITE_GAME_SERVICE_URL for WebSocket (API Gateway does not support WebSockets)')
-        return url
+        // En développement local avec Minikube/Kubernetes, utiliser le proxy Nginx
+        // Le proxy Nginx route /api/game vers game-service et supporte les WebSockets
+        if (typeof window !== 'undefined') {
+          // Utiliser l'URL de base du navigateur (via proxy Nginx)
+          const url = `${window.location.protocol}//${window.location.host}`
+          console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
+          return url
+        }
+        // Fallback si window n'est pas disponible
+        return 'http://localhost:5173'
       }
     })(),
   },

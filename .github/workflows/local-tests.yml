@@ -1,0 +1,85 @@
+name: Local Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install auth-service dependencies
+        run: |
+          cd node/auth-service
+          npm ci
+
+      - name: Run auth-service tests
+        run: |
+          cd node/auth-service
+          npm test
+
+      - name: Install quiz-service dependencies
+        run: |
+          cd node/quiz-service
+          npm ci
+
+      - name: Run quiz-service tests
+        run: |
+          cd node/quiz-service
+          npm test
+
+      - name: Install game-service dependencies
+        run: |
+          cd node/game-service
+          npm ci
+
+      - name: Run game-service tests
+        run: |
+          cd node/game-service
+          npm test
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd vue/front
+          npm ci
+
+      - name: Run frontend tests
+        run: |
+          cd vue/front
+          npm test
+
+      - name: Build frontend
+        run: |
+          cd vue/front
+          npm run build
+
+

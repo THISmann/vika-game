@@ -12,9 +12,70 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    sparse: true, // Allow multiple null values
+    index: true
+  },
+  password: {
+    type: String,
+    select: false // Don't return password by default
+  },
+  contact: {
+    type: String,
+    trim: true
+  },
+  useCase: {
+    type: String,
+    enum: ['education', 'corporate', 'entertainment', 'events', 'other'],
+    trim: true
+  },
+  country: {
+    type: String,
+    trim: true
+  },
+  role: {
+    type: String,
+    enum: ['player', 'user', 'admin'],
+    default: 'player',
+    index: true,
+    required: true
+  },
   score: {
     type: Number,
     default: 0
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'blocked'],
+    default: 'pending',
+    index: true
+  },
+  statusChangedAt: {
+    type: Date
+  },
+  statusChangedBy: {
+    type: String // Admin username who changed the status
+  },
+  rejectionReason: {
+    type: String,
+    trim: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  lastLoginAt: {
+    type: Date
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
   }
 }, {
   timestamps: false, // Keep same structure as JSON
@@ -27,6 +88,7 @@ userSchema.index({ id: 1 }, { unique: true });
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+
 
 
 

@@ -1,0 +1,84 @@
+# Values for ELK Stack
+
+elasticsearch:
+  enabled: true
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 20Gi
+  resources:
+    requests:
+      memory: "1.5Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  service:
+    type: ClusterIP
+    port: 9200
+
+logstash:
+  enabled: true
+  image:
+    repository: docker.elastic.co/logstash/logstash
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+kibana:
+  enabled: true
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  service:
+    type: ClusterIP
+    port: 5601
+
+filebeat:
+  enabled: true
+  image:
+    repository: docker.elastic.co/beats/filebeat
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+metricbeat:
+  enabled: true
+  image:
+    repository: docker.elastic.co/beats/metricbeat
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"

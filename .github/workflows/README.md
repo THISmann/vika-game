@@ -1,87 +1,47 @@
 # GitHub Actions Workflows
 
-## Docker Build and Push
+## Workflows disponibles
 
-Ce workflow construit et pousse automatiquement les images Docker vers DockerHub.
+### 1. `ci-cd-pipeline.yml`
+Pipeline principal CI/CD qui :
+- Exécute les tests (backend + frontend)
+- Effectue les scans de sécurité (CodeQL, Semgrep, Trivy)
+- Construit les images Docker
+- Scanne les images Docker avec Trivy
+- Push vers Docker Hub uniquement si tout passe
 
-### Configuration requise
+### 2. `local-tests.yml`
+Tests locaux qui s'exécutent sur chaque push/PR :
+- Tests backend (auth, quiz, game services)
+- Tests frontend
+- Build frontend
 
-Pour que ce workflow fonctionne, vous devez configurer les secrets suivants dans votre repository GitHub :
+### 3. `security-scan.yml`
+Scans de sécurité automatisés :
+- CodeQL Analysis (JavaScript)
+- Semgrep (OWASP Top 10, security-audit)
+- Trivy Filesystem Scan
+- Trivy Dockerfile Scan
 
-1. Allez dans **Settings** > **Secrets and variables** > **Actions**
-2. Ajoutez les secrets suivants :
+## Configuration
 
-   - **DOCKER_USERNAME** : `thismann17` (votre nom d'utilisateur DockerHub)
-   - **DOCKER_PASSWORD** : Votre mot de passe DockerHub ou un Personal Access Token (recommandé)
-   - **TELEGRAM_BOT_TOKEN** : Le token de votre bot Telegram (pour le service telegram-bot)
+### Secrets requis
 
-### Utilisation d'un Personal Access Token (recommandé)
+Dans les paramètres GitHub du repository, ajouter :
 
-Pour plus de sécurité, utilisez un Personal Access Token au lieu de votre mot de passe :
-
-1. Allez sur https://hub.docker.com/settings/security
-2. Cliquez sur **New Access Token**
-3. Donnez un nom au token (ex: "github-actions")
-4. Copiez le token généré
-5. Ajoutez-le comme secret `DOCKER_PASSWORD` dans GitHub
+- `DOCKER_USERNAME` : Votre nom d'utilisateur Docker Hub
+- `DOCKER_PASSWORD` : Votre token Docker Hub (pas le mot de passe)
 
 ### Déclencheurs
 
-Le workflow se déclenche automatiquement sur :
-- Push vers les branches `main` ou `master`
-- Push de tags (ex: `v1.0.0`)
-- Pull requests vers `main` ou `master` (build uniquement, pas de push)
-- Déclenchement manuel via l'interface GitHub Actions
+Les workflows s'exécutent automatiquement sur :
+- Push vers `main` ou `develop`
+- Pull requests vers `main` ou `develop`
+- Schedule hebdomadaire (security-scan.yml)
 
-### Images créées
+## Résultats
 
-Le workflow crée et pousse 5 images Docker :
-
-1. `thismann17/gamev2-auth-service`
-2. `thismann17/gamev2-quiz-service`
-3. `thismann17/gamev2-game-service`
-4. `thismann17/gamev2-telegram-bot`
-5. `thismann17/gamev2-frontend`
-
-### Secret TELEGRAM_BOT_TOKEN
-
-Le secret `TELEGRAM_BOT_TOKEN` est disponible dans les workflows GitHub Actions. Il peut être utilisé pour :
-- Déployer le container telegram-bot avec le token
-- Configurer des secrets Kubernetes
-- Automatiser les déploiements
-
-**Note** : Le token n'est pas nécessaire pendant le build Docker, mais doit être fourni comme variable d'environnement au runtime.
-
-### Tags
-
-Les images sont taguées avec :
-- `latest` : Pour la branche par défaut
-- Nom de la branche : Pour les autres branches
-- SHA du commit : Pour le traçage
-- Version semver : Si vous poussez un tag (ex: `v1.0.0`)
-
-### Utilisation des images
-
-Après le push, vous pouvez utiliser les images avec :
-
-```bash
-docker pull thismann17/gamev2-auth-service:latest
-docker pull thismann17/gamev2-quiz-service:latest
-docker pull thismann17/gamev2-game-service:latest
-docker pull thismann17/gamev2-frontend:latest
-```
-
-Ou dans un `docker-compose.yml` :
-
-```yaml
-services:
-  auth:
-    image: thismann17/gamev2-auth-service:latest
-  quiz:
-    image: thismann17/gamev2-quiz-service:latest
-  game:
-    image: thismann17/gamev2-game-service:latest
-  frontend:
-    image: thismann17/gamev2-frontend:latest
-```
-
+Les résultats sont disponibles dans :
+- **Actions** : Onglet GitHub Actions
+- **Security** : Onglet "Code scanning alerts" pour les vulnérabilités
+- **Docker Hub** : Images pushées après validation
