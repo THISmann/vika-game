@@ -192,9 +192,13 @@ services:
     command:
       - "--api.insecure=true"
       - "--api.dashboard=true"
+      - "--api.debug=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=user1_app-network"
       - "--entrypoints.web.address=:80"
+      - "--log.level=INFO"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "8080:8080"  # Dashboard
