@@ -489,50 +489,54 @@ exports.getConnectedPlayers = async (req, res) => {
     const services = require('../config/services');
     
     const players = [];
+    const playersMap = new Map(); // Map pour stocker les joueurs trouvés
     
-    // Récupérer tous les joueurs en une seule fois
+    // Récupérer tous les joueurs depuis auth-service
     try {
       const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
       console.log(`📋 Fetched ${playersRes.data.length} players from auth-service`);
       
-      for (const playerId of playerIds) {
-        const player = playersRes.data.find(p => p.id === playerId);
-        if (player && player.name && player.name.trim() !== '' && player.name.trim() !== 'Joueur anonyme') {
-          // Seulement ajouter si le joueur existe dans auth-service ET a un nom valide
-          players.push({
-            id: playerId,
-            name: player.name.trim()
+      // Créer une map des joueurs depuis auth-service
+      for (const player of playersRes.data) {
+        if (player && player.id) {
+          playersMap.set(player.id, {
+            id: player.id,
+            name: player.name && player.name.trim() !== '' ? player.name.trim() : null
           });
-          console.log(`🔴 [game.controller] ✅ Found player in auth-service: ${player.name} (${playerId})`);
-        } else if (player && (!player.name || player.name.trim() === '' || player.name.trim() === 'Joueur anonyme')) {
-          // Le joueur existe mais n'a pas de nom valide, ne pas l'ajouter
-          console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} exists in auth-service but has invalid name, skipping`);
-        } else {
-          // Si le joueur n'existe pas dans auth-service, ne pas l'ajouter (joueurs non enregistrés)
-          console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} not found in auth-service, skipping (unregistered player)`);
         }
       }
     } catch (err) {
       console.error("❌ Error fetching players from auth-service:", err);
-      // En cas d'erreur, essayer de récupérer depuis les scores
-      for (const playerId of playerIds) {
+    }
+    
+    // Pour chaque joueur connecté, essayer de trouver son nom
+    for (const playerId of playerIds) {
+      let playerName = null;
+      
+      // 1. Essayer depuis auth-service
+      const authPlayer = playersMap.get(playerId);
+      if (authPlayer && authPlayer.name) {
+        playerName = authPlayer.name;
+        console.log(`🔴 [game.controller] ✅ Found player name in auth-service: ${playerName} (${playerId})`);
+      } else {
+        // 2. Essayer depuis les scores (fallback)
         try {
           const score = await Score.findOne({ playerId });
           if (score && score.playerName && score.playerName.trim() !== '') {
-            players.push({
-              id: playerId,
-              name: score.playerName.trim()
-            });
-            console.log(`🔴 [game.controller] ✅ Found player in scores (fallback): ${score.playerName} (${playerId})`);
-          } else {
-            // Ne pas ajouter de joueur sans nom
-            console.warn(`🔴 [game.controller] ⚠️ Player ${playerId} not found in scores or has no name, skipping`);
+            playerName = score.playerName.trim();
+            console.log(`🔴 [game.controller] ✅ Found player name in scores (fallback): ${playerName} (${playerId})`);
           }
         } catch (scoreErr) {
           console.warn(`🔴 [game.controller] ⚠️ Error fetching score for ${playerId}:`, scoreErr.message);
-          // Ne pas ajouter de joueur sans nom
         }
       }
+      
+      // Ajouter le joueur même s'il n'a pas de nom (on utilisera un nom par défaut)
+      // Cela garantit que tous les joueurs connectés apparaissent dans le dashboard
+      players.push({
+        id: playerId,
+        name: playerName || `Joueur ${playerId.substring(0, 6)}` // Nom par défaut si pas de nom trouvé
+      });
     }
     
     console.log(`🔴 [game.controller] ✅ Returning ${players.length} connected players:`, players.map(p => `${p.name} (${p.id})`).join(', '));
