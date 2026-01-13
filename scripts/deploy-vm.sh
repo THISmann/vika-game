@@ -7,7 +7,7 @@ set -e
 
 VM_HOST="82.202.141.248"
 VM_USER="user1"
-VM_PATH="~/gameV2"
+VM_PATH="~/vika-game"
 PROJECT_NAME="vika-game"
 
 GREEN='\033[0;32m'
@@ -58,7 +58,7 @@ step "Connexion à la VM et déploiement..."
 ssh ${VM_USER}@${VM_HOST} << 'ENDSSH'
 set -e
 
-PROJECT_PATH="~/gameV2"
+PROJECT_PATH="~/vika-game"
 PROJECT_NAME="vika-game"
 
 echo "📦 === DÉPLOIEMENT SUR VM ==="
@@ -69,8 +69,8 @@ if [ ! -d "$PROJECT_PATH" ]; then
     echo "📥 Clonage du repository depuis GitHub..."
     cd ~
     # Essayer d'abord avec SSH, puis HTTPS
-    git clone git@github.com:THISmann/vika-game.git gameV2 2>/dev/null || \
-    git clone https://github.com/THISmann/vika-game.git gameV2 || {
+    git clone git@github.com:THISmann/vika-game.git vika-game 2>/dev/null || \
+    git clone https://github.com/THISmann/vika-game.git vika-game || {
         echo "❌ Échec du clonage du repository"
         exit 1
     }
