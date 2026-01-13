@@ -192,11 +192,11 @@ services:
     command:
       - "--api.insecure=true"
       - "--api.dashboard=true"
-      - "--api.debug=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=user1_app-network"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.dashboard.address=:8080"
       - "--log.level=INFO"
       - "--accesslog=true"
     ports:
