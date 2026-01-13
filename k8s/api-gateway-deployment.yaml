@@ -27,7 +27,7 @@ spec:
         command: ['sh', '-c', 'until nc -z game-service.intelectgame.svc.cluster.local 3003; do echo waiting for game-service; sleep 2; done;']
       containers:
       - name: api-gateway
-        image: thismann17/gamev2-api-gateway:latest
+        image: gamev2-api-gateway:local
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
@@ -81,10 +81,11 @@ metadata:
   labels:
     app: api-gateway
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 3000
     targetPort: 3000
+    nodePort: 30082
     protocol: TCP
   selector:
     app: api-gateway

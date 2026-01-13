@@ -16,7 +16,7 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' 2>&1 | grep -q '^1$' || exit 1"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.runCommand({ ping: 1 }).ok\" 2>&1 | grep -q \"^1$$\" || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -185,6 +185,25 @@ services:
     networks:
       - app-network
 
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v2.11
+    container_name: intelectgame-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+    labels:
+      - "traefik.enable=true"
+
   # API Gateway
   api-gateway:
     build:
@@ -217,37 +236,59 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=PathPrefix(`/vika-game/api`)"
+      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/vika-game/api"
+      - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
 
-  # Frontend
+  # Frontend (Mode Dev pour contourner le problème de build UTF-8)
   frontend:
-    build:
-      context: ./vue
-      dockerfile: Dockerfile
-      args:
-        - VITE_AUTH_SERVICE_URL=http://localhost:3000
-        - VITE_QUIZ_SERVICE_URL=http://localhost:3000
-        - VITE_GAME_SERVICE_URL=http://localhost:3000
+    image: node:20-alpine
     container_name: intelectgame-frontend
+    working_dir: /app
+    volumes:
+      - ./vue/front:/app
     ports:
       - "5173:5173"
+    environment:
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --force"
     depends_on:
       api-gateway:
         condition: service_healthy
+      traefik:
+        condition: service_started
     networks:
       - app-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.middlewares.frontend-stripprefix.stripprefix.prefixes=/vika-game"
+      - "traefik.http.routers.frontend.middlewares=frontend-stripprefix"
+      - "traefik.http.routers.frontend.priority=10"
+      - "traefik.docker.network=user1_app-network"
 
-  # Admin Frontend
+  # Admin Frontend (Mode Dev pour contourner le problème de build UTF-8)
   admin-frontend:
-    build:
-      context: ./vue
-      dockerfile: admin/Dockerfile
-      args:
-        - VITE_AUTH_SERVICE_URL=http://localhost:3000
-        - VITE_QUIZ_SERVICE_URL=http://localhost:3000
-        - VITE_GAME_SERVICE_URL=http://localhost:3000
+    image: node:20-alpine
     container_name: intelectgame-admin-frontend
+    working_dir: /app
+    volumes:
+      - ./vue/admin:/app
     ports:
       - "5174:5174"
+    environment:
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --force"
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -300,7 +341,7 @@ services:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: intelectgame-cadvisor
     ports:
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

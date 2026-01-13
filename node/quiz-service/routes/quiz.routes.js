@@ -5,6 +5,20 @@ const { authenticateAdmin } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
+ * /quiz/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ */
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'quiz-service' });
+});
+
+/**
+ * @swagger
  * /quiz/test:
  *   get:
  *     summary: Test endpoint

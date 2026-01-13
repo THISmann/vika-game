@@ -63,37 +63,37 @@ export function isUserAuthenticated() {
       } else {
         role = decoded.substring(secondLastDashIndex + 1, lastDashIndex)
       }
-      
-      // Vérifier que le rôle correspond
-      if (role !== 'user' && role !== 'admin') {
-        console.log('🔒 Auth check failed: invalid role in token', role)
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('userInfo')
-        return false
-      }
-      
-      // Vérifier que le timestamp est valide
-      if (isNaN(timestamp) || timestamp <= 0) {
-        console.log('🔒 Auth check failed: invalid timestamp')
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('userInfo')
-        return false
-      }
-      
-      // Vérifier l'expiration (24 heures)
-      const now = Date.now()
-      const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
-      
-      if (now - timestamp > TOKEN_EXPIRY) {
-        console.log('🔒 Auth check failed: token expired')
-        // Token expiré, nettoyer le localStorage
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('userInfo')
-        return false
-      }
-      
-      // Token valide
-      return true
+        
+        // Vérifier que le rôle correspond
+        if (role !== 'user' && role !== 'admin') {
+          console.log('🔒 Auth check failed: invalid role in token', role)
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Vérifier que le timestamp est valide
+        if (isNaN(timestamp) || timestamp <= 0) {
+          console.log('🔒 Auth check failed: invalid timestamp')
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Vérifier l'expiration (24 heures)
+        const now = Date.now()
+        const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
+        
+        if (now - timestamp > TOKEN_EXPIRY) {
+          console.log('🔒 Auth check failed: token expired')
+          // Token expiré, nettoyer le localStorage
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('userInfo')
+          return false
+        }
+        
+        // Token valide
+        return true
     } catch (error) {
       console.error('🔒 Error verifying token:', error)
       // En cas d'erreur de décodage, considérer comme non authentifié

@@ -603,9 +603,9 @@ async function scheduleNextQuestion(io, defaultDuration = 30000) {
         quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/all`);
       } catch (err) {
         console.error("⏰ Error fetching questions from /quiz/all:", err.message);
-        // Continuer sans questions - on ne peut pas passer à la question suivante
-        return;
-      }
+          // Continuer sans questions - on ne peut pas passer à la question suivante
+          return;
+        }
       
       let questions = quiz.data || [];
       
@@ -901,7 +901,7 @@ exports.nextQuestion = async (req, res) => {
 
     // Récupérer les questionIds depuis le gameState (si disponibles)
     const stateQuestionIds = state.questionIds;
-    
+
     // Récupérer les questions (nécessite l'authentification admin)
     // Transmettre le token d'authentification depuis la requête originale
     let questions = [];

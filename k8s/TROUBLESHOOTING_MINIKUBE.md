@@ -113,12 +113,31 @@ kubectl get nodes
 kubectl get pods -n kube-system
 ```
 
+### Solution rapide pour l'apiserver qui ne démarre pas
+
+Si Minikube démarre mais l'apiserver ne fonctionne pas :
+
+```bash
+# Utiliser le script de correction automatique
+./k8s/scripts/fix-minikube-apiserver.sh
+
+# Ou manuellement :
+minikube stop
+minikube start --driver=docker --skip-image-download
+```
+
 ### Si le problème persiste
 
 1. **Réinitialiser Minikube** :
    ```bash
    minikube delete
-   minikube start --driver=docker --image-repository='registry.aliyuncs.com/google_containers'
+   minikube start --driver=docker --skip-image-download
+   ```
+
+2. **Utiliser les images en cache** :
+   ```bash
+   minikube delete
+   minikube start --driver=docker --skip-image-download --kubernetes-version=stable
    ```
 
 2. **Utiliser Docker Desktop** :

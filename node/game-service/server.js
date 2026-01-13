@@ -103,7 +103,7 @@ function emitScoreUpdate(ioInstance, playerId, score, leaderboard) {
 async function checkScheduledGames() {
   try {
     const GameSession = require('./models/GameSession');
-    const now = new Date();
+      const now = new Date();
     
     // Trouver toutes les parties programmées qui doivent être lancées
     // On vérifie que scheduledStartTime existe, n'est pas null, et est <= maintenant
@@ -234,32 +234,32 @@ async function launchScheduledGameFromParty(party, ioInstance) {
       logger.error('Error fetching questions for scheduled party', err, { partyId: party.id });
       return;
     }
-    
+
     if (questions.length === 0) {
       logger.warn('No questions found for scheduled party', { partyId: party.id, questionIds: party.questionIds });
       return;
     }
-    
+
     // Réinitialiser les scores
     await Score.deleteMany({});
     
     // Initialiser les scores pour les joueurs connectés
     const currentState = await gameState.getState();
     if (currentState.connectedPlayers && currentState.connectedPlayers.length > 0) {
-      try {
-        const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+    try {
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
         for (const playerId of currentState.connectedPlayers) {
-          const player = playersRes.data.find(p => p.id === playerId);
-          if (player) {
-            await initializePlayerScore(playerId, player.name);
+        const player = playersRes.data.find(p => p.id === playerId);
+        if (player) {
+          await initializePlayerScore(playerId, player.name);
           }
         }
         logger.info('Scores initialized for connected players', { count: currentState.connectedPlayers.length });
-      } catch (err) {
-        logger.error('Error initializing scores', err);
+    } catch (err) {
+      logger.error('Error initializing scores', err);
       }
     }
-    
+
     // Démarrer le jeu avec la première question
     if (questions.length > 0 && ioInstance) {
       const firstQuestion = questions[0];
@@ -277,7 +277,7 @@ async function launchScheduledGameFromParty(party, ioInstance) {
         totalQuestions: questions.length,
         duration: party.questionDuration
       });
-      
+
       // Programmer la question suivante en utilisant la fonction exportée du controller
       const gameController = require('./controllers/game.controller');
       gameController.scheduleNextQuestion(ioInstance, party.questionDuration);

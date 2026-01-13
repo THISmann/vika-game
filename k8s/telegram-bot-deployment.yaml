@@ -40,7 +40,7 @@ spec:
         command: ['sh', '-c', 'until nc -z game-service.intelectgame.svc.cluster.local 3003; do echo waiting for game-service; sleep 2; done;']
       containers:
       - name: telegram-bot
-        image: thismann17/gamev2-telegram-bot:latest
+        image: gamev2-telegram-bot:local
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3004

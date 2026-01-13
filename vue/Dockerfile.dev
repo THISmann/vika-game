@@ -1,0 +1,28 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY front/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy frontend files
+COPY front/ .
+
+# Set environment variables
+ARG VITE_AUTH_SERVICE_URL=/vika-game/api
+ARG VITE_QUIZ_SERVICE_URL=/vika-game/api
+ARG VITE_GAME_SERVICE_URL=/vika-game/api
+
+ENV VITE_AUTH_SERVICE_URL=$VITE_AUTH_SERVICE_URL
+ENV VITE_QUIZ_SERVICE_URL=$VITE_QUIZ_SERVICE_URL
+ENV VITE_GAME_SERVICE_URL=$VITE_GAME_SERVICE_URL
+
+# Expose port
+EXPOSE 5173
+
+# Start Vite dev server with base path
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173", "--base", "/"]
+

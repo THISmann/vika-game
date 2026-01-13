@@ -27,7 +27,7 @@ spec:
         command: ['sh', '-c', 'until nc -z auth-service.intelectgame.svc.cluster.local 3001; do echo waiting for auth-service; sleep 2; done;']
       containers:
       - name: quiz-service
-        image: thismann17/gamev2-quiz-service:latest
+        image: gamev2-quiz-service:local
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002

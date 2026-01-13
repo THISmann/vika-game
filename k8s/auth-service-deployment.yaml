@@ -24,7 +24,7 @@ spec:
         command: ['sh', '-c', 'until nc -z redis.intelectgame.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
       containers:
       - name: auth-service
-        image: thismann17/gamev2-auth-service:latest
+        image: gamev2-auth-service:local
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001

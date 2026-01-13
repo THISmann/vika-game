@@ -33,7 +33,7 @@ spec:
         command: ['sh', '-c', 'until nc -z minio.intelectgame.svc.cluster.local 9000; do echo waiting for minio; sleep 2; done;']
       containers:
       - name: game-service
-        image: thismann17/gamev2-game-service:latest
+        image: gamev2-game-service:local
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3003

@@ -28,31 +28,73 @@ error() {
 }
 
 # Vérifier que Minikube est démarré
-if ! minikube status &> /dev/null; then
-    warn "Minikube n'est pas démarré. Démarrage de Minikube..."
-    # Démarrer Minikube avec des options pour éviter les problèmes de réseau
-    # Utiliser --image-mirror-country pour utiliser des mirrors régionaux
-    # --skip-image-download évite de télécharger les images du registry.k8s.io qui échoue souvent
-    minikube start --driver=docker --container-runtime=docker \
-        --image-mirror-country=fr \
-        --image-repository='registry.aliyuncs.com/google_containers' \
-        --kubernetes-version=stable || {
-        warn "Première tentative échouée, essai avec des options alternatives..."
-        # Essayer sans spécifier de version Kubernetes
+check_minikube_ready() {
+    local status=$(minikube status --format json 2>/dev/null || echo "{}")
+    local host=$(echo "$status" | grep -q '"Host":"Running"' || echo "")
+    local kubelet=$(echo "$status" | grep -q '"Kubelet":"Running"' || echo "")
+    local apiserver=$(echo "$status" | grep -q '"APIServer":"Running"' || echo "")
+    
+    if [ -n "$host" ] && [ -n "$kubelet" ] && [ -n "$apiserver" ]; then
+        return 0
+    fi
+    return 1
+}
+
+if ! check_minikube_ready; then
+    warn "Minikube n'est pas complètement démarré. Démarrage de Minikube..."
+    
+    # Fonction pour démarrer Minikube en ignorant le warning registry.k8s.io
+    start_minikube_safe() {
+        warn "Démarrage de Minikube (le warning sur registry.k8s.io peut apparaître mais est non-bloquant)..."
+        
+        # Démarrer Minikube en redirigeant stderr pour ignorer le warning
         minikube start --driver=docker --container-runtime=docker \
             --image-mirror-country=fr \
-            --image-repository='registry.aliyuncs.com/google_containers' || {
-            warn "Essai avec registry local..."
-            # Dernière tentative : utiliser le registry local ou ignorer les erreurs de registry
-            minikube start --driver=docker --container-runtime=docker \
-                --skip-image-download \
-                --kubernetes-version=stable || {
-                error "Impossible de démarrer Minikube"
-                warn "Vérifiez votre connexion Internet et les paramètres de proxy"
-                exit 1
-            }
+            --image-repository='registry.aliyuncs.com/google_containers' \
+            --kubernetes-version=stable 2>&1 | grep -v "Failing to connect to https://registry.k8s.io/" || {
+            local exit_code=$?
+            # Le code de sortie peut être 1 même si Minikube a démarré (à cause du warning)
+            # Vérifier si Minikube a réellement démarré
+            sleep 3
+            if check_minikube_ready || minikube status &> /dev/null; then
+                return 0
+            fi
+            return $exit_code
         }
+        
+        # Attendre un peu et vérifier
+        sleep 3
+        if check_minikube_ready; then
+            return 0
+        fi
+        
+        return 1
     }
+    
+    # Tentative 1 : Avec registry Aliyun
+    if ! start_minikube_safe; then
+        warn "Première tentative avec warning, vérification du statut..."
+        sleep 5
+        if check_minikube_ready || minikube status &> /dev/null; then
+            info "Minikube a démarré avec succès (malgré le warning)"
+        else
+            warn "Première tentative échouée, essai avec skip-image-download..."
+            # Tentative 2 : Sans télécharger les images
+            minikube start --driver=docker --container-runtime=docker \
+                --skip-image-download 2>&1 | grep -v "Failing to connect to https://registry.k8s.io/" || {
+                sleep 5
+                if check_minikube_ready; then
+                    info "Minikube a démarré avec succès"
+                else
+                    error "Impossible de démarrer Minikube"
+                    warn "Vérifiez votre connexion Internet et les paramètres de proxy"
+                    warn "Ou essayez manuellement: minikube start --driver=docker --skip-image-download"
+                    exit 1
+                fi
+            }
+        fi
+    fi
+    
     info "Minikube démarré"
 else
     info "Minikube est déjà démarré"
@@ -60,16 +102,39 @@ else
     minikube update-context || true
 fi
 
-# Vérifier la connexion à l'API Kubernetes
-info "Vérification de la connexion à Kubernetes..."
-if ! kubectl cluster-info &> /dev/null; then
-    warn "Problème de connexion à Kubernetes, tentative de réparation..."
-    minikube update-context || {
-        error "Impossible de se connecter à Kubernetes"
-        exit 1
-    }
+# Vérifier que l'apiserver est prêt
+info "Vérification de l'API Kubernetes..."
+for i in {1..30}; do
+    if kubectl cluster-info &> /dev/null 2>&1; then
+        info "API Kubernetes est prête"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        warn "L'API Kubernetes prend plus de temps que prévu..."
+        warn "Attente supplémentaire..."
+        sleep 10
+        if kubectl cluster-info &> /dev/null 2>&1; then
+            info "API Kubernetes est maintenant prête"
+        else
+            warn "Problème de connexion à Kubernetes, tentative de réparation..."
+            minikube delete 2>/dev/null || true
+            minikube start --driver=docker --skip-image-download 2>&1 | grep -v "Failing to connect to https://registry.k8s.io/" || true
+            sleep 10
+        fi
+    else
+        sleep 2
+    fi
+done
+
+if kubectl cluster-info &> /dev/null 2>&1; then
+    info "Connexion Kubernetes OK"
+else
+    error "Impossible de se connecter à l'API Kubernetes"
+    warn "Essayez de redémarrer Minikube avec:"
+    warn "  minikube delete"
+    warn "  minikube start --driver=docker --skip-image-download"
+    exit 1
 fi
-info "Connexion Kubernetes OK"
 
 # Vérifier que kubectl est disponible
 if ! command -v kubectl &> /dev/null; then

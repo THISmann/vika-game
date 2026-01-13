@@ -10,12 +10,11 @@ const getApiUrl = (service) => {
   const quizUrl = import.meta.env.VITE_QUIZ_SERVICE_URL
   const gameUrl = import.meta.env.VITE_GAME_SERVICE_URL
   
-  // Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
-  // IMPORTANT: En production Kubernetes, les URLs sont relatives (/api/auth), donc useApiGateway sera false
+// Détecter si on utilise l'API Gateway (toutes les URLs sont identiques)
+// Si les URLs sont identiques et commencent par http/https, c'est qu'on utilise l'API Gateway
   const useApiGateway = authUrl && quizUrl && gameUrl && 
                         authUrl === quizUrl && quizUrl === gameUrl &&
-                        (authUrl.startsWith('http://') || authUrl.startsWith('https://')) &&
-                        (authUrl.includes(':3000') || authUrl.includes('localhost:3000') || authUrl.includes('127.0.0.1:3000'))
+                      (authUrl.startsWith('http://') || authUrl.startsWith('https://'))
   
   if (isProduction) {
     // En production/Kubernetes, utiliser les variables d'environnement ou des URLs relatives
@@ -72,10 +71,36 @@ const getApiUrl = (service) => {
   }
 }
 
+// Helper pour obtenir l'URL de base pour l'API Gateway si on est sur localhost
+const getBaseApiUrl = (service) => {
+  const baseUrl = getApiUrl(service)
+  
+  // Détecter si on est accédé via localhost/127.0.0.1 (port-forward depuis Kubernetes)
+  // Dans ce cas, on doit utiliser des URLs absolues vers l'API Gateway
+  const isLocalhostAccess = typeof window !== 'undefined' && 
+                            (window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1')
+  
+  if (isLocalhostAccess) {
+    // Si on est sur localhost avec des chemins relatifs (/api/auth), utiliser l'API Gateway via port-forward
+    if (baseUrl.startsWith('/api/')) {
+      console.log('🌐 Admin: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
+      return 'http://127.0.0.1:3000'
+    }
+    // Si l'URL est absolue mais pointe vers un autre hôte (192.168.x.x, etc.), utiliser localhost
+    if (baseUrl.startsWith('http://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
+      console.log('🌐 Admin: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
+      return 'http://127.0.0.1:3000'
+    }
+  }
+  
+  return baseUrl
+}
+
 export const API_CONFIG = {
-  AUTH_SERVICE: getApiUrl('auth'),
-  QUIZ_SERVICE: getApiUrl('quiz'),
-  GAME_SERVICE: getApiUrl('game'),
+  get AUTH_SERVICE() { return getBaseApiUrl('auth') },
+  get QUIZ_SERVICE() { return getBaseApiUrl('quiz') },
+  get GAME_SERVICE() { return getBaseApiUrl('game') },
 }
 
 // Helper pour construire les URLs complètes
@@ -83,7 +108,6 @@ export const API_CONFIG = {
 const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
 
 // Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
-// IMPORTANT: En production Kubernetes, les URLs sont relatives (/api/auth), donc useApiGateway sera false
 const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE && 
                       API_CONFIG.QUIZ_SERVICE === API_CONFIG.GAME_SERVICE &&
                       API_CONFIG.AUTH_SERVICE !== '' &&
@@ -105,7 +129,9 @@ export const API_URLS = {
         ? `${API_CONFIG.AUTH_SERVICE}/players`
         : `${API_CONFIG.AUTH_SERVICE}/auth/players`,
     login: useApiGateway
-      ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`
+      ? (API_CONFIG.AUTH_SERVICE.includes('/auth') 
+          ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
+          : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`)
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`,
