@@ -4,7 +4,13 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/intele
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      bufferMaxEntries: 0,
+      bufferCommands: false
+    });
     console.log('✅ MongoDB connected (game-service)');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
@@ -13,6 +19,7 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
+
 
 
 

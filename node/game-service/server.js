@@ -456,8 +456,21 @@ io.on("connection", (socket) => {
         return;
       }
       
-      // Vérifier l'état du jeu
-      const state = await gameState.getState();
+      // Vérifier l'état du jeu avec timeout
+      let state;
+      try {
+        state = await Promise.race([
+          gameState.getState(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+      } catch (stateError) {
+        logger.warn('Error getting game state, continuing anyway', {
+          error: stateError.message,
+          playerId: playerId
+        });
+        // Créer un état par défaut si on ne peut pas le récupérer
+        state = { isStarted: false };
+      }
       
       // Si le jeu a déjà commencé, ne pas permettre l'enregistrement
       if (state.isStarted) {
@@ -472,18 +485,41 @@ io.on("connection", (socket) => {
         return;
       }
       
-      // Ajouter le joueur à la liste des joueurs connectés
-      await gameState.addConnectedPlayer(playerId);
+      // Ajouter le joueur à la liste des joueurs connectés avec retry
+      try {
+        await Promise.race([
+          gameState.addConnectedPlayer(playerId),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+        logger.info('Player added to connectedPlayers', { playerId });
+      } catch (addError) {
+        logger.error('Error adding player to connectedPlayers, but continuing', {
+          error: addError.message,
+          playerId: playerId
+        });
+        // Continuer même si l'ajout échoue pour ne pas bloquer le joueur
+      }
       
       // Stocker le socket ID pour ce joueur
       playersSockets.set(playerId, socket.id);
       
       // Récupérer le gameCode actuel
-      const currentState = await gameState.getState();
-      const gameCode = currentState.gameCode;
-      
-      // Récupérer le nombre de joueurs connectés
-      const connectedCount = await gameState.getConnectedPlayersCount();
+      let currentState;
+      let gameCode = null;
+      let connectedCount = 0;
+      try {
+        currentState = await Promise.race([
+          gameState.getState(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+        gameCode = currentState.gameCode;
+        connectedCount = await Promise.race([
+          gameState.getConnectedPlayersCount(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+      } catch (stateError) {
+        logger.warn('Error getting game state for response', { error: stateError.message });
+      }
       
       // Envoyer le gameCode au joueur
       if (gameCode) {
