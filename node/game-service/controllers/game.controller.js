@@ -494,6 +494,7 @@ exports.getConnectedPlayers = async (req, res) => {
         gameState.getConnectedPlayers(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
       ]);
+      console.log(`✅ Got connected players from getConnectedPlayers:`, playerIds);
     } catch (getError) {
       console.warn(`⚠️ Error getting connected players from gameState, trying fallback:`, getError.message);
       // Fallback: essayer de récupérer depuis getState
@@ -505,13 +506,31 @@ exports.getConnectedPlayers = async (req, res) => {
         playerIds = state.connectedPlayers || [];
         console.log(`✅ Got connected players from getState fallback:`, playerIds);
       } catch (stateError) {
-        console.error(`❌ Error getting state as fallback:`, stateError.message);
-        // Dernier recours: retourner un tableau vide mais ne pas crasher
-        playerIds = [];
+        console.warn(`⚠️ Error getting state as fallback, trying direct MongoDB:`, stateError.message);
+        // Dernier recours: récupérer directement depuis MongoDB
+        try {
+          const GameState = require('../models/GameState');
+          const mongoose = require('mongoose');
+          if (mongoose.connection.readyState === 1) {
+            const stateDoc = await GameState.findOne({ key: 'current' }).maxTimeMS(3000);
+            if (stateDoc && stateDoc.connectedPlayers) {
+              playerIds = Array.isArray(stateDoc.connectedPlayers) ? stateDoc.connectedPlayers : [];
+              console.log(`✅ Got connected players from direct MongoDB query:`, playerIds);
+            } else {
+              playerIds = [];
+            }
+          } else {
+            console.error(`❌ MongoDB not connected, cannot fetch players`);
+            playerIds = [];
+          }
+        } catch (mongoError) {
+          console.error(`❌ Error querying MongoDB directly:`, mongoError.message);
+          playerIds = [];
+        }
       }
     }
     
-    console.log(`🔴 [game.controller] Found ${playerIds.length} player IDs in gameState:`, playerIds);
+    console.log(`🔴 [game.controller] Found ${playerIds.length} player IDs:`, playerIds);
     
     // Si aucun joueur connecté, retourner immédiatement
     if (playerIds.length === 0) {
