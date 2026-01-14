@@ -60,7 +60,7 @@ const gameStateSchema = new mongoose.Schema({
   }
 }, {
   timestamps: false,
-  collection: 'gamestate'
+  collection: 'gamestates'
 });
 
 // Use a single document identified by a fixed key field
