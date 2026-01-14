@@ -8,7 +8,6 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
-      bufferMaxEntries: 0,
       bufferCommands: false
     });
     console.log('✅ MongoDB connected (game-service)');
