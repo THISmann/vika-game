@@ -364,7 +364,13 @@ exports.leaderboard = async (req, res) => {
 exports.getGameState = async (req, res) => {
   try {
     const state = await gameState.getState();
-    const connectedCount = await gameState.getConnectedPlayersCount();
+    let connectedCount = 0;
+    try {
+      connectedCount = await gameState.getConnectedPlayersCount();
+    } catch (countError) {
+      // Si on ne peut pas récupérer le count, utiliser la longueur du tableau
+      connectedCount = state.connectedPlayers?.length || 0;
+    }
     res.json({
       isStarted: state.isStarted,
       currentQuestionIndex: state.currentQuestionIndex,
@@ -481,8 +487,37 @@ exports.getConnectedPlayers = async (req, res) => {
   try {
     console.log(`\n🔴 [game.controller] ========== GET CONNECTED PLAYERS ==========`);
     
-    const playerIds = await gameState.getConnectedPlayers();
+    // Essayer de récupérer les playerIds avec timeout et fallback
+    let playerIds = [];
+    try {
+      playerIds = await Promise.race([
+        gameState.getConnectedPlayers(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+      ]);
+    } catch (getError) {
+      console.warn(`⚠️ Error getting connected players from gameState, trying fallback:`, getError.message);
+      // Fallback: essayer de récupérer depuis getState
+      try {
+        const state = await Promise.race([
+          gameState.getState(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+        playerIds = state.connectedPlayers || [];
+        console.log(`✅ Got connected players from getState fallback:`, playerIds);
+      } catch (stateError) {
+        console.error(`❌ Error getting state as fallback:`, stateError.message);
+        // Dernier recours: retourner un tableau vide mais ne pas crasher
+        playerIds = [];
+      }
+    }
+    
     console.log(`🔴 [game.controller] Found ${playerIds.length} player IDs in gameState:`, playerIds);
+    
+    // Si aucun joueur connecté, retourner immédiatement
+    if (playerIds.length === 0) {
+      console.log(`🔴 [game.controller] No connected players, returning empty array`);
+      return res.json({ players: [], count: 0 });
+    }
     
     // Récupérer les noms des joueurs depuis auth-service
     const axios = require('axios');
@@ -493,7 +528,7 @@ exports.getConnectedPlayers = async (req, res) => {
     
     // Récupérer tous les joueurs depuis auth-service
     try {
-      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`);
+      const playersRes = await axios.get(`${services.AUTH_SERVICE_URL}/auth/players`, { timeout: 5000 });
       console.log(`📋 Fetched ${playersRes.data.length} players from auth-service`);
       
       // Créer une map des joueurs depuis auth-service
@@ -506,7 +541,7 @@ exports.getConnectedPlayers = async (req, res) => {
         }
       }
     } catch (err) {
-      console.error("❌ Error fetching players from auth-service:", err);
+      console.error("❌ Error fetching players from auth-service:", err.message);
     }
     
     // Pour chaque joueur connecté, essayer de trouver son nom
@@ -521,7 +556,7 @@ exports.getConnectedPlayers = async (req, res) => {
       } else {
         // 2. Essayer depuis les scores (fallback)
         try {
-          const score = await Score.findOne({ playerId });
+          const score = await Score.findOne({ playerId }).maxTimeMS(3000);
           if (score && score.playerName && score.playerName.trim() !== '') {
             playerName = score.playerName.trim();
             console.log(`🔴 [game.controller] ✅ Found player name in scores (fallback): ${playerName} (${playerId})`);
@@ -546,7 +581,8 @@ exports.getConnectedPlayers = async (req, res) => {
   } catch (error) {
     console.error("❌ Error getting connected players:", error);
     console.error("❌ Error stack:", error.stack);
-    res.status(500).json({ error: "Internal server error" });
+    // En cas d'erreur, retourner un tableau vide plutôt qu'une erreur 500
+    res.json({ players: [], count: 0 });
   }
 };
 
