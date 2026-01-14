@@ -119,40 +119,46 @@ module.exports = {
       console.log(`\n🟡 [gameState] ========== ADD CONNECTED PLAYER ==========`);
       console.log(`🟡 [gameState] Player ID: ${playerId}`);
       
-      const state = await GameState.getCurrent();
-      console.log(`🟡 [gameState] Current connectedPlayers before:`, state.connectedPlayers || []);
-      console.log(`🟡 [gameState] State document ID:`, state._id);
-      console.log(`🟡 [gameState] State key:`, state.key);
+      // Utiliser une requête atomique MongoDB pour éviter les problèmes de timeout
+      // Utiliser $addToSet pour éviter les doublons
+      const result = await GameState.findOneAndUpdate(
+        { key: 'current' },
+        { 
+          $addToSet: { connectedPlayers: playerId },
+          $setOnInsert: { key: 'current' } // Créer le document s'il n'existe pas
+        },
+        { 
+          upsert: true, 
+          new: true,
+          maxTimeMS: 5000 // Timeout de 5 secondes
+        }
+      );
       
-      // Vérifier si le joueur est déjà dans la liste
-      if (state.connectedPlayers && state.connectedPlayers.includes(playerId)) {
-        console.log(`🟡 [gameState] Player already in connectedPlayers list`);
-        return;
+      if (result) {
+        console.log(`🟡 [gameState] Player added successfully. Connected players:`, result.connectedPlayers || []);
+        console.log(`🟡 [gameState] ========================================\n`);
+        return result;
+      } else {
+        // Fallback: essayer avec getCurrent + save si findOneAndUpdate échoue
+        console.log(`🟡 [gameState] findOneAndUpdate returned null, trying fallback...`);
+        const state = await GameState.getCurrent();
+        if (!state.connectedPlayers || !state.connectedPlayers.includes(playerId)) {
+          if (!state.connectedPlayers) {
+            state.connectedPlayers = [];
+          }
+          state.connectedPlayers.push(playerId);
+          await state.save();
+          console.log(`🟡 [gameState] Player added via fallback. Connected players:`, state.connectedPlayers);
+        } else {
+          console.log(`🟡 [gameState] Player already in list`);
+        }
+        console.log(`🟡 [gameState] ========================================\n`);
+        return state;
       }
-      
-      // Ajouter le joueur à la liste
-      if (!state.connectedPlayers) {
-        console.log(`🟡 [gameState] Initializing empty connectedPlayers array`);
-        state.connectedPlayers = [];
-      }
-      state.connectedPlayers.push(playerId);
-      console.log(`🟡 [gameState] Player pushed to array. New array:`, state.connectedPlayers);
-      
-      // Sauvegarder le document
-      console.log(`🟡 [gameState] Saving state document...`);
-      const savedState = await state.save();
-      console.log(`🟡 [gameState] Document saved. Saved connectedPlayers:`, savedState.connectedPlayers);
-      console.log(`🟡 [gameState] Player added successfully`);
-      
-      // Vérifier que le joueur a bien été ajouté en rechargeant depuis la DB
-      console.log(`🟡 [gameState] Reloading state from DB to verify...`);
-      const updatedState = await GameState.getCurrent();
-      console.log(`🟡 [gameState] Current connectedPlayers after reload:`, updatedState.connectedPlayers || []);
-      console.log(`🟡 [gameState] Player is in list: ${updatedState.connectedPlayers?.includes(playerId) || false}`);
-      console.log(`🟡 [gameState] ========================================\n`);
     } catch (error) {
       console.error("🟡 [gameState] ❌ Error adding connected player:", error);
       console.error("🟡 [gameState] ❌ Error stack:", error.stack);
+      // Ne pas throw pour ne pas bloquer le flux, mais logger l'erreur
       throw error;
     }
   },
