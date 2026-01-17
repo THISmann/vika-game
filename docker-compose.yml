@@ -162,8 +162,10 @@ services:
       - "traefik.http.routers.socket-io.entrypoints=web"
       - "traefik.http.routers.socket-io.service=socket-io"
       - "traefik.http.services.socket-io.loadbalancer.server.port=3003"
+      - "traefik.http.services.socket-io.loadbalancer.server.scheme=http"
       - "traefik.http.routers.socket-io.priority=20"
       - "traefik.docker.network=user1_app-network"
+      - "traefik.http.routers.socket-io.tls=false"
 
   # Telegram Bot
   telegram-bot:
