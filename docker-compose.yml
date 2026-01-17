@@ -258,9 +258,11 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_AUTH_SERVICE_URL=http://localhost:3001
-      - VITE_QUIZ_SERVICE_URL=http://localhost:3002
-      - VITE_GAME_SERVICE_URL=http://localhost:3003
+      # Use relative URLs for production (via Traefik/API Gateway)
+      # In production, the browser accesses services through the same domain
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
     command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base /vika-game/ --force"
     depends_on:
       api-gateway:
@@ -287,9 +289,11 @@ services:
     ports:
       - "5174:5174"
     environment:
-      - VITE_AUTH_SERVICE_URL=http://localhost:3001
-      - VITE_QUIZ_SERVICE_URL=http://localhost:3002
-      - VITE_GAME_SERVICE_URL=http://localhost:3003
+      # Use relative URLs for production (via Traefik/API Gateway)
+      # In production, the browser accesses services through the same domain
+      - VITE_AUTH_SERVICE_URL=/vika-game/api
+      - VITE_QUIZ_SERVICE_URL=/vika-game/api
+      - VITE_GAME_SERVICE_URL=/vika-game/api
     command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --base /vika-admin/ --force"
     depends_on:
       api-gateway:
