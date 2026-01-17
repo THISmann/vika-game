@@ -221,6 +221,11 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
+      # Route pour exposer le dashboard Traefik sur /dashboard
+      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.priority=30"
 
   # API Gateway
   api-gateway:
