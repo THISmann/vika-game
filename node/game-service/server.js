@@ -602,29 +602,27 @@ io.on("connection", (socket) => {
       reason: reason
     });
     
-    // Trouver le playerId associé à ce socket et le retirer
+    // IMPORTANT: Ne pas retirer le joueur de connectedPlayers lors de la déconnexion
+    // Le joueur peut se reconnecter et doit rester visible dans le dashboard
+    // On retire seulement le mapping socket -> playerId pour permettre la reconnexion
     for (const [playerId, socketId] of playersSockets.entries()) {
       if (socketId === socket.id) {
-        try {
-          await gameState.removeConnectedPlayer(playerId);
-          playersSockets.delete(playerId);
-          
-          // Émettre le nouveau comptage à tous les clients
-          const connectedCount = await gameState.getConnectedPlayersCount();
-          io.emit('players:count', { count: connectedCount });
-          
-          logger.info('Player removed from connected players', {
-            playerId: playerId,
-            connectedCount: connectedCount
-          });
-        } catch (error) {
-          logger.error('Error removing player on disconnect', error, {
-            playerId: playerId
-          });
-        }
+        // Supprimer seulement le mapping socket, pas le joueur de connectedPlayers
+        playersSockets.delete(playerId);
+        logger.info('Socket mapping removed for player (player stays in connectedPlayers)', {
+          playerId: playerId,
+          socketId: socket.id,
+          reason: reason
+        });
         break;
       }
     }
+    
+    // Note: Le joueur reste dans connectedPlayers même après déconnexion
+    // Il sera retiré seulement si :
+    // 1. Le jeu se termine (via delete endpoint)
+    // 2. L'admin supprime explicitement le joueur
+    // 3. Le joueur se reconnecte avec un nouveau socket (le mapping sera mis à jour)
   });
   
   socket.on('error', (error) => {
