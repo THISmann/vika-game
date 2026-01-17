@@ -160,8 +160,10 @@ services:
       # Route Socket.IO vers game-service
       - "traefik.http.routers.socket-io.rule=PathPrefix(`/socket.io`)"
       - "traefik.http.routers.socket-io.entrypoints=web"
+      - "traefik.http.routers.socket-io.service=socket-io"
       - "traefik.http.services.socket-io.loadbalancer.server.port=3003"
       - "traefik.http.routers.socket-io.priority=20"
+      - "traefik.docker.network=user1_app-network"
 
   # Telegram Bot
   telegram-bot:
