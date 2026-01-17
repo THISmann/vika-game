@@ -200,3 +200,5 @@ kubectl logs -f deployment/auth-service
 
 
 
+
+
