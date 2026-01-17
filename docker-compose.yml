@@ -158,6 +158,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Route Socket.IO vers game-service
+      # Utiliser le nom du service pour éviter la détection multiple d'IPs
       - "traefik.http.routers.socket-io.rule=PathPrefix(`/socket.io`)"
       - "traefik.http.routers.socket-io.entrypoints=web"
       - "traefik.http.routers.socket-io.service=socket-io"
@@ -166,6 +167,8 @@ services:
       - "traefik.http.routers.socket-io.priority=20"
       - "traefik.docker.network=user1_app-network"
       - "traefik.http.routers.socket-io.tls=false"
+      # Utiliser le nom du service Docker pour forcer l'utilisation du bon container
+      - "traefik.http.services.socket-io.loadbalancer.passHostHeader=true"
 
   # Telegram Bot
   telegram-bot:
