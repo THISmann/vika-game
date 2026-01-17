@@ -12,15 +12,15 @@
         <div class="space-y-4">
           <div>
             <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
-              {{ t('admin.login.username') }}
+              {{ t('admin.login.username') || 'Email' }}
             </label>
             <input
               id="username"
               v-model="username"
-              type="text"
+              type="email"
               required
               class="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
-              :placeholder="t('admin.login.usernamePlaceholder')"
+              :placeholder="t('admin.login.usernamePlaceholder') || 'admin@vika-game.com'"
             />
           </div>
 
