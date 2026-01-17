@@ -119,46 +119,63 @@ module.exports = {
       console.log(`\n🟡 [gameState] ========== ADD CONNECTED PLAYER ==========`);
       console.log(`🟡 [gameState] Player ID: ${playerId}`);
       
-      // Utiliser une requête atomique MongoDB pour éviter les problèmes de timeout
+      // Vérifier la connexion MongoDB
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState !== 1) {
+        console.error(`🟡 [gameState] ❌ MongoDB not connected, readyState: ${mongoose.connection.readyState}`);
+        throw new Error(`MongoDB not connected (readyState: ${mongoose.connection.readyState})`);
+      }
+      
+      // Utiliser une requête atomique MongoDB avec timeout court
       // Utiliser $addToSet pour éviter les doublons
-      const result = await GameState.findOneAndUpdate(
-        { key: 'current' },
-        { 
-          $addToSet: { connectedPlayers: playerId },
-          $setOnInsert: { key: 'current' } // Créer le document s'il n'existe pas
-        },
-        { 
-          upsert: true, 
-          new: true,
-          maxTimeMS: 5000 // Timeout de 5 secondes
-        }
-      );
+      const result = await Promise.race([
+        GameState.findOneAndUpdate(
+          { key: 'current' },
+          { 
+            $addToSet: { connectedPlayers: playerId },
+            $setOnInsert: { key: 'current' } // Créer le document s'il n'existe pas
+          },
+          { 
+            upsert: true, 
+            new: true,
+            maxTimeMS: 2000 // Timeout très court de 2 secondes
+          }
+        ),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('MongoDB operation timeout')), 2000))
+      ]);
       
       if (result) {
-        console.log(`🟡 [gameState] Player added successfully. Connected players:`, result.connectedPlayers || []);
+        console.log(`🟡 [gameState] ✅ Player added successfully. Connected players:`, result.connectedPlayers || []);
         console.log(`🟡 [gameState] ========================================\n`);
         return result;
       } else {
+        console.log(`🟡 [gameState] ⚠️ findOneAndUpdate returned null, trying fallback...`);
         // Fallback: essayer avec getCurrent + save si findOneAndUpdate échoue
-        console.log(`🟡 [gameState] findOneAndUpdate returned null, trying fallback...`);
-        const state = await GameState.getCurrent();
+        const state = await Promise.race([
+          GameState.getCurrent(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('getCurrent timeout')), 2000))
+        ]);
         if (!state.connectedPlayers || !state.connectedPlayers.includes(playerId)) {
           if (!state.connectedPlayers) {
             state.connectedPlayers = [];
           }
           state.connectedPlayers.push(playerId);
-          await state.save();
-          console.log(`🟡 [gameState] Player added via fallback. Connected players:`, state.connectedPlayers);
+          await Promise.race([
+            state.save(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('save timeout')), 2000))
+          ]);
+          console.log(`🟡 [gameState] ✅ Player added via fallback. Connected players:`, state.connectedPlayers);
         } else {
-          console.log(`🟡 [gameState] Player already in list`);
+          console.log(`🟡 [gameState] ℹ️ Player already in list`);
         }
         console.log(`🟡 [gameState] ========================================\n`);
         return state;
       }
     } catch (error) {
       console.error("🟡 [gameState] ❌ Error adding connected player:", error);
-      console.error("🟡 [gameState] ❌ Error stack:", error.stack);
-      // Ne pas throw pour ne pas bloquer le flux, mais logger l'erreur
+      console.error("🟡 [gameState] ❌ Error message:", error.message);
+      console.error("🟡 [gameState] ❌ Error stack:", error.stack?.substring(0, 300));
+      // Throw l'erreur pour que le fallback dans server.js soit appelé
       throw error;
     }
   },
