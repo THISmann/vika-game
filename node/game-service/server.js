@@ -488,39 +488,65 @@ io.on("connection", (socket) => {
       // Ajouter le joueur à la liste des joueurs connectés avec retry et fallback
       let playerAdded = false;
       try {
+        // Essayer d'abord avec gameState.addConnectedPlayer avec timeout court
         await Promise.race([
           gameState.addConnectedPlayer(playerId),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
         ]);
         playerAdded = true;
-        logger.info('Player added to connectedPlayers', { playerId });
+        logger.info('Player added to connectedPlayers via gameState', { playerId });
       } catch (addError) {
         logger.warn('Error adding player to connectedPlayers via gameState, trying direct MongoDB', {
           error: addError.message,
           playerId: playerId
         });
-        // Fallback: utiliser une requête MongoDB directe
+        // Fallback: utiliser une requête MongoDB directe IMMÉDIATEMENT
         try {
           const GameState = require('./models/GameState');
           const mongoose = require('mongoose');
+          logger.info('Attempting MongoDB fallback', { 
+            playerId,
+            mongooseReadyState: mongoose.connection.readyState,
+            mongooseHost: mongoose.connection.host,
+            mongooseName: mongoose.connection.name
+          });
           if (mongoose.connection.readyState === 1) {
-            await GameState.findOneAndUpdate(
-              { key: 'current' },
-              { $addToSet: { connectedPlayers: playerId } },
-              { upsert: true, maxTimeMS: 5000 }
-            );
-            playerAdded = true;
-            logger.info('Player added to connectedPlayers via direct MongoDB query', { playerId });
+            // Utiliser une requête directe avec timeout très court
+            const result = await Promise.race([
+              GameState.findOneAndUpdate(
+                { key: 'current' },
+                { $addToSet: { connectedPlayers: playerId } },
+                { upsert: true, new: true, maxTimeMS: 3000 }
+              ),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('MongoDB timeout')), 3000))
+            ]);
+            if (result) {
+              playerAdded = true;
+              logger.info('Player added to connectedPlayers via direct MongoDB query', { 
+                playerId,
+                connectedPlayersCount: result.connectedPlayers?.length || 0
+              });
+            } else {
+              logger.warn('Direct MongoDB query returned null', { playerId });
+            }
           } else {
-            logger.error('MongoDB not connected, cannot add player', { playerId });
+            logger.error('MongoDB not connected, cannot add player', { 
+              playerId,
+              readyState: mongoose.connection.readyState 
+            });
           }
         } catch (mongoError) {
           logger.error('Error adding player via direct MongoDB query', {
             error: mongoError.message,
+            errorStack: mongoError.stack?.substring(0, 200),
             playerId: playerId
           });
         }
         // Continuer même si l'ajout échoue pour ne pas bloquer le joueur
+      }
+      
+      if (!playerAdded) {
+        logger.warn('Player was not added to connectedPlayers, but continuing registration', { playerId });
       }
       
       // Stocker le socket ID pour ce joueur
