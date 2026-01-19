@@ -40,20 +40,20 @@
           </div>
 
           <!-- Login Button -->
-          <button
-            @click="showLogin = true"
+          <router-link
+            to="/auth/login"
             class="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base text-white hover:text-yellow-300 transition-all font-bold rounded-xl hover:bg-white/20 backdrop-blur-md whitespace-nowrap flex-shrink-0 border border-white/30 shadow-lg hover:shadow-xl"
           >
             {{ t('landing.login') }}
-          </button>
+          </router-link>
 
           <!-- Sign Up Button -->
-          <button
-            @click="showSignup = true"
+          <router-link
+            to="/auth/signup"
             class="px-4 sm:px-5 md:px-7 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl font-bold hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl text-xs sm:text-sm md:text-base whitespace-nowrap flex-shrink-0 border-2 border-yellow-300/50 drop-shadow-lg"
           >
             {{ t('landing.signup') }}
-          </button>
+          </router-link>
         </div>
       </div>
     </header>
@@ -71,24 +71,46 @@
           {{ t('landing.subtitle') }}
         </p>
 
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 my-8 sm:my-10 md:my-12 w-full max-w-2xl mx-auto px-4">
-          <router-link
-            to="/player/register"
-            class="group w-full sm:w-auto px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 shadow-2xl hover:shadow-yellow-500/70 flex items-center justify-center space-x-3 whitespace-nowrap border-2 border-yellow-300/50"
-          >
-            <span class="truncate drop-shadow-lg">{{ t('landing.playNow') }}</span>
-            <svg class="w-6 h-6 sm:w-7 sm:h-7 transform group-hover:translate-x-1 transition-transform flex-shrink-0 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </router-link>
+        <!-- CTA Section - Enter Game Code -->
+        <div class="w-full max-w-2xl mx-auto my-8 sm:my-10 md:my-12 px-4">
+          <div class="bg-gradient-to-br from-white/20 to-purple-900/40 backdrop-blur-md rounded-3xl border-2 border-white/30 p-6 sm:p-8 md:p-10 shadow-2xl">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 sm:mb-6 text-center drop-shadow-lg">
+              {{ t('landing.cta.title') }}
+            </h2>
+            <p class="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 text-center drop-shadow-lg">
+              {{ t('landing.cta.subtitle') }}
+            </p>
+            
+            <form @submit.prevent="handleGameCodeSubmit" class="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div class="flex-1">
+                <input
+                  v-model="gameCode"
+                  type="text"
+                  maxlength="6"
+                  :placeholder="t('landing.cta.codePlaceholder')"
+                  class="w-full px-6 sm:px-8 py-4 sm:py-5 md:py-6 bg-white/90 border-2 border-white/50 rounded-2xl text-center text-2xl sm:text-3xl md:text-4xl font-mono tracking-widest uppercase text-gray-900 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-yellow-400 transition-all shadow-lg focus:shadow-xl"
+                  @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                />
+              </div>
+              <button
+                type="submit"
+                :disabled="!gameCode || gameCode.length < 3"
+                class="px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-yellow-500/70 border-2 border-yellow-300/50 whitespace-nowrap"
+              >
+                {{ t('landing.cta.joinButton') }}
+              </button>
+            </form>
+          </div>
+        </div>
 
-          <button
-            @click="showSignup = true"
-            class="w-full sm:w-auto px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-white/20 backdrop-blur-md text-white border-3 border-white rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:bg-white/30 transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl whitespace-nowrap"
+        <!-- Secondary CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl mx-auto px-4">
+          <router-link
+            to="/auth/signup"
+            class="w-full sm:w-auto px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-white/20 backdrop-blur-md text-white border-2 border-white/50 rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:bg-white/30 transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl whitespace-nowrap"
           >
             <span class="truncate drop-shadow-lg">{{ t('landing.createAccount') }}</span>
-          </button>
+          </router-link>
         </div>
 
         <!-- Features Grid -->
@@ -549,6 +571,15 @@ export default {
       this.currentLang = lang
       this.changeLanguage(lang)
       localStorage.setItem('gameLanguage', lang)
+    },
+    handleGameCodeSubmit() {
+      if (this.gameCode && this.gameCode.length >= 3) {
+        // Rediriger vers la page de registration avec le code pré-rempli
+        this.$router.push({
+          path: '/player/register',
+          query: { code: this.gameCode }
+        })
+      }
     },
     async handleLogin() {
       this.loginError = ''

@@ -108,6 +108,12 @@ const translations = {
     'landing.feature4.title': 'Challenging',
     'landing.feature4.desc': 'Testez vos connaissances',
     
+    // CTA Section
+    'landing.cta.title': 'Rejoignez une Partie',
+    'landing.cta.subtitle': 'Entrez le code de la partie pour commencer à jouer',
+    'landing.cta.codePlaceholder': 'ABC123',
+    'landing.cta.joinButton': 'Rejoindre',
+    
     // Platform Description
     'landing.description.title': 'Qu\'est-ce qu\'IntelectGame ?',
     'landing.description.whatIs': 'IntelectGame est une plateforme de quiz interactifs en temps réel qui permet d\'organiser des sessions de questions-réponses avec plusieurs participants simultanément. C\'est comme un "Kahoot" ou un "Quizizz" que vous pouvez personnaliser et gérer vous-même.',
@@ -574,6 +580,12 @@ const translations = {
     'landing.feature4.title': 'Challenging',
     'landing.feature4.desc': 'Test your knowledge',
     
+    // CTA Section
+    'landing.cta.title': 'Join a Game',
+    'landing.cta.subtitle': 'Enter the game code to start playing',
+    'landing.cta.codePlaceholder': 'ABC123',
+    'landing.cta.joinButton': 'Join',
+    
     // Platform Description
     'landing.description.title': 'What is IntelectGame?',
     'landing.description.whatIs': 'IntelectGame is a real-time interactive quiz platform that allows you to organize question-and-answer sessions with multiple participants simultaneously. It\'s like a "Kahoot" or "Quizizz" that you can customize and manage yourself.',
@@ -1039,6 +1051,12 @@ const translations = {
     'landing.feature4.title': 'Сложный',
     'landing.feature4.desc': 'Проверьте свои знания',
     
+    // CTA Section
+    'landing.cta.title': 'Присоединиться к Игре',
+    'landing.cta.subtitle': 'Введите код игры, чтобы начать играть',
+    'landing.cta.codePlaceholder': 'ABC123',
+    'landing.cta.joinButton': 'Присоединиться',
+    
     // Platform Description
     'landing.description.title': 'Что такое IntelectGame?',
     'landing.description.whatIs': 'IntelectGame — это платформа для интерактивных викторин в реальном времени, которая позволяет организовывать сессии вопросов и ответов с несколькими участниками одновременно. Это как "Kahoot" или "Quizizz", которые вы можете настроить и управлять самостоятельно.',
@@ -1489,6 +1507,12 @@ const translations = {
     'landing.feature3.desc': 'Spill med venner',
     'landing.feature4.title': 'Utfordrende',
     'landing.feature4.desc': 'Test din kunnskap',
+    
+    // CTA Section
+    'landing.cta.title': 'Bli Med i et Spill',
+    'landing.cta.subtitle': 'Skriv inn spillkoden for å begynne å spille',
+    'landing.cta.codePlaceholder': 'ABC123',
+    'landing.cta.joinButton': 'Bli Med',
     
     // Platform Description
     'landing.description.title': 'Hva er IntelectGame?',
