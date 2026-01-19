@@ -386,13 +386,13 @@ services:
       - "traefik.http.routers.grafana-api-gateway.rule=Path(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
       - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-redirect"
-      - "traefik.http.routers.grafana-api-gateway.priority=25"
+      - "traefik.http.routers.grafana-api-gateway.priority=35"
       - "traefik.http.routers.grafana-api-gateway.service=noop@internal"
       # Route pour /container-monitoring (redirect vers Grafana)
       - "traefik.http.routers.grafana-container.rule=Path(`/container-monitoring`)"
       - "traefik.http.routers.grafana-container.entrypoints=web"
       - "traefik.http.routers.grafana-container.middlewares=grafana-container-redirect"
-      - "traefik.http.routers.grafana-container.priority=25"
+      - "traefik.http.routers.grafana-container.priority=35"
       - "traefik.http.routers.grafana-container.service=noop@internal"
 
   # cAdvisor for container metrics
