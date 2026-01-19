@@ -4,7 +4,7 @@
   "tags": ["containers", "docker", "monitoring"],
   "timezone": "browser",
   "schemaVersion": 16,
-  "version": 0,
+  "version": 1,
   "refresh": "10s",
   "panels": [
     {
@@ -14,8 +14,8 @@
       "title": "Container CPU Usage (%) - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_cpu_usage_seconds_total{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"}[5m]) * 100",
-          "legendFormat": "{{id}}",
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\".*intelectgame.*\"}[5m]) * 100",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -34,8 +34,8 @@
       "title": "Container Memory Usage - IntelectGame",
       "targets": [
         {
-          "expr": "container_memory_usage_bytes{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"}",
-          "legendFormat": "{{id}}",
+          "expr": "container_memory_usage_bytes{name=~\".*intelectgame.*\"}",
+          "legendFormat": "{{name}}",
           "refId": "A"
         }
       ],
@@ -52,13 +52,13 @@
       "title": "Container Network I/O - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_network_receive_bytes_total{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"}[5m])",
-          "legendFormat": "{{id}} - Receive",
+          "expr": "rate(container_network_receive_bytes_total{name=~\".*intelectgame.*\"}[5m])",
+          "legendFormat": "{{name}} - Receive",
           "refId": "A"
         },
         {
-          "expr": "rate(container_network_transmit_bytes_total{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"}[5m])",
-          "legendFormat": "{{id}} - Transmit",
+          "expr": "rate(container_network_transmit_bytes_total{name=~\".*intelectgame.*\"}[5m])",
+          "legendFormat": "{{name}} - Transmit",
           "refId": "B"
         }
       ],
@@ -75,7 +75,7 @@
       "title": "Active Containers (IntelectGame)",
       "targets": [
         {
-          "expr": "count(container_last_seen{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"})",
+          "expr": "count(container_last_seen{name=~\".*intelectgame.*\"})",
           "refId": "A"
         }
       ],
@@ -92,7 +92,7 @@
       "title": "Container List (IntelectGame)",
       "targets": [
         {
-          "expr": "container_last_seen{id=~\"/docker/(f9a6c6e0f3792f54ee0a764936ff1f46b4fdf1047610f10e8ea0985b1ebde199|260e38860f1cb222ae6121894d2bc219e3f198baa54c4571f6fc8e4ebf056feb|ad00d9401d6edb7065ea81cd573ca2658466631051f8b363309ef1b81244e431|e6680366ae20899be9adce399d3e076188635f5213e025038a0d6e0d6e7d99a0|72705f6476baa6ca690ee702170eb9fae3d802f561ca116e98d7ca7528bcdbf8|2e6c47feb536d42004779aa78f69873fc602a1bbad44d13e72ea8703bb711d5b|096b41836fe9b70a7a361cc394dba092482cd981f8e0f5fc1a01766101e39059|ee129972f55205ca9afe371f32e1ff5935c0ec5d0bc513ce5b144db8e1a7c002|7c7e67ce9f57424f72f71977c00e863303b13b3afdc27ffdc27e7640cb25c69b|0c8cab90906dc9428e05bce9f346f2d21e7f34754d3da40548506f4058bb1dbb|6a79e7642074935f34236b99eb5ace66aecfb045609a6321d8db1463ad67cee0|fc12589e46860a76dbac8eafe9238723dbfff7147159c0a21c4a6dfa641ec78c|2da269ecf48dbd5892263907e395ad4abe33c372b5c44ce0c4c6ab771ba6999b|52de98b6b59e41542e2d0dd0a639491ace4837671e3468e63758995752d00fbf)\"}",
+          "expr": "container_last_seen{name=~\".*intelectgame.*\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -104,13 +104,48 @@
           "options": {
             "excludeByName": {"Time": true, "__name__": true},
             "renameByName": {
-              "id": "Container ID",
+              "name": "Container Name",
               "Value": "Last Seen"
             }
           }
         }
       ]
+    },
+    {
+      "id": 6,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "type": "timeseries",
+      "title": "Container CPU Usage by Service",
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".*intelectgame.*\"}[5m])) by (name) * 100",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "type": "timeseries",
+      "title": "Container Memory Usage by Service",
+      "targets": [
+        {
+          "expr": "sum(container_memory_usage_bytes{name=~\".*intelectgame.*\"}) by (name)",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
     }
-  ],
-  "time": {"from": "now-1h", "to": "now"}
+  ]
 }
