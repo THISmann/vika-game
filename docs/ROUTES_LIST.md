@@ -66,8 +66,12 @@
 ### Traefik Dashboard
 | Route | Service | Description | Accès |
 |-------|---------|-------------|-------|
-| `http://82.202.141.248:8080/dashboard/` | traefik | Dashboard Traefik (API) | Public (local uniquement) |
-| `http://82.202.141.248/dashboard` | traefik | Dashboard Traefik (via Traefik) | Public |
+| `http://82.202.141.248:8080/dashboard/` | traefik | Dashboard Traefik (API directe) | Public (local uniquement, firewall) |
+| `http://82.202.141.248/dashboard/` | traefik | Dashboard Traefik (via Traefik) | Public |
+| `http://82.202.141.248/dashboard` | traefik | Dashboard Traefik (sans slash) | Public |
+| `http://82.202.141.248/traefik-dashboard` | traefik | Dashboard Traefik (route alternative) | Public |
+| `http://82.202.141.248/treafik-dashboard` | traefik | Dashboard Traefik (faute de frappe, redirection) | Public |
+| `http://82.202.141.248/api` | traefik | API Traefik (via Traefik) | Public |
 
 ### Grafana Dashboards
 | Route | Service | Description | Accès |
@@ -142,15 +146,17 @@ Les routes Traefik sont évaluées par ordre de priorité (plus élevé = évalu
 
 | Priorité | Route | Service | Description |
 |----------|-------|---------|-------------|
+| **50** | `/treafik-dashboard` | traefik | Dashboard Traefik (faute de frappe, redirection) |
 | **45** | `/user/*` | grafana | Routes utilisateur Grafana |
 | **40** | `/login`, `/api/`, `/public/`, `/d/`, `/img/`, `/favicon.ico` | grafana | Routes principales Grafana |
 | **35** | `/api-gateway-monitoring` | grafana | Dashboard API Gateway |
 | **35** | `/container-monitoring` | grafana | Dashboard Containers |
-| **30** | `/dashboard` | traefik | Dashboard Traefik |
+| **30** | `/dashboard`, `/api` | traefik | Dashboard Traefik |
+| **30** | `/traefik-dashboard` | traefik | Dashboard Traefik (route alternative) |
+| **20** | `/socket.io` | game-service | WebSocket Socket.IO |
 | **10** | `/vika-admin` | admin-frontend | Frontend administrateur |
 | **10** | `/vika-game` | frontend | Frontend utilisateur |
 | **10** | `/vika-game/api` | api-gateway | API Gateway |
-| **10** | `/socket.io` | game-service | WebSocket Socket.IO |
 
 ---
 
@@ -229,11 +235,14 @@ ws://82.202.141.248/socket.io/?EIO=4&transport=websocket
 - **Connexion Admin** : http://82.202.141.248/vika-admin/admin/login
 
 ### Pour les développeurs
-- **Traefik Dashboard** : http://82.202.141.248:8080/dashboard/
-- **Grafana** : http://82.202.141.248:3005
+- **Traefik Dashboard** : http://82.202.141.248/dashboard/ (ou http://82.202.141.248:8080/dashboard/ si firewall configuré)
+- **Traefik Dashboard (alternative)** : http://82.202.141.248/traefik-dashboard
+- **Grafana** : http://82.202.141.248:3005 ou http://82.202.141.248/login
 - **Prometheus** : http://82.202.141.248:9090
 - **API Gateway Monitoring** : http://82.202.141.248/api-gateway-monitoring
 - **Containers Monitoring** : http://82.202.141.248/container-monitoring
+- **cAdvisor** : http://82.202.141.248:8081
+- **Node Exporter** : http://82.202.141.248:9100/metrics
 
 ---
 

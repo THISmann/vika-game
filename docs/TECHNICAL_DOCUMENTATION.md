@@ -246,12 +246,22 @@ socket.emit('answer', {
 
 ### Routes Monitoring
 
-| Route | Service | Description |
-|-------|---------|-------------|
-| `/dashboard` | traefik | Dashboard Traefik (port 8080) |
-| `/api-gateway-monitoring` | grafana | Dashboard Grafana API Gateway |
-| `/container-monitoring` | grafana | Dashboard Grafana Containers |
-| `/d/*` | grafana | Dashboards Grafana (accès direct) |
+| Route | Service | Description | Priorité |
+|-------|---------|-------------|----------|
+| `/dashboard/` | traefik | Dashboard Traefik (via Traefik) | 30 |
+| `/dashboard` | traefik | Dashboard Traefik (sans slash) | 30 |
+| `/api` | traefik | API Traefik (via Traefik) | 30 |
+| `/traefik-dashboard` | traefik | Dashboard Traefik (route alternative) | 30 |
+| `/treafik-dashboard` | traefik | Dashboard Traefik (faute de frappe, redirection) | 50 |
+| `/api-gateway-monitoring` | grafana | Dashboard Grafana API Gateway | 35 |
+| `/container-monitoring` | grafana | Dashboard Grafana Containers | 35 |
+| `/d/*` | grafana | Dashboards Grafana (accès direct) | 40 |
+| `/login` | grafana | Page de connexion Grafana | 40 |
+| `/user/*` | grafana | Routes utilisateur Grafana | 45 |
+| `/api/*` | grafana | API Grafana | 40 |
+| `/public/*` | grafana | Assets publics Grafana | 40 |
+| `/img/*` | grafana | Images Grafana | 40 |
+| `/favicon.ico` | grafana | Favicon Grafana | 40 |
 
 ### Configuration Traefik
 
@@ -339,9 +349,13 @@ Expose les métriques Docker au format Prometheus.
 
 ### Traefik Dashboard
 
-**URL** : `http://localhost:8080/dashboard/`
+**URLs disponibles** :
+- `http://localhost:8080/dashboard/` - API directe (local uniquement, peut être bloqué par firewall)
+- `http://localhost/dashboard/` - Via Traefik (recommandé)
+- `http://localhost/traefik-dashboard` - Route alternative
+- `http://localhost/treafik-dashboard` - Route avec faute de frappe (redirection)
 
-Aucune authentification requise (local uniquement).
+Aucune authentification requise.
 
 ### MongoDB
 
@@ -452,8 +466,12 @@ socket.on('connect', () => {
 
 - **Frontend Utilisateur** : http://localhost/vika-game
 - **Frontend Admin** : http://localhost/vika-admin
-- **Grafana** : http://localhost:3005
-- **Traefik Dashboard** : http://localhost:8080/dashboard/
+- **Grafana** : http://localhost:3005 ou http://localhost/login
+- **Traefik Dashboard** : http://localhost/dashboard/ (ou http://localhost:8080/dashboard/ si firewall configuré)
+- **Traefik Dashboard (alternative)** : http://localhost/traefik-dashboard
+- **Prometheus** : http://localhost:9090
+- **cAdvisor** : http://localhost:8081
+- **Node Exporter** : http://localhost:9100/metrics
 
 ### Scénario de test complet
 
