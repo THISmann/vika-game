@@ -314,7 +314,7 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`)"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`) || Path(`/vika-game`)"
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.http.routers.frontend.priority=10"
