@@ -113,6 +113,10 @@ const translations = {
     'landing.cta.subtitle': 'Entrez le code de la partie pour commencer à jouer',
     'landing.cta.codePlaceholder': 'ABC123',
     'landing.cta.joinButton': 'Rejoindre',
+    'landing.cta.verifying': 'Vérification...',
+    'landing.cta.codeTooShort': 'Le code doit contenir au moins 3 caractères',
+    'landing.cta.invalidCode': 'Code invalide. Veuillez vérifier le code de la partie.',
+    'landing.cta.verifyError': 'Erreur lors de la vérification du code. Veuillez réessayer.',
     
     // Platform Description
     'landing.description.title': 'Qu\'est-ce qu\'IntelectGame ?',
@@ -585,6 +589,10 @@ const translations = {
     'landing.cta.subtitle': 'Enter the game code to start playing',
     'landing.cta.codePlaceholder': 'ABC123',
     'landing.cta.joinButton': 'Join',
+    'landing.cta.verifying': 'Verifying...',
+    'landing.cta.codeTooShort': 'The code must contain at least 3 characters',
+    'landing.cta.invalidCode': 'Invalid code. Please check the game code.',
+    'landing.cta.verifyError': 'Error verifying code. Please try again.',
     
     // Platform Description
     'landing.description.title': 'What is IntelectGame?',
@@ -1056,6 +1064,10 @@ const translations = {
     'landing.cta.subtitle': 'Введите код игры, чтобы начать играть',
     'landing.cta.codePlaceholder': 'ABC123',
     'landing.cta.joinButton': 'Присоединиться',
+    'landing.cta.verifying': 'Проверка...',
+    'landing.cta.codeTooShort': 'Код должен содержать не менее 3 символов',
+    'landing.cta.invalidCode': 'Неверный код. Пожалуйста, проверьте код игры.',
+    'landing.cta.verifyError': 'Ошибка при проверке кода. Пожалуйста, попробуйте снова.',
     
     // Platform Description
     'landing.description.title': 'Что такое IntelectGame?',
@@ -1513,6 +1525,10 @@ const translations = {
     'landing.cta.subtitle': 'Skriv inn spillkoden for å begynne å spille',
     'landing.cta.codePlaceholder': 'ABC123',
     'landing.cta.joinButton': 'Bli Med',
+    'landing.cta.verifying': 'Verifiserer...',
+    'landing.cta.codeTooShort': 'Koden må inneholde minst 3 tegn',
+    'landing.cta.invalidCode': 'Ugyldig kode. Vennligst sjekk spillkoden.',
+    'landing.cta.verifyError': 'Feil ved verifisering av kode. Vennligst prøv igjen.',
     
     // Platform Description
     'landing.description.title': 'Hva er IntelectGame?',

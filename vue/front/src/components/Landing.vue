@@ -88,16 +88,23 @@
                   type="text"
                   maxlength="6"
                   :placeholder="t('landing.cta.codePlaceholder')"
-                  class="w-full px-6 sm:px-8 py-4 sm:py-5 md:py-6 bg-white/90 border-2 border-white/50 rounded-2xl text-center text-2xl sm:text-3xl md:text-4xl font-mono tracking-widest uppercase text-gray-900 focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-yellow-400 transition-all shadow-lg focus:shadow-xl"
-                  @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
+                  :class="['w-full px-6 sm:px-8 py-4 sm:py-5 md:py-6 bg-white/90 border-2 rounded-2xl text-center text-2xl sm:text-3xl md:text-4xl font-mono tracking-widest uppercase text-gray-900 focus:outline-none focus:ring-4 transition-all shadow-lg focus:shadow-xl', codeError ? 'border-red-400 focus:ring-red-400' : 'border-white/50 focus:ring-yellow-400 focus:border-yellow-400']"
+                  @input="gameCode = gameCode.toUpperCase().replace(/[^A-Z0-9]/g, ''); codeError = ''"
                 />
+                <p v-if="codeError" class="mt-2 text-sm text-red-300 text-center drop-shadow-lg">{{ codeError }}</p>
               </div>
               <button
                 type="submit"
-                :disabled="!gameCode || gameCode.length < 3"
-                class="px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-yellow-500/70 border-2 border-yellow-300/50 whitespace-nowrap"
+                :disabled="!gameCode || gameCode.length < 3 || verifyingCode"
+                class="px-8 sm:px-10 md:px-12 py-4 sm:py-5 md:py-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 text-white rounded-2xl font-bold text-lg sm:text-xl md:text-2xl hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl hover:shadow-yellow-500/70 border-2 border-yellow-300/50 whitespace-nowrap relative"
               >
-                {{ t('landing.cta.joinButton') }}
+                <span v-if="verifyingCode" class="absolute left-0 inset-y-0 flex items-center pl-4">
+                  <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </span>
+                {{ verifyingCode ? (t('landing.cta.verifying') || 'Vérification...') : t('landing.cta.joinButton') }}
               </button>
             </form>
           </div>
@@ -572,13 +579,37 @@ export default {
       this.changeLanguage(lang)
       localStorage.setItem('gameLanguage', lang)
     },
-    handleGameCodeSubmit() {
-      if (this.gameCode && this.gameCode.length >= 3) {
-        // Rediriger vers la page de registration avec le code pré-rempli
-        this.$router.push({
-          path: '/player/register',
-          query: { code: this.gameCode }
+    async handleGameCodeSubmit() {
+      // Validation basique
+      if (!this.gameCode || this.gameCode.length < 3) {
+        this.codeError = this.t('landing.cta.codeTooShort') || 'Le code doit contenir au moins 3 caractères'
+        return
+      }
+
+      this.verifyingCode = true
+      this.codeError = ''
+
+      try {
+        // Vérifier le code via l'API avant de rediriger
+        const res = await axios.post(API_URLS.game.verifyCode, {
+          code: this.gameCode.toUpperCase()
         })
+
+        if (res.data.valid) {
+          // Code valide, rediriger vers la page de registration avec le code pré-rempli
+          this.$router.push({
+            path: '/player/register',
+            query: { code: this.gameCode.toUpperCase() }
+          })
+        } else {
+          // Code invalide
+          this.codeError = this.t('landing.cta.invalidCode') || 'Code invalide. Veuillez vérifier le code de la partie.'
+        }
+      } catch (err) {
+        // Erreur lors de la vérification
+        this.codeError = err.response?.data?.error || this.t('landing.cta.verifyError') || 'Erreur lors de la vérification du code. Veuillez réessayer.'
+      } finally {
+        this.verifyingCode = false
       }
     },
     async handleLogin() {
