@@ -225,10 +225,10 @@ services:
       - "traefik.enable=true"
       # Route pour exposer le dashboard Traefik sur /dashboard
       # Utiliser seulement /dashboard pour éviter de capturer /api-gateway-monitoring
-      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`) || (PathPrefix(`/api`) && !PathPrefix(`/api/ds`) && !PathPrefix(`/api/annotations`) && !PathPrefix(`/api/dashboards`) && !PathPrefix(`/api/user`) && !PathPrefix(`/api/org`) && !PathPrefix(`/api/folders`) && !PathPrefix(`/api/datasources`) && !PathPrefix(`/api/auth`) && !PathPrefix(`/api/search`) && !PathPrefix(`/api/public`))"
       - "traefik.http.routers.traefik-dashboard.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.priority=30"
+      - "traefik.http.routers.traefik-dashboard.priority=50"
       # Middleware pour remplacer /traefik-dashboard par /dashboard/ (proxy direct)
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(.*)"
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
