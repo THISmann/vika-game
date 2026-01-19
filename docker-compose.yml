@@ -365,8 +365,7 @@ services:
       - GF_SERVER_DOMAIN=82.202.141.248
       - GF_SERVER_PROTOCOL=http
       - GF_INSTALL_PLUGINS=
-      - GF_FEATURE_TOGGLES_ENABLE=kubernetesDashboards
-      - GF_KUBERNETES_DASHBOARDS_ENABLED=false
+      - GF_APISERVER_ENABLED=false
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
