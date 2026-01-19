@@ -366,6 +366,8 @@ services:
       - GF_SERVER_PROTOCOL=http
       - GF_INSTALL_PLUGINS=
       - GF_APISERVER_ENABLED=false
+      - GF_FEATURE_TOGGLES_ENABLE=
+      - GF_FEATURE_TOGGLES_DISABLE=kubernetesDashboards
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
