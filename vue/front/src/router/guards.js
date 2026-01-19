@@ -14,9 +14,9 @@ export function isUserAuthenticated() {
   if (!token || !userInfoStr) {
     if (process.env.NODE_ENV === 'development') {
       // console.log('🔒 Auth check failed: missing token or user info', { // Commented for production security
-        hasToken: !!token,
-        hasUserInfo: !!userInfoStr
-      })
+      //   hasToken: !!token,
+      //   hasUserInfo: !!userInfoStr
+      // })
     }
     return false
   }
