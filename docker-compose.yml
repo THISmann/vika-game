@@ -361,6 +361,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://82.202.141.248
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_INSTALL_PLUGINS=
     volumes:
       - grafana-data:/var/lib/grafana
@@ -380,7 +381,7 @@ services:
       - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.replacement=/d/api-gateway-dashboard/api-gateway-monitoring$$1"
       # Middleware pour remplacer le chemin pour /container-monitoring
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
-      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring$$1"
+      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s$$1"
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-api-gateway.rule=PathPrefix(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
