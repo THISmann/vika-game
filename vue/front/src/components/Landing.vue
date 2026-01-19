@@ -120,6 +120,7 @@
             <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature4.title') }}</h3>
             <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature4.desc') }}</p>
           </div>
+        </div>
 
         <!-- Platform Description Section -->
         <div class="w-full max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24 lg:mt-32 px-4 sm:px-6">
