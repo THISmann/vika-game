@@ -222,8 +222,8 @@ services:
     labels:
       - "traefik.enable=true"
       # Route pour exposer le dashboard Traefik sur /dashboard
-      # Exclure /api-gateway-monitoring et /container-monitoring de cette route
-      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`) || (PathPrefix(`/api`) && !Path(`/api-gateway-monitoring`) && !Path(`/container-monitoring`))"
+      # Utiliser seulement /dashboard pour éviter de capturer /api-gateway-monitoring
+      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.priority=30"
