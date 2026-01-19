@@ -59,7 +59,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-start px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 min-h-0 mt-20 sm:mt-24 md:mt-32 lg:mt-40">
+    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-start px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 min-h-0 mt-8 sm:mt-10 md:mt-12 lg:mt-16">
       <div class="w-full max-w-7xl mx-auto text-center flex flex-col items-center space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
         <!-- Title -->
         <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold leading-tight text-orange-400 px-2 sm:px-4 break-words drop-shadow-2xl w-full">
