@@ -229,15 +229,14 @@ services:
       - "traefik.http.routers.traefik-dashboard.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.priority=30"
-      # Middleware pour rediriger /traefik-dashboard vers /dashboard/
-      - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.regex=^https?://[^/]+/traefik-dashboard(.*)"
-      - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.replacement=http://82.202.141.248/dashboard$${1}"
-      - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.permanent=true"
-      # Route alternative pour le dashboard Traefik sur /traefik-dashboard (redirection)
+      # Middleware pour remplacer /traefik-dashboard par /dashboard/ (proxy direct)
+      - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(/.*)?$$"
+      - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
+      # Route alternative pour le dashboard Traefik sur /traefik-dashboard
       - "traefik.http.routers.traefik-dashboard-alt.rule=PathPrefix(`/traefik-dashboard`)"
       - "traefik.http.routers.traefik-dashboard-alt.entrypoints=web"
-      - "traefik.http.routers.traefik-dashboard-alt.middlewares=traefik-dashboard-redirect"
-      - "traefik.http.routers.traefik-dashboard-alt.service=noop@internal"
+      - "traefik.http.routers.traefik-dashboard-alt.middlewares=traefik-dashboard-replace"
+      - "traefik.http.routers.traefik-dashboard-alt.service=api@internal"
       - "traefik.http.routers.traefik-dashboard-alt.priority=30"
 
   # API Gateway
