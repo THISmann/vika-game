@@ -59,20 +59,20 @@
     </header>
 
     <!-- Main Content -->
-    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 min-h-0 mt-20 sm:mt-24 md:mt-32 lg:mt-40">
-      <div class="w-full max-w-7xl mx-auto text-center flex flex-col items-center justify-center space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
+    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-start px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 min-h-0 mt-20 sm:mt-24 md:mt-32 lg:mt-40">
+      <div class="w-full max-w-7xl mx-auto text-center flex flex-col items-center space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
         <!-- Title -->
-        <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold leading-tight text-orange-400 px-2 sm:px-4 break-words drop-shadow-2xl mb-4 sm:mb-6">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold leading-tight text-orange-400 px-2 sm:px-4 break-words drop-shadow-2xl w-full">
           {{ t('landing.title') }}
         </h1>
 
         <!-- Subtitle -->
-        <p class="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-gray-100 max-w-3xl mx-auto px-4 break-words leading-relaxed font-medium drop-shadow-lg">
+        <p class="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-gray-100 max-w-3xl mx-auto px-4 break-words leading-relaxed font-medium drop-shadow-lg w-full">
           {{ t('landing.subtitle') }}
         </p>
 
         <!-- CTA Section - Enter Game Code -->
-        <div class="w-full max-w-2xl mx-auto my-8 sm:my-10 md:my-12 px-4">
+        <div class="w-full max-w-2xl mx-auto px-4">
           <div class="bg-gradient-to-br from-white/20 to-purple-900/40 backdrop-blur-md rounded-3xl border-2 border-white/30 p-6 sm:p-8 md:p-10 shadow-2xl">
             <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 sm:mb-6 text-center drop-shadow-lg">
               {{ t('landing.cta.title') }}
@@ -114,38 +114,38 @@
         </div>
 
         <!-- Features Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8 max-w-6xl mx-auto w-full mt-10 sm:mt-14 md:mt-20 px-2 sm:px-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-8 max-w-6xl mx-auto w-full px-2 sm:px-4">
           <!-- Feature 1 -->
-          <div class="flex flex-col items-center p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
+          <div class="flex flex-col items-center justify-start p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
             <div class="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 filter drop-shadow-2xl flex-shrink-0">🏆</div>
-            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature1.title') }}</h3>
-            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature1.desc') }}</p>
+            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg flex-grow-0">{{ t('landing.feature1.title') }}</h3>
+            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium flex-grow">{{ t('landing.feature1.desc') }}</p>
           </div>
 
           <!-- Feature 2 -->
-          <div class="flex flex-col items-center p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-yellow-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
+          <div class="flex flex-col items-center justify-start p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-yellow-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
             <div class="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-yellow-300 filter drop-shadow-2xl flex-shrink-0">⚡</div>
-            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature2.title') }}</h3>
-            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature2.desc') }}</p>
+            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg flex-grow-0">{{ t('landing.feature2.title') }}</h3>
+            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium flex-grow">{{ t('landing.feature2.desc') }}</p>
           </div>
 
           <!-- Feature 3 -->
-          <div class="flex flex-col items-center p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
+          <div class="flex flex-col items-center justify-start p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
             <div class="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-blue-300 filter drop-shadow-2xl flex-shrink-0">🌐</div>
-            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature3.title') }}</h3>
-            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature3.desc') }}</p>
+            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg flex-grow-0">{{ t('landing.feature3.title') }}</h3>
+            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium flex-grow">{{ t('landing.feature3.desc') }}</p>
           </div>
 
           <!-- Feature 4 -->
-          <div class="flex flex-col items-center p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-red-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
+          <div class="flex flex-col items-center justify-start p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-purple-800/60 to-indigo-900/60 backdrop-blur-md rounded-3xl border-2 border-white/30 transform hover:scale-110 hover:shadow-2xl hover:shadow-red-500/50 transition-all duration-300 min-h-[200px] sm:min-h-[220px] md:min-h-[240px] shadow-xl">
             <div class="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-red-300 filter drop-shadow-2xl flex-shrink-0">🎯</div>
-            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature4.title') }}</h3>
-            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature4.desc') }}</p>
+            <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg flex-grow-0">{{ t('landing.feature4.title') }}</h3>
+            <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium flex-grow">{{ t('landing.feature4.desc') }}</p>
           </div>
         </div>
 
         <!-- Platform Description Section -->
-        <div class="w-full max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24 lg:mt-32 px-4 sm:px-6">
+        <div class="w-full max-w-6xl mx-auto px-4 sm:px-6">
           <div class="bg-gradient-to-br from-white/10 to-purple-900/30 backdrop-blur-md rounded-3xl border-2 border-white/30 p-6 sm:p-8 md:p-10 lg:p-12 shadow-2xl">
             <!-- Title -->
             <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-yellow-400 mb-6 sm:mb-8 text-center drop-shadow-2xl">
