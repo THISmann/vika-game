@@ -375,35 +375,29 @@ services:
       - "traefik.docker.network=user1_app-network"
       # Service Grafana
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      # Middleware de redirect pour /api-gateway-monitoring vers Grafana (port 3005)
-      - "traefik.http.middlewares.grafana-api-gateway-redirect.redirectregex.regex=^http://([^/]+)/api-gateway-monitoring(.*)"
-      - "traefik.http.middlewares.grafana-api-gateway-redirect.redirectregex.replacement=http://$$1:3005/d/api-gateway-dashboard/api-gateway-monitoring?orgId=1&from=now-1h&to=now&timezone=browser&refresh=10s"
-      - "traefik.http.middlewares.grafana-api-gateway-redirect.redirectregex.permanent=false"
-      # Middleware de redirect pour /container-monitoring vers Grafana (port 3005)
-      - "traefik.http.middlewares.grafana-container-redirect.redirectregex.regex=^http://([^/]+)/container-monitoring(.*)"
-      - "traefik.http.middlewares.grafana-container-redirect.redirectregex.replacement=http://$$1:3005/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s"
-      - "traefik.http.middlewares.grafana-container-redirect.redirectregex.permanent=false"
-      # Route pour /api-gateway-monitoring (redirect vers Grafana port 3005)
-      - "traefik.http.routers.grafana-api-gateway.rule=Path(`/api-gateway-monitoring`)"
+      # Middleware pour remplacer le chemin pour /api-gateway-monitoring
+      - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.regex=^/api-gateway-monitoring(.*)"
+      - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.replacement=/d/api-gateway-dashboard/api-gateway-monitoring$$1"
+      # Middleware pour remplacer le chemin pour /container-monitoring
+      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
+      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring$$1"
+      # Route pour /api-gateway-monitoring (proxy vers Grafana)
+      - "traefik.http.routers.grafana-api-gateway.rule=PathPrefix(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
-      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-redirect"
+      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace"
       - "traefik.http.routers.grafana-api-gateway.priority=35"
-      - "traefik.http.routers.grafana-api-gateway.service=noop@internal"
-      # Route pour /container-monitoring (redirect vers Grafana port 3005)
-      - "traefik.http.routers.grafana-container.rule=Path(`/container-monitoring`)"
+      - "traefik.http.routers.grafana-api-gateway.service=grafana"
+      # Route pour /container-monitoring (proxy vers Grafana)
+      - "traefik.http.routers.grafana-container.rule=PathPrefix(`/container-monitoring`)"
       - "traefik.http.routers.grafana-container.entrypoints=web"
-      - "traefik.http.routers.grafana-container.middlewares=grafana-container-redirect"
+      - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace"
       - "traefik.http.routers.grafana-container.priority=35"
-      - "traefik.http.routers.grafana-container.service=noop@internal"
-      # Route pour /login (redirect vers Grafana port 3005)
-      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.regex=^http://([^/]+)/login(.*)"
-      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.replacement=http://$$1:3005/login$$2"
-      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.permanent=false"
-      - "traefik.http.routers.grafana-login.rule=PathPrefix(`/login`)"
-      - "traefik.http.routers.grafana-login.entrypoints=web"
-      - "traefik.http.routers.grafana-login.middlewares=grafana-login-redirect"
-      - "traefik.http.routers.grafana-login.priority=40"
-      - "traefik.http.routers.grafana-login.service=noop@internal"
+      - "traefik.http.routers.grafana-container.service=grafana"
+      # Route principale pour Grafana (login, API, dashboards, etc.)
+      - "traefik.http.routers.grafana-main.rule=PathPrefix(`/login`) || PathPrefix(`/api/`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`)"
+      - "traefik.http.routers.grafana-main.entrypoints=web"
+      - "traefik.http.routers.grafana-main.priority=40"
+      - "traefik.http.routers.grafana-main.service=grafana"
 
   # cAdvisor for container metrics
   cadvisor:
