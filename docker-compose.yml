@@ -382,16 +382,19 @@ services:
       # Middleware pour remplacer le chemin pour /container-monitoring
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s$$1"
+      # Middleware pour ajouter les headers nécessaires pour Grafana
+      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=http"
+      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=82.202.141.248"
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-api-gateway.rule=PathPrefix(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
-      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace"
+      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace,grafana-headers"
       - "traefik.http.routers.grafana-api-gateway.priority=35"
       - "traefik.http.routers.grafana-api-gateway.service=grafana"
       # Route pour /container-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-container.rule=PathPrefix(`/container-monitoring`)"
       - "traefik.http.routers.grafana-container.entrypoints=web"
-      - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace"
+      - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace,grafana-headers"
       - "traefik.http.routers.grafana-container.priority=35"
       - "traefik.http.routers.grafana-container.service=grafana"
       # Route principale pour Grafana (login, API, dashboards, etc.)
