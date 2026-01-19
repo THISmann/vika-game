@@ -521,6 +521,9 @@ export default {
       currentLang: localStorage.getItem('gameLanguage') || 'fr',
       showLogin: false,
       showSignup: false,
+      gameCode: '',
+      verifyingCode: false,
+      codeError: '',
       loginForm: {
         email: '',
         password: ''
