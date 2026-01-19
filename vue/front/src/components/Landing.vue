@@ -30,6 +30,7 @@
               <option value="fr" class="bg-gray-800 text-white">🇫🇷 FR</option>
               <option value="en" class="bg-gray-800 text-white">🇬🇧 EN</option>
               <option value="ru" class="bg-gray-800 text-white">🇷🇺 RU</option>
+              <option value="no" class="bg-gray-800 text-white">🇳🇴 NO</option>
             </select>
             <div class="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
               <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,6 +119,184 @@
             <div class="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-5 md:mb-6 text-red-300 filter drop-shadow-2xl flex-shrink-0">🎯</div>
             <h3 class="text-white font-extrabold text-sm sm:text-base md:text-lg lg:text-xl mb-3 sm:mb-4 text-center leading-tight break-words drop-shadow-lg">{{ t('landing.feature4.title') }}</h3>
             <p class="text-gray-100 text-xs sm:text-sm md:text-base text-center leading-relaxed break-words font-medium">{{ t('landing.feature4.desc') }}</p>
+          </div>
+
+        <!-- Platform Description Section -->
+        <div class="w-full max-w-6xl mx-auto mt-16 sm:mt-20 md:mt-24 lg:mt-32 px-4 sm:px-6">
+          <div class="bg-gradient-to-br from-white/10 to-purple-900/30 backdrop-blur-md rounded-3xl border-2 border-white/30 p-6 sm:p-8 md:p-10 lg:p-12 shadow-2xl">
+            <!-- Title -->
+            <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-yellow-400 mb-6 sm:mb-8 text-center drop-shadow-2xl">
+              {{ t('landing.description.title') }}
+            </h2>
+
+            <!-- What is IntelectGame -->
+            <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-100 mb-8 sm:mb-10 md:mb-12 leading-relaxed text-center max-w-4xl mx-auto drop-shadow-lg">
+              {{ t('landing.description.whatIs') }}
+            </p>
+
+            <!-- Who is it for -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10 md:mb-12">
+              <!-- For Administrators -->
+              <div class="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-2xl border-2 border-blue-400/30 p-5 sm:p-6 md:p-7 shadow-xl">
+                <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-blue-300 mb-3 sm:mb-4 drop-shadow-lg">
+                  {{ t('landing.description.forAdmins') }}
+                </h3>
+                <p class="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed">
+                  {{ t('landing.description.forAdminsDesc') }}
+                </p>
+              </div>
+
+              <!-- For Participants -->
+              <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-sm rounded-2xl border-2 border-purple-400/30 p-5 sm:p-6 md:p-7 shadow-xl">
+                <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-purple-300 mb-3 sm:mb-4 drop-shadow-lg">
+                  {{ t('landing.description.forParticipants') }}
+                </h3>
+                <p class="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed">
+                  {{ t('landing.description.forParticipantsDesc') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Main Features -->
+            <div class="mb-8 sm:mb-10 md:mb-12">
+              <h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8 text-center drop-shadow-lg">
+                {{ t('landing.description.features.title') }}
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+                <!-- Quick Registration -->
+                <div class="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur-sm rounded-xl border-2 border-green-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-green-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    {{ t('landing.description.features.quickRegistration') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.features.quickRegistrationDesc') }}
+                  </p>
+                </div>
+
+                <!-- Real-Time -->
+                <div class="bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm rounded-xl border-2 border-yellow-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-yellow-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    {{ t('landing.description.features.realTime') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.features.realTimeDesc') }}
+                  </p>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 backdrop-blur-sm rounded-xl border-2 border-blue-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-blue-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    {{ t('landing.description.features.leaderboard') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.features.leaderboardDesc') }}
+                  </p>
+                </div>
+
+                <!-- Results -->
+                <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-sm rounded-xl border-2 border-purple-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-purple-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    {{ t('landing.description.features.results') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.features.resultsDesc') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Platform Strengths -->
+            <div class="mb-8 sm:mb-10 md:mb-12">
+              <h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8 text-center drop-shadow-lg">
+                {{ t('landing.description.strengths.title') }}
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+                <!-- Real-Time -->
+                <div class="bg-gradient-to-br from-indigo-900/40 to-blue-900/40 backdrop-blur-sm rounded-xl border-2 border-indigo-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-indigo-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    ⚡ {{ t('landing.description.strengths.realTime') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.strengths.realTimeDesc') }}
+                  </p>
+                </div>
+
+                <!-- Cross-Platform -->
+                <div class="bg-gradient-to-br from-teal-900/40 to-cyan-900/40 backdrop-blur-sm rounded-xl border-2 border-teal-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-teal-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    📱 {{ t('landing.description.strengths.crossPlatform') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.strengths.crossPlatformDesc') }}
+                  </p>
+                </div>
+
+                <!-- Telegram -->
+                <div class="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-xl border-2 border-blue-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-blue-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    🤖 {{ t('landing.description.strengths.telegram') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.strengths.telegramDesc') }}
+                  </p>
+                </div>
+
+                <!-- Security -->
+                <div class="bg-gradient-to-br from-red-900/40 to-pink-900/40 backdrop-blur-sm rounded-xl border-2 border-red-400/30 p-4 sm:p-5 shadow-lg">
+                  <h4 class="text-lg sm:text-xl font-bold text-red-300 mb-2 sm:mb-3 drop-shadow-lg">
+                    🔒 {{ t('landing.description.strengths.security') }}
+                  </h4>
+                  <p class="text-xs sm:text-sm md:text-base text-gray-200 leading-relaxed">
+                    {{ t('landing.description.strengths.securityDesc') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Use Cases -->
+            <div class="mb-8 sm:mb-10 md:mb-12">
+              <h3 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8 text-center drop-shadow-lg">
+                {{ t('landing.description.useCases.title') }}
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+                <!-- Education -->
+                <div class="bg-gradient-to-br from-yellow-900/40 to-amber-900/40 backdrop-blur-sm rounded-xl border-2 border-yellow-400/30 p-4 sm:p-5 md:p-6 shadow-lg">
+                  <h4 class="text-xl sm:text-2xl font-bold text-yellow-300 mb-3 sm:mb-4 drop-shadow-lg">
+                    🎓 {{ t('landing.description.useCases.education') }}
+                  </h4>
+                  <p class="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed">
+                    {{ t('landing.description.useCases.educationDesc') }}
+                  </p>
+                </div>
+
+                <!-- Business -->
+                <div class="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-xl border-2 border-blue-400/30 p-4 sm:p-5 md:p-6 shadow-lg">
+                  <h4 class="text-xl sm:text-2xl font-bold text-blue-300 mb-3 sm:mb-4 drop-shadow-lg">
+                    🏢 {{ t('landing.description.useCases.business') }}
+                  </h4>
+                  <p class="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed">
+                    {{ t('landing.description.useCases.businessDesc') }}
+                  </p>
+                </div>
+
+                <!-- Events -->
+                <div class="bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-sm rounded-xl border-2 border-purple-400/30 p-4 sm:p-5 md:p-6 shadow-lg">
+                  <h4 class="text-xl sm:text-2xl font-bold text-purple-300 mb-3 sm:mb-4 drop-shadow-lg">
+                    🎉 {{ t('landing.description.useCases.events') }}
+                  </h4>
+                  <p class="text-sm sm:text-base md:text-lg text-gray-200 leading-relaxed">
+                    {{ t('landing.description.useCases.eventsDesc') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-gradient-to-br from-orange-900/40 to-yellow-900/40 backdrop-blur-sm rounded-2xl border-2 border-orange-400/30 p-5 sm:p-6 md:p-8 shadow-xl">
+              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-100 leading-relaxed text-center drop-shadow-lg">
+                {{ t('landing.description.summary') }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
