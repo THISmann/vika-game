@@ -14,7 +14,7 @@
       "title": "Container CPU Usage (%) - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[5m]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[5m]) * 100 or vector(0)",
           "legendFormat": "{{id}}",
           "refId": "A"
         }
@@ -34,7 +34,7 @@
       "title": "Container Memory Usage - IntelectGame",
       "targets": [
         {
-          "expr": "container_memory_usage_bytes{id=~\"/docker/.+\"}",
+          "expr": "container_memory_usage_bytes{id=~\"/docker/.+\"} or vector(0)",
           "legendFormat": "{{id}}",
           "refId": "A"
         }
@@ -52,12 +52,12 @@
       "title": "Container Network I/O - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_network_receive_bytes_total{id=~\"/docker/.+\"}[5m])",
+          "expr": "rate(container_network_receive_bytes_total{id=~\"/docker/.+\"}[5m]) or vector(0)",
           "legendFormat": "{{id}} - Receive",
           "refId": "A"
         },
         {
-          "expr": "rate(container_network_transmit_bytes_total{id=~\"/docker/.+\"}[5m])",
+          "expr": "rate(container_network_transmit_bytes_total{id=~\"/docker/.+\"}[5m]) or vector(0)",
           "legendFormat": "{{id}} - Transmit",
           "refId": "B"
         }
@@ -75,7 +75,7 @@
       "title": "Active Containers (IntelectGame)",
       "targets": [
         {
-          "expr": "count(container_last_seen{id=~\"/docker/.+\"})",
+          "expr": "count(container_last_seen{id=~\"/docker/.+\"}) or vector(0)",
           "refId": "A"
         }
       ],
@@ -92,7 +92,7 @@
       "title": "Container List (IntelectGame)",
       "targets": [
         {
-          "expr": "container_last_seen{id=~\"/docker/.+\"}",
+          "expr": "container_last_seen{id=~\"/docker/.+\"} or vector(0)",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -118,7 +118,7 @@
       "title": "Container CPU Usage by Service",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[5m])) by (id) * 100",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[5m])) by (id) * 100 or vector(0)",
           "legendFormat": "{{id}}",
           "refId": "A"
         }
@@ -136,7 +136,7 @@
       "title": "Container Memory Usage by Service",
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{id=~\"/docker/.+\"}) by (id)",
+          "expr": "sum(container_memory_usage_bytes{id=~\"/docker/.+\"}) by (id) or vector(0)",
           "legendFormat": "{{id}}",
           "refId": "A"
         }
