@@ -231,7 +231,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.priority=30"
       # Middleware pour rediriger /traefik-dashboard vers /dashboard/
       - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.regex=^https?://[^/]+/traefik-dashboard(.*)"
-      - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.replacement=http://$${1}/dashboard$${2}"
+      - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.replacement=http://82.202.141.248/dashboard$${1}"
       - "traefik.http.middlewares.traefik-dashboard-redirect.redirectregex.permanent=true"
       # Route alternative pour le dashboard Traefik sur /traefik-dashboard (redirection)
       - "traefik.http.routers.traefik-dashboard-alt.rule=PathPrefix(`/traefik-dashboard`)"
