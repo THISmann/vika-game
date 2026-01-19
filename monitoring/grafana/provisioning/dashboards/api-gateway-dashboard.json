@@ -50,7 +50,7 @@
         "title": "HTTP Error Rate",
         "targets": [
           {
-            "expr": "rate(http_request_errors_total{service=\"api-gateway\"}[5m])",
+            "expr": "rate(http_request_errors_total{service=\"api-gateway\"}[5m]) or vector(0)",
             "legendFormat": "{{method}} {{route}} - {{error_type}}",
             "refId": "A"
           }
@@ -100,7 +100,7 @@
       "title": "Error Log Summary (Last 24h)",
         "targets": [
           {
-          "expr": "topk(10, sum by (method, route, status_code, error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h])))",
+          "expr": "topk(10, sum by (method, route, status_code, error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h]))) or vector(0)",
             "format": "table",
             "instant": true,
             "refId": "A"
@@ -122,7 +122,7 @@
       "title": "Total Errors",
       "targets": [
         {
-          "expr": "sum(http_request_errors_total{service=\"api-gateway\"})",
+          "expr": "sum(http_request_errors_total{service=\"api-gateway\"}) or vector(0)",
           "refId": "A"
         }
       ],
@@ -138,7 +138,7 @@
       "title": "Errors by Type",
       "targets": [
         {
-          "expr": "sum by (error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h]))",
+          "expr": "sum by (error_type) (rate(http_request_errors_total{service=\"api-gateway\"}[24h])) or vector(0)",
           "legendFormat": "{{error_type}}",
           "refId": "A"
         }
