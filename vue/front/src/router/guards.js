@@ -13,7 +13,7 @@ export function isUserAuthenticated() {
   // Vérifier que le token existe
   if (!token || !userInfoStr) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔒 Auth check failed: missing token or user info', {
+      // console.log('🔒 Auth check failed: missing token or user info', { // Commented for production security
         hasToken: !!token,
         hasUserInfo: !!userInfoStr
       })
@@ -45,7 +45,7 @@ export function isUserAuthenticated() {
       
       const lastDashIndex = decoded.lastIndexOf('-')
       if (lastDashIndex === -1) {
-        console.log('🔒 Auth check failed: no dash found in token')
+        // console.log('🔒 Auth check failed: no dash found in token') // Commented for production security
         localStorage.removeItem('authToken')
         localStorage.removeItem('userInfo')
         return false
@@ -66,7 +66,7 @@ export function isUserAuthenticated() {
         
         // Vérifier que le rôle correspond
         if (role !== 'user' && role !== 'admin') {
-          console.log('🔒 Auth check failed: invalid role in token', role)
+          // console.log('🔒 Auth check failed: invalid role in token', role) // Commented for production security
           localStorage.removeItem('authToken')
           localStorage.removeItem('userInfo')
           return false
@@ -85,7 +85,7 @@ export function isUserAuthenticated() {
         const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
         
         if (now - timestamp > TOKEN_EXPIRY) {
-          console.log('🔒 Auth check failed: token expired')
+          // console.log('🔒 Auth check failed: token expired') // Commented for production security
           // Token expiré, nettoyer le localStorage
           localStorage.removeItem('authToken')
           localStorage.removeItem('userInfo')

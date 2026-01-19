@@ -13,7 +13,7 @@ export function isAdminAuthenticated() {
   // Vérifier que le token existe et que le flag admin est présent
   if (!token || adminFlag !== '1') {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔒 Auth check failed: missing token or admin flag', {
+      // console.log('🔒 Auth check failed: missing token or admin flag', { // Commented for production security
         hasToken: !!token,
         hasAdminFlag: adminFlag === '1',
         adminFlagValue: adminFlag
@@ -36,7 +36,7 @@ export function isAdminAuthenticated() {
     // Extraire le timestamp (dernière partie après le dernier tiret)
     const lastDashIndex = decoded.lastIndexOf('-')
     if (lastDashIndex === -1 || lastDashIndex === decoded.length - 1) {
-      console.log('🔒 Auth check failed: no dash found in token or invalid format')
+      // console.log('🔒 Auth check failed: no dash found in token or invalid format') // Commented for production security
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
       return false
@@ -58,7 +58,7 @@ export function isAdminAuthenticated() {
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔒 Token verification:', { role, timestamp, timestampStr, decoded: decoded.substring(0, 50) + '...' })
+      // console.log('🔒 Token verification:', { role, timestamp, timestampStr, decoded: decoded.substring(0, 50) + '...' }) // Commented for production security
     }
     
     // Vérifier que le rôle est admin
@@ -82,7 +82,7 @@ export function isAdminAuthenticated() {
     const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 heures
     
     if (now - timestamp > TOKEN_EXPIRY) {
-      console.log('🔒 Auth check failed: token expired')
+      // console.log('🔒 Auth check failed: token expired') // Commented for production security
       // Token expiré, nettoyer le localStorage
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
