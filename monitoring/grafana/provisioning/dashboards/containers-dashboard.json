@@ -14,8 +14,8 @@
       "title": "Container CPU Usage (%) - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_cpu_usage_seconds_total{name=~\".*intelectgame.*\"}[5m]) * 100",
-          "legendFormat": "{{name}}",
+          "expr": "rate(container_cpu_usage_seconds_total{id=~\"/docker/.*\",id!=\"/docker\"}[5m]) * 100",
+          "legendFormat": "{{id}}",
           "refId": "A"
         }
       ],
@@ -34,8 +34,8 @@
       "title": "Container Memory Usage - IntelectGame",
       "targets": [
         {
-          "expr": "container_memory_usage_bytes{name=~\".*intelectgame.*\"}",
-          "legendFormat": "{{name}}",
+          "expr": "container_memory_usage_bytes{id=~\"/docker/.*\",id!=\"/docker\"}",
+          "legendFormat": "{{id}}",
           "refId": "A"
         }
       ],
@@ -52,13 +52,13 @@
       "title": "Container Network I/O - IntelectGame",
       "targets": [
         {
-          "expr": "rate(container_network_receive_bytes_total{name=~\".*intelectgame.*\"}[5m])",
-          "legendFormat": "{{name}} - Receive",
+          "expr": "rate(container_network_receive_bytes_total{id=~\"/docker/.*\",id!=\"/docker\"}[5m])",
+          "legendFormat": "{{id}} - Receive",
           "refId": "A"
         },
         {
-          "expr": "rate(container_network_transmit_bytes_total{name=~\".*intelectgame.*\"}[5m])",
-          "legendFormat": "{{name}} - Transmit",
+          "expr": "rate(container_network_transmit_bytes_total{id=~\"/docker/.*\",id!=\"/docker\"}[5m])",
+          "legendFormat": "{{id}} - Transmit",
           "refId": "B"
         }
       ],
@@ -75,7 +75,7 @@
       "title": "Active Containers (IntelectGame)",
       "targets": [
         {
-          "expr": "count(container_last_seen{name=~\".*intelectgame.*\"})",
+          "expr": "count(container_last_seen{id=~\"/docker/.*\",id!=\"/docker\"})",
           "refId": "A"
         }
       ],
@@ -92,7 +92,7 @@
       "title": "Container List (IntelectGame)",
       "targets": [
         {
-          "expr": "container_last_seen{name=~\".*intelectgame.*\"}",
+          "expr": "container_last_seen{id=~\"/docker/.*\",id!=\"/docker\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -104,7 +104,7 @@
           "options": {
             "excludeByName": {"Time": true, "__name__": true},
             "renameByName": {
-              "name": "Container Name",
+              "id": "Container ID",
               "Value": "Last Seen"
             }
           }
@@ -118,8 +118,8 @@
       "title": "Container CPU Usage by Service",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".*intelectgame.*\"}[5m])) by (name) * 100",
-          "legendFormat": "{{name}}",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id=~\"/docker/.*\",id!=\"/docker\"}[5m])) by (id) * 100",
+          "legendFormat": "{{id}}",
           "refId": "A"
         }
       ],
@@ -136,8 +136,8 @@
       "title": "Container Memory Usage by Service",
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{name=~\".*intelectgame.*\"}) by (name)",
-          "legendFormat": "{{name}}",
+          "expr": "sum(container_memory_usage_bytes{id=~\"/docker/.*\",id!=\"/docker\"}) by (id)",
+          "legendFormat": "{{id}}",
           "refId": "A"
         }
       ],
