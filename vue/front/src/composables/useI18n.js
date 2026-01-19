@@ -116,7 +116,7 @@ const translations = {
     
     // Platform Description
     'landing.description.title': 'Qu\'est-ce qu\'IntelectGame ?',
-    'landing.description.whatIs': 'IntelectGame est une plateforme de quiz interactifs en temps réel qui permet d\'organiser des sessions de questions-réponses avec plusieurs participants simultanément. C\'est comme un "Kahoot" ou un "Quizizz" que vous pouvez personnaliser et gérer vous-même.',
+    'landing.description.whatIs': 'IntelectGame est une plateforme de quiz interactifs en temps réel qui permet d\'organiser des sessions de questions-réponses avec plusieurs participants simultanément. Une solution complète que vous pouvez personnaliser et gérer vous-même selon vos besoins.',
     'landing.description.forAdmins': 'Pour les Administrateurs',
     'landing.description.forAdminsDesc': 'Enseignants, formateurs, organisateurs d\'événements, responsables RH pour des formations, animateurs de conférences ou réunions.',
     'landing.description.forParticipants': 'Pour les Participants',
@@ -588,7 +588,7 @@ const translations = {
     
     // Platform Description
     'landing.description.title': 'What is IntelectGame?',
-    'landing.description.whatIs': 'IntelectGame is a real-time interactive quiz platform that allows you to organize question-and-answer sessions with multiple participants simultaneously. It\'s like a "Kahoot" or "Quizizz" that you can customize and manage yourself.',
+    'landing.description.whatIs': 'IntelectGame is a real-time interactive quiz platform that allows you to organize question-and-answer sessions with multiple participants simultaneously. A complete solution that you can customize and manage yourself according to your needs.',
     'landing.description.forAdmins': 'For Administrators',
     'landing.description.forAdminsDesc': 'Teachers, trainers, event organizers, HR managers for training sessions, conference or meeting facilitators.',
     'landing.description.forParticipants': 'For Participants',
@@ -1059,7 +1059,7 @@ const translations = {
     
     // Platform Description
     'landing.description.title': 'Что такое IntelectGame?',
-    'landing.description.whatIs': 'IntelectGame — это платформа для интерактивных викторин в реальном времени, которая позволяет организовывать сессии вопросов и ответов с несколькими участниками одновременно. Это как "Kahoot" или "Quizizz", которые вы можете настроить и управлять самостоятельно.',
+    'landing.description.whatIs': 'IntelectGame — это платформа для интерактивных викторин в реальном времени, которая позволяет организовывать сессии вопросов и ответов с несколькими участниками одновременно. Полное решение, которое вы можете настроить и управлять самостоятельно в соответствии с вашими потребностями.',
     'landing.description.forAdmins': 'Для Администраторов',
     'landing.description.forAdminsDesc': 'Учителя, тренеры, организаторы мероприятий, менеджеры по персоналу для обучения, ведущие конференций или встреч.',
     'landing.description.forParticipants': 'Для Участников',
@@ -1516,7 +1516,7 @@ const translations = {
     
     // Platform Description
     'landing.description.title': 'Hva er IntelectGame?',
-    'landing.description.whatIs': 'IntelectGame er en sanntids interaktiv quiz-plattform som lar deg organisere spørsmål-og-svar-økter med flere deltakere samtidig. Det er som en "Kahoot" eller "Quizizz" som du kan tilpasse og administrere selv.',
+    'landing.description.whatIs': 'IntelectGame er en sanntids interaktiv quiz-plattform som lar deg organisere spørsmål-og-svar-økter med flere deltakere samtidig. En komplett løsning som du kan tilpasse og administrere selv etter dine behov.',
     'landing.description.forAdmins': 'For Administratorer',
     'landing.description.forAdminsDesc': 'Lærere, trenere, arrangører, HR-ledere for treningsøkter, konferanse- eller møtefasilitatorer.',
     'landing.description.forParticipants': 'For Deltakere',
