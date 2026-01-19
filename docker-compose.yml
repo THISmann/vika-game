@@ -375,12 +375,18 @@ services:
       - "traefik.docker.network=user1_app-network"
       # Service Grafana
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      # Route principale pour Grafana (pour accéder à /login, etc.)
+      - "traefik.http.routers.grafana.rule=PathPrefix(`/grafana`) || PathPrefix(`/login`) || PathPrefix(`/api`) || PathPrefix(`/public`)"
+      - "traefik.http.routers.grafana.entrypoints=web"
+      - "traefik.http.routers.grafana.priority=40"
+      - "traefik.http.routers.grafana.service=grafana"
+      - "traefik.http.middlewares.grafana-stripprefix.stripprefix.prefixes=/grafana"
       # Middleware pour remplacer le chemin pour /api-gateway-monitoring
       - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.regex=^/api-gateway-monitoring(.*)"
-      - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.replacement=/d/api-gateway-dashboard/api-gateway-monitoring?orgId=1&from=now-1h&to=now&timezone=browser&refresh=10s$$1"
+      - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.replacement=/d/api-gateway-dashboard/api-gateway-monitoring$$1"
       # Middleware pour remplacer le chemin pour /container-monitoring
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
-      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s$$1"
+      - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring$$1"
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-api-gateway.rule=Path(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
