@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
     // Si un token existe, l'ajouter au header Authorization
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token, 'Token length:', token.length)
+      // console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token, 'Token length:', token.length) // Commented for production security
     } else {
       if (config.url && (config.url.includes('/quiz/') || config.url.includes('/game/'))) {
         console.warn('⚠️ No auth token found for admin request:', config.url)
@@ -109,8 +109,8 @@ export const authService = {
       // Stocker le token et le flag admin
       localStorage.setItem('adminToken', response.data.token)
       localStorage.setItem('admin', '1')
-      console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...')
-      console.log('✅ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken'))
+      // console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...') // Commented for production security
+      // console.log('✅ localStorage.getItem("adminToken"):', localStorage.getItem('adminToken')) // Commented for production security
       return response.data.token
     }
     

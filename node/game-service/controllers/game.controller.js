@@ -749,8 +749,8 @@ exports.startGame = async (req, res) => {
     const authHeader = req.headers.authorization || req.headers.Authorization;
     
     if (authHeader) {
-      console.log(`🚀 Token preview: ${authHeader.substring(0, 50)}...`);
-      console.log(`🚀 Token length: ${authHeader.length}`);
+      // console.log(`🚀 Token preview: ${authHeader.substring(0, 50)}...`); // Commented for production security
+      // console.log(`🚀 Token length: ${authHeader.length}`); // Commented for production security
     } else {
       console.error("❌ No authorization header found in request");
       console.error("❌ Available headers:", Object.keys(req.headers));
@@ -780,12 +780,12 @@ exports.startGame = async (req, res) => {
     try {
       console.log(`📋 Fetching questions from ${services.QUIZ_SERVICE_URL}/quiz/full`);
       console.log(`📋 Auth header present: ${!!authHeader}`);
-      console.log(`📋 Auth header value: ${authHeader.substring(0, 50)}...`);
+      // console.log(`📋 Auth header value: ${authHeader.substring(0, 50)}...`); // Commented for production security
       
       // S'assurer que le header est au format "Bearer <token>"
       const authHeaderFormatted = authHeader.startsWith('Bearer ') ? authHeader : `Bearer ${authHeader.replace(/^Bearer\s+/i, '')}`;
       
-      console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`);
+      // console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`); // Commented for production security
       
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
         headers: { 
@@ -983,7 +983,7 @@ exports.nextQuestion = async (req, res) => {
       // S'assurer que le header est au format "Bearer <token>"
       const authHeaderFormatted = authHeader.startsWith('Bearer ') ? authHeader : `Bearer ${authHeader.replace(/^Bearer\s+/i, '')}`;
       
-      console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`);
+      // console.log(`📋 Formatted auth header: ${authHeaderFormatted.substring(0, 50)}...`); // Commented for production security
       
       const quiz = await axios.get(`${services.QUIZ_SERVICE_URL}/quiz/full`, {
         headers: { 

@@ -19,7 +19,7 @@ const authenticateAdmin = async (req, res, next) => {
 
     console.log(`🔐 Authorization header: ${authHeader ? 'Present' : 'Missing'}`)
     if (authHeader) {
-      console.log(`🔐 Token preview: ${authHeader.substring(0, 50)}...`)
+      // console.log(`🔐 Token preview: ${authHeader.substring(0, 50)}...`) // Commented for production security
     }
 
     if (!authHeader) {
@@ -41,7 +41,7 @@ const authenticateAdmin = async (req, res, next) => {
     }
 
     const token = parts[1]
-    console.log(`🔐 Token extracted: ${token.substring(0, 30)}...`)
+    // console.log(`🔐 Token extracted: ${token.substring(0, 30)}...`) // Commented for production security
 
     try {
       // Essayer d'abord la vérification locale si disponible
@@ -73,7 +73,7 @@ const authenticateAdmin = async (req, res, next) => {
       // Sinon, vérifier via le service d'authentification
       const verifyUrl = `${AUTH_SERVICE_URL}/auth/verify-token`
       console.log(`🔐 Calling auth service: ${verifyUrl}`)
-      console.log(`🔐 Request headers: Authorization: Bearer ${token.substring(0, 30)}...`)
+      // console.log(`🔐 Request headers: Authorization: Bearer ${token.substring(0, 30)}...`) // Commented for production security
       
       const response = await axios.get(verifyUrl, {
         headers: {

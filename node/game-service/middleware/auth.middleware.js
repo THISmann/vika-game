@@ -16,7 +16,7 @@ const authenticateAdmin = async (req, res, next) => {
     console.log('🔐 Headers:', JSON.stringify(req.headers, null, 2))
     console.log('🔐 Authorization header:', req.headers.authorization ? 'PRESENT' : 'MISSING')
     if (req.headers.authorization) {
-      console.log('🔐 Authorization value:', req.headers.authorization.substring(0, 30) + '...')
+      // console.log('🔐 Authorization value:', req.headers.authorization.substring(0, 30) + '...') // Commented for production security
     }
     
     // Récupérer le token depuis le header Authorization

@@ -53,7 +53,7 @@ token = token.trim().replace(/[\r\n]/g, '');
 if (!token.includes(':')) {
   console.error('❌ TELEGRAM_BOT_TOKEN format invalide!');
   console.error('   Le token doit être au format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
-  console.error(`   Token reçu (longueur: ${token.length}): ${token.substring(0, 20)}...`);
+  // console.error(`   Token reçu (longueur: ${token.length}): ${token.substring(0, 20)}...`); // Commented for production security
   process.exit(1);
 }
 
@@ -62,14 +62,14 @@ const tokenParts = token.split(':');
 if (tokenParts.length !== 2 || !/^\d+$/.test(tokenParts[0]) || tokenParts[1].length < 10) {
   console.error('❌ TELEGRAM_BOT_TOKEN format invalide!');
   console.error('   Format attendu: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
-  console.error(`   Token reçu: ${tokenParts[0]}:${tokenParts[1].substring(0, 10)}...`);
+  // console.error(`   Token reçu: ${tokenParts[0]}:${tokenParts[1].substring(0, 10)}...`); // Commented for production security
   process.exit(1);
 }
 
 // Logger le début du token pour debug (sans exposer le token complet)
 const tokenPrefix = tokenParts[0];
 const tokenLength = token.length;
-console.log(`🔐 Telegram Bot Token configuré (ID: ${tokenPrefix}..., longueur: ${tokenLength})`);
+// console.log(`🔐 Telegram Bot Token configuré (ID: ${tokenPrefix}..., longueur: ${tokenLength})`); // Commented for production security
 
 // Tester le token avant de créer le bot
 async function testToken() {

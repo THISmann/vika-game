@@ -399,7 +399,7 @@ exports.forgotPassword = async (req, res) => {
 
         // In production, send email with reset link
         // For now, we'll return the token in development (remove in production!)
-        console.log(`🔐 Password reset token for ${user.email}: ${resetToken}`);
+        // console.log(`🔐 Password reset token for ${user.email}: ${resetToken}`); // Commented for production security
         
         res.json({ 
             message: "If an account exists with this email, a password reset link has been sent",

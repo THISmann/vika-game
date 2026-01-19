@@ -23,7 +23,7 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
       // Log pour débogage (toujours actif pour diagnostiquer les problèmes)
-      console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token, 'Token length:', token.length)
+      // console.log('🔑 Adding auth token to request:', config.url, 'Token present:', !!token, 'Token length:', token.length) // Commented for production security
     } else {
       // Log si pas de token (toujours actif pour diagnostiquer)
       if (config.url && (config.url.includes('/quiz/') || config.url.includes('/game/'))) {
@@ -116,8 +116,8 @@ export const authService = {
       // Stocker le token et les infos utilisateur
       localStorage.setItem('authToken', response.data.token)
       localStorage.setItem('userInfo', JSON.stringify(response.data.user))
-      console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...')
-      console.log('✅ localStorage.getItem("authToken"):', localStorage.getItem('authToken'))
+      // console.log('✅ Login successful, token stored:', response.data.token.substring(0, 20) + '...') // Commented for production security
+      // console.log('✅ localStorage.getItem("authToken"):', localStorage.getItem('authToken')) // Commented for production security
       return response.data
     }
     
