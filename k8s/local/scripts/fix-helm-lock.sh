@@ -16,7 +16,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Vérifier les secrets de release (qui contiennent l'état)
-NAMESPACES=("database" "monitoring" "nginx-ingress" "elk" "intelectgame")
+NAMESPACES=("database" "monitoring" "nginx-ingress" "intelectgame")
 
 for ns in "${NAMESPACES[@]}"; do
   echo "🔍 Vérification du namespace: $ns"

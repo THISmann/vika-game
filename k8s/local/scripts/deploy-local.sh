@@ -64,18 +64,9 @@ helm upgrade --install nginx-ingress "$HELM_DIR/nginx-ingress" \
   --wait \
   --timeout 5m
 
-# ELK
-echo ""
-echo "--- 4. Déploiement ELK Stack ---"
-helm upgrade --install elk "$HELM_DIR/elk" \
-  --namespace elk \
-  --create-namespace \
-  --wait \
-  --timeout 10m
-
 # Application
 echo ""
-echo "--- 5. Déploiement Application ---"
+echo "--- 4. Déploiement Application ---"
 # Nettoyer les ressources existantes non gérées par Helm
 echo "🧹 Nettoyage des ressources existantes..."
 
