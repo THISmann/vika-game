@@ -395,6 +395,15 @@ services:
       - "traefik.http.routers.grafana-container.middlewares=grafana-container-redirect"
       - "traefik.http.routers.grafana-container.priority=35"
       - "traefik.http.routers.grafana-container.service=noop@internal"
+      # Route pour /login (redirect vers Grafana port 3005)
+      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.regex=^http://([^/]+)/login(.*)"
+      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.replacement=http://$$1:3005/login$$2"
+      - "traefik.http.middlewares.grafana-login-redirect.redirectregex.permanent=false"
+      - "traefik.http.routers.grafana-login.rule=PathPrefix(`/login`)"
+      - "traefik.http.routers.grafana-login.entrypoints=web"
+      - "traefik.http.routers.grafana-login.middlewares=grafana-login-redirect"
+      - "traefik.http.routers.grafana-login.priority=40"
+      - "traefik.http.routers.grafana-login.service=noop@internal"
 
   # cAdvisor for container metrics
   cadvisor:
