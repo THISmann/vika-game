@@ -246,7 +246,7 @@ services:
       - "traefik.http.routers.treafik-dashboard.entrypoints=web"
       - "traefik.http.routers.treafik-dashboard.middlewares=treafik-dashboard-replace"
       - "traefik.http.routers.treafik-dashboard.service=api@internal"
-      - "traefik.http.routers.treafik-dashboard.priority=30"
+      - "traefik.http.routers.treafik-dashboard.priority=50"
 
   # API Gateway
   api-gateway:
