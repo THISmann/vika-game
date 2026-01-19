@@ -230,7 +230,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.priority=30"
       # Middleware pour remplacer /traefik-dashboard par /dashboard/
-      - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(/.*)?$$"
+      - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(.*)"
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$$1"
       # Route alternative pour le dashboard Traefik sur /traefik-dashboard
       - "traefik.http.routers.traefik-dashboard-alt.rule=PathPrefix(`/traefik-dashboard`)"
