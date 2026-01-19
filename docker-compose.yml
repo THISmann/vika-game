@@ -232,6 +232,8 @@ services:
       # Middleware pour remplacer /traefik-dashboard par /dashboard/ (proxy direct)
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(.*)"
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
+      # Service HTTP pour proxy vers l'API Traefik (port 8080)
+      - "traefik.http.services.traefik-api.loadbalancer.server.port=8080"
       # Middleware pour remplacer /treafik-dashboard (faute de frappe) par /dashboard/
       - "traefik.http.middlewares.treafik-dashboard-replace.replacepathregex.regex=^/treafik-dashboard(.*)"
       - "traefik.http.middlewares.treafik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
@@ -241,11 +243,11 @@ services:
       - "traefik.http.routers.traefik-dashboard-alt.middlewares=traefik-dashboard-replace"
       - "traefik.http.routers.traefik-dashboard-alt.service=api@internal"
       - "traefik.http.routers.traefik-dashboard-alt.priority=30"
-      # Route pour /treafik-dashboard (faute de frappe) sur port 80
+      # Route pour /treafik-dashboard (faute de frappe) sur port 80 - utilise le service traefik-api
       - "traefik.http.routers.treafik-dashboard.rule=PathPrefix(`/treafik-dashboard`)"
       - "traefik.http.routers.treafik-dashboard.entrypoints=web"
       - "traefik.http.routers.treafik-dashboard.middlewares=treafik-dashboard-replace"
-      - "traefik.http.routers.treafik-dashboard.service=api@internal"
+      - "traefik.http.routers.treafik-dashboard.service=traefik-api"
       - "traefik.http.routers.treafik-dashboard.priority=50"
 
   # API Gateway
