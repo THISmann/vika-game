@@ -210,6 +210,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=user1_app-network"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.dashboard.address=:8080"
       - "--log.level=INFO"
       - "--accesslog=true"
       - "--api.dashboard=true"
@@ -232,12 +233,38 @@ services:
       # Middleware pour remplacer /traefik-dashboard par /dashboard/ (proxy direct)
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(.*)"
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
-      # Route alternative pour le dashboard Traefik sur /traefik-dashboard
+      # Middleware pour remplacer /treafik-dashboard (faute de frappe) par /dashboard/
+      - "traefik.http.middlewares.treafik-dashboard-replace.replacepathregex.regex=^/treafik-dashboard(.*)"
+      - "traefik.http.middlewares.treafik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
+      # Route alternative pour le dashboard Traefik sur /traefik-dashboard (port 80)
       - "traefik.http.routers.traefik-dashboard-alt.rule=PathPrefix(`/traefik-dashboard`)"
       - "traefik.http.routers.traefik-dashboard-alt.entrypoints=web"
       - "traefik.http.routers.traefik-dashboard-alt.middlewares=traefik-dashboard-replace"
       - "traefik.http.routers.traefik-dashboard-alt.service=api@internal"
       - "traefik.http.routers.traefik-dashboard-alt.priority=30"
+      # Route pour /treafik-dashboard (faute de frappe) sur port 80
+      - "traefik.http.routers.treafik-dashboard.rule=PathPrefix(`/treafik-dashboard`)"
+      - "traefik.http.routers.treafik-dashboard.entrypoints=web"
+      - "traefik.http.routers.treafik-dashboard.middlewares=treafik-dashboard-replace"
+      - "traefik.http.routers.treafik-dashboard.service=api@internal"
+      - "traefik.http.routers.treafik-dashboard.priority=30"
+      # Route pour /treafik-dashboard sur port 8080 (dashboard entrypoint)
+      - "traefik.http.routers.treafik-dashboard-8080.rule=PathPrefix(`/treafik-dashboard`)"
+      - "traefik.http.routers.treafik-dashboard-8080.entrypoints=dashboard"
+      - "traefik.http.routers.treafik-dashboard-8080.middlewares=treafik-dashboard-replace"
+      - "traefik.http.routers.treafik-dashboard-8080.service=api@internal"
+      - "traefik.http.routers.treafik-dashboard-8080.priority=30"
+      # Route pour /traefik-dashboard sur port 8080 (dashboard entrypoint)
+      - "traefik.http.routers.traefik-dashboard-8080.rule=PathPrefix(`/traefik-dashboard`)"
+      - "traefik.http.routers.traefik-dashboard-8080.entrypoints=dashboard"
+      - "traefik.http.routers.traefik-dashboard-8080.middlewares=traefik-dashboard-replace"
+      - "traefik.http.routers.traefik-dashboard-8080.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard-8080.priority=30"
+      # Route pour /dashboard sur port 8080 (dashboard entrypoint)
+      - "traefik.http.routers.traefik-dashboard-direct-8080.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik-dashboard-direct-8080.entrypoints=dashboard"
+      - "traefik.http.routers.traefik-dashboard-direct-8080.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard-direct-8080.priority=30"
 
   # API Gateway
   api-gateway:
