@@ -375,12 +375,11 @@ services:
       - "traefik.docker.network=user1_app-network"
       # Service Grafana
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      # Route principale pour Grafana (pour accéder à /login, etc.)
-      - "traefik.http.routers.grafana.rule=PathPrefix(`/grafana`) || PathPrefix(`/login`) || PathPrefix(`/api`) || PathPrefix(`/public`)"
-      - "traefik.http.routers.grafana.entrypoints=web"
-      - "traefik.http.routers.grafana.priority=40"
-      - "traefik.http.routers.grafana.service=grafana"
-      - "traefik.http.middlewares.grafana-stripprefix.stripprefix.prefixes=/grafana"
+      # Route principale pour Grafana (pour accéder à /login, /api, etc.)
+      - "traefik.http.routers.grafana-main.rule=PathPrefix(`/login`) || PathPrefix(`/api`) || PathPrefix(`/public`) || PathPrefix(`/avatar`) || PathPrefix(`/d/`)"
+      - "traefik.http.routers.grafana-main.entrypoints=web"
+      - "traefik.http.routers.grafana-main.priority=40"
+      - "traefik.http.routers.grafana-main.service=grafana"
       # Middleware pour remplacer le chemin pour /api-gateway-monitoring
       - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.regex=^/api-gateway-monitoring(.*)"
       - "traefik.http.middlewares.grafana-api-gateway-replace.replacepathregex.replacement=/d/api-gateway-dashboard/api-gateway-monitoring$$1"
