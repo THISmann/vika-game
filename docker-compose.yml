@@ -493,7 +493,7 @@ services:
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api-gateway-monitoring`)"
       - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
-      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace,grafana-strip-prefix,grafana-headers"
+      - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace,grafana-headers"
       - "traefik.http.routers.grafana-api-gateway.priority=35"
       - "traefik.http.routers.grafana-api-gateway.service=grafana"
       # Route HTTPS Grafana API Gateway (désactivée temporairement)
@@ -506,7 +506,7 @@ services:
       # Route pour /container-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-container.rule=Host(`vika-game.ru`) && PathPrefix(`/container-monitoring`)"
       - "traefik.http.routers.grafana-container.entrypoints=web"
-      - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace,grafana-strip-prefix,grafana-headers"
+      - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace,grafana-headers"
       - "traefik.http.routers.grafana-container.priority=35"
       - "traefik.http.routers.grafana-container.service=grafana"
       # Route HTTPS Grafana Container (désactivée temporairement)
@@ -530,10 +530,10 @@ services:
       # - "traefik.http.routers.grafana-user-secure.priority=45"
       # - "traefik.http.routers.grafana-user-secure.service=grafana"
       # Route pour Grafana (toutes les routes /grafana/*)
-      - "traefik.http.middlewares.grafana-strip-prefix.stripprefix.prefixes=/grafana"
+      # Note: On ne supprime PAS le préfixe /grafana car Grafana doit le recevoir pour générer correctement le base href
       - "traefik.http.routers.grafana-main.rule=Host(`vika-game.ru`) && PathPrefix(`/grafana`)"
       - "traefik.http.routers.grafana-main.entrypoints=web"
-      - "traefik.http.routers.grafana-main.middlewares=grafana-strip-prefix,grafana-headers"
+      - "traefik.http.routers.grafana-main.middlewares=grafana-headers"
       - "traefik.http.routers.grafana-main.priority=40"
       - "traefik.http.routers.grafana-main.service=grafana"
       # Route HTTPS Grafana Main (désactivée temporairement)
