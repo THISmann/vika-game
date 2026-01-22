@@ -65,11 +65,11 @@ class SocketService {
     // console.log('🔌 Creating WebSocket connection:', wsUrl)
     // console.log('🔌 Socket path:', socketPath)
     // console.log('🔌 Connection options:', {
-      path: socketPath,
-      transports: ['polling', 'websocket'],
-      autoConnect: true,
-      timeout: 20000
-    })
+    //   path: socketPath,
+    //   transports: ['polling', 'websocket'],
+    //   autoConnect: true,
+    //   timeout: 20000
+    // })
     
     this.socket = io(wsUrl, {
       path: socketPath,
