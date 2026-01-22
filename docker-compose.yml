@@ -396,9 +396,9 @@ services:
     environment:
       # Use relative URLs for production (via Traefik/API Gateway)
       # In production, the browser accesses services through the same domain
-      - VITE_AUTH_SERVICE_URL=/vika-game/api
-      - VITE_QUIZ_SERVICE_URL=/vika-game/api
-      - VITE_GAME_SERVICE_URL=/vika-game/api
+      - VITE_AUTH_SERVICE_URL=/api
+      - VITE_QUIZ_SERVICE_URL=/api
+      - VITE_GAME_SERVICE_URL=/api
     command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --base /vika-admin/ --force"
     depends_on:
       api-gateway:
