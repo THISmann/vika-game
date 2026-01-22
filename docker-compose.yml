@@ -459,8 +459,8 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://vika-game.ru
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_SERVER_ROOT_URL=http://vika-game.ru/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SERVER_DOMAIN=vika-game.ru
       - GF_SERVER_PROTOCOL=http
       - GF_INSTALL_PLUGINS=
