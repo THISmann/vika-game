@@ -413,6 +413,11 @@ services:
       - "traefik.http.routers.admin-frontend.entrypoints=web"
       - "traefik.http.routers.admin-frontend.service=admin-frontend"
       - "traefik.http.services.admin-frontend.loadbalancer.server.port=5174"
+      # Middleware pour servir index.html pour les routes SPA
+      - "traefik.http.middlewares.admin-frontend-spa.regex=^/vika-admin/(?!@|api|socket\\.io|__).*$"
+      - "traefik.http.middlewares.admin-frontend-spa.replacepathregex.regex=^/vika-admin/(.*)$"
+      - "traefik.http.middlewares.admin-frontend-spa.replacepathregex.replacement=/vika-admin/index.html"
+      - "traefik.http.routers.admin-frontend.middlewares=admin-frontend-spa"
       - "traefik.http.routers.admin-frontend.priority=10"
       # Route HTTPS Admin (désactivée temporairement)
       # - "traefik.http.routers.admin-frontend-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
