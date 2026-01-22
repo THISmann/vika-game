@@ -331,13 +331,13 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api`) && !PathPrefix(`/api/ds`) && !PathPrefix(`/api/annotations`) && !PathPrefix(`/api/dashboards`) && !PathPrefix(`/api/user`) && !PathPrefix(`/api/org`) && !PathPrefix(`/api/folders`) && !PathPrefix(`/api/datasources`) && !PathPrefix(`/api/search`) && !PathPrefix(`/api/public`)"
       - "traefik.http.routers.api-gateway.entrypoints=web"
       - "traefik.http.routers.api-gateway.service=api-gateway"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
       - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
-      - "traefik.http.routers.api-gateway.priority=20"
+      - "traefik.http.routers.api-gateway.priority=50"
       # Route HTTPS API (désactivée temporairement)
       # - "traefik.http.routers.api-gateway-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/api`)"
       # - "traefik.http.routers.api-gateway-secure.entrypoints=websecure"
@@ -525,7 +525,7 @@ services:
       # - "traefik.http.routers.grafana-user-secure.priority=45"
       # - "traefik.http.routers.grafana-user-secure.service=grafana"
       # Route principale pour Grafana (login, API, dashboards, etc.) - routes spécifiques uniquement
-      - "traefik.http.routers.grafana-main.rule=Host(`vika-game.ru`) && (PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`))"
+      - "traefik.http.routers.grafana-main.rule=Host(`vika-game.ru`) && (PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`))"
       - "traefik.http.routers.grafana-main.entrypoints=web"
       - "traefik.http.routers.grafana-main.middlewares=grafana-headers"
       - "traefik.http.routers.grafana-main.priority=40"
