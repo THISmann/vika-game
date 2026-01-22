@@ -11,69 +11,26 @@ const spaFallback = () => {
   return {
     name: 'spa-fallback',
     configureServer(server) {
-      // Ajouter un middleware au début de la chaîne pour intercepter les requêtes SPA
-      // Utiliser { at: 0 } pour l'ajouter au début
-      if (server.middlewares.stack) {
-        // Express-style middleware stack
-        server.middlewares.stack.unshift({
-          route: '',
-          handle: (req, res, next) => {
-            // Si la requête est pour une route SPA (pas un fichier statique)
-            if (req.url && 
-                req.url.startsWith('/vika-admin/') && 
-                !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html)$/) &&
-                !req.url.startsWith('/vika-admin/@') && 
-                !req.url.startsWith('/vika-admin/api') &&
-                !req.url.startsWith('/vika-admin/socket.io') &&
-                !req.url.startsWith('/vika-admin/__')) {
-              // Servir index.html pour toutes les routes SPA
-              req.url = '/vika-admin/index.html'
-            }
-            next()
-          }
-        })
-      } else {
-        // Connect-style middleware
-        const originalUse = server.middlewares.use.bind(server.middlewares)
-        server.middlewares.use = function(path, fn) {
-          if (typeof path === 'function') {
-            fn = path
-            path = '/'
-          }
-          return originalUse(path, (req, res, next) => {
-            // Si la requête est pour une route SPA (pas un fichier statique)
-            if (req.url && 
-                req.url.startsWith('/vika-admin/') && 
-                !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html)$/) &&
-                !req.url.startsWith('/vika-admin/@') && 
-                !req.url.startsWith('/vika-admin/api') &&
-                !req.url.startsWith('/vika-admin/socket.io') &&
-                !req.url.startsWith('/vika-admin/__')) {
-              // Servir index.html pour toutes les routes SPA
-              req.url = '/vika-admin/index.html'
-            }
-            if (fn) {
-              fn(req, res, next)
-            } else {
-              next()
-            }
-          })
+      // Utiliser un middleware qui intercepte les requêtes avant Vite
+      const handle = (req, res, next) => {
+        // Si la requête est pour une route SPA (pas un fichier statique)
+        if (req.url && 
+            req.url.startsWith('/vika-admin/') && 
+            !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html)$/) &&
+            !req.url.startsWith('/vika-admin/@') && 
+            !req.url.startsWith('/vika-admin/api') &&
+            !req.url.startsWith('/vika-admin/socket.io') &&
+            !req.url.startsWith('/vika-admin/__')) {
+          // Servir index.html pour toutes les routes SPA
+          req.url = '/vika-admin/index.html'
         }
-        // Ajouter le middleware maintenant
-        server.middlewares.use((req, res, next) => {
-          // Si la requête est pour une route SPA (pas un fichier statique)
-          if (req.url && 
-              req.url.startsWith('/vika-admin/') && 
-              !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html)$/) &&
-              !req.url.startsWith('/vika-admin/@') && 
-              !req.url.startsWith('/vika-admin/api') &&
-              !req.url.startsWith('/vika-admin/socket.io') &&
-              !req.url.startsWith('/vika-admin/__')) {
-            // Servir index.html pour toutes les routes SPA
-            req.url = '/vika-admin/index.html'
-          }
-          next()
-        })
+        next()
+      }
+      // Ajouter le middleware au début de la chaîne
+      if (Array.isArray(server.middlewares.stack)) {
+        server.middlewares.stack.unshift({ route: '', handle })
+      } else {
+        server.middlewares.use(handle)
       }
     }
   }
