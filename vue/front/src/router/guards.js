@@ -12,12 +12,10 @@ export function isUserAuthenticated() {
   
   // Vérifier que le token existe
   if (!token || !userInfoStr) {
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('🔒 Auth check failed: missing token or user info', { // Commented for production security
-      //   hasToken: !!token,
-      //   hasUserInfo: !!userInfoStr
-      // })
-    }
+    // console.log('🔒 Auth check failed: missing token or user info', {
+    //   hasToken: !!token,
+    //   hasUserInfo: !!userInfoStr
+    // })
     return false
   }
 

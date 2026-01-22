@@ -12,13 +12,11 @@ export function isAdminAuthenticated() {
   
   // Vérifier que le token existe et que le flag admin est présent
   if (!token || adminFlag !== '1') {
-    if (process.env.NODE_ENV === 'development') {
-      // console.log('🔒 Auth check failed: missing token or admin flag', { // Commented for production security
-        hasToken: !!token,
-        hasAdminFlag: adminFlag === '1',
-        adminFlagValue: adminFlag
-      })
-    }
+    // console.log('🔒 Auth check failed: missing token or admin flag', {
+    //   hasToken: !!token,
+    //   hasAdminFlag: adminFlag === '1',
+    //   adminFlagValue: adminFlag
+    // })
     return false
   }
 
@@ -63,7 +61,7 @@ export function isAdminAuthenticated() {
     
     // Vérifier que le rôle est admin
     if (role !== 'admin') {
-      console.log('🔒 Auth check failed: invalid role', role)
+      // console.log('🔒 Auth check failed: invalid role', role)
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
       return false
@@ -71,7 +69,7 @@ export function isAdminAuthenticated() {
     
     // Vérifier que le timestamp est valide
     if (isNaN(timestamp) || timestamp <= 0) {
-      console.log('🔒 Auth check failed: invalid timestamp', timestamp)
+      // console.log('🔒 Auth check failed: invalid timestamp', timestamp)
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
       return false
@@ -92,7 +90,7 @@ export function isAdminAuthenticated() {
     // Token valide
     return true
   } catch (error) {
-    console.error('🔒 Error verifying token:', error)
+    // console.error('🔒 Error verifying token:', error)
     // En cas d'erreur de décodage, considérer comme non authentifié
     localStorage.removeItem('adminToken')
     localStorage.removeItem('admin')
