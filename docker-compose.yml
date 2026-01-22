@@ -319,11 +319,11 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`) || Host(`api.vika-game.ru`)"
+      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`)"
       - "traefik.http.routers.api-gateway.entrypoints=websecure"
       - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api-gateway.service=api-gateway"
-      - "traefik.http.routers.api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`) || Host(`api.vika-game.ru`)"
+      - "traefik.http.routers.api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`)"
       - "traefik.http.routers.api-gateway-http.entrypoints=web"
       - "traefik.http.routers.api-gateway-http.middlewares=redirect-to-https"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
@@ -407,11 +407,11 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.admin-frontend.rule=Host(`admin.vika-game.ru`) || PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
       - "traefik.http.routers.admin-frontend.entrypoints=websecure"
       - "traefik.http.routers.admin-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.admin-frontend.service=admin-frontend"
-      - "traefik.http.routers.admin-frontend-http.rule=Host(`admin.vika-game.ru`) || PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend-http.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
       - "traefik.http.routers.admin-frontend-http.entrypoints=web"
       - "traefik.http.routers.admin-frontend-http.middlewares=redirect-to-https"
       - "traefik.http.services.admin-frontend.loadbalancer.server.port=5174"
