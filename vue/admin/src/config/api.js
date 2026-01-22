@@ -107,14 +107,14 @@ export const API_CONFIG = {
 // En production avec proxy, les chemins sont déjà préfixés par /api/*
 const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production'
 
-// Détecter si on utilise l'API Gateway (toutes les URLs sont identiques et pointent vers le port 3000)
+// Détecter si on utilise l'API Gateway
+// En production, si les URLs sont identiques et commencent par /api, on utilise l'API Gateway
 const useApiGateway = API_CONFIG.AUTH_SERVICE === API_CONFIG.QUIZ_SERVICE && 
                       API_CONFIG.QUIZ_SERVICE === API_CONFIG.GAME_SERVICE &&
                       API_CONFIG.AUTH_SERVICE !== '' &&
-                      (API_CONFIG.AUTH_SERVICE.startsWith('http://') || API_CONFIG.AUTH_SERVICE.startsWith('https://')) &&
-                      (API_CONFIG.AUTH_SERVICE.includes(':3000') || 
-                       API_CONFIG.AUTH_SERVICE.includes('localhost:3000') ||
-                       API_CONFIG.AUTH_SERVICE.includes('127.0.0.1:3000'))
+                      (API_CONFIG.AUTH_SERVICE.startsWith('/api') || 
+                       API_CONFIG.AUTH_SERVICE.startsWith('http://') || 
+                       API_CONFIG.AUTH_SERVICE.startsWith('https://'))
 
 export const API_URLS = {
   auth: {
@@ -129,9 +129,11 @@ export const API_URLS = {
         ? `${API_CONFIG.AUTH_SERVICE}/players`
         : `${API_CONFIG.AUTH_SERVICE}/auth/players`,
     login: useApiGateway
-      ? (API_CONFIG.AUTH_SERVICE.includes('/auth') 
-          ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
-          : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`)
+      ? (API_CONFIG.AUTH_SERVICE.startsWith('/api')
+          ? `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`
+          : API_CONFIG.AUTH_SERVICE.includes('/auth') 
+            ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
+            : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`)
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/login`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/login`,
