@@ -33,6 +33,10 @@
 - **Username**: `admin`
 - **Password**: `admin`
 
+### ⚠️ Note importante :
+- Le frontend admin est accessible uniquement via le domaine `vika-game.ru`
+- Les tests depuis `localhost` ne fonctionneront pas car la règle Traefik nécessite le Host header correct
+
 ---
 
 ## 🚦 Traefik Dashboard
