@@ -16,11 +16,17 @@ const spaFallback = () => {
         // Si la requête est pour une route SPA (pas un fichier statique)
         if (req.url && 
             req.url.startsWith('/vika-admin/') && 
-            !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html)$/) &&
+            // Exclure tous les fichiers statiques et assets Vite
+            !req.url.match(/\.(js|mjs|ts|jsx|tsx|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map|html|wasm)$/i) &&
             !req.url.startsWith('/vika-admin/@') && 
+            !req.url.startsWith('/vika-admin/node_modules/') &&
+            !req.url.startsWith('/vika-admin/src/') &&
             !req.url.startsWith('/vika-admin/api') &&
             !req.url.startsWith('/vika-admin/socket.io') &&
-            !req.url.startsWith('/vika-admin/__')) {
+            !req.url.startsWith('/vika-admin/__') &&
+            !req.url.startsWith('/vika-admin/assets/') &&
+            !req.url.includes('?v=') && // Exclure les fichiers avec query params (assets Vite)
+            !req.url.includes('&')) {
           // Servir index.html pour toutes les routes SPA
           req.url = '/vika-admin/index.html'
         }
