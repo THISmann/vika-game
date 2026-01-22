@@ -310,21 +310,21 @@ export default {
         const componentId = 'PlayerRegister'
         
         // console.log('📝 Player registered via API, playerId:', res.data.id)
-        // console.log('📝 Socket state:', {
-          connected: this.socket.connected,
-          disconnected: this.socket.disconnected,
-          id: this.socket.id,
-          url: API_URLS.ws.game
-        })
+          // console.log('📝 Socket state:', {
+          //   connected: this.socket.connected,
+          //   disconnected: this.socket.disconnected,
+          //   id: this.socket.id,
+          //   url: API_URLS.ws.game
+          // })
         
         // Enregistrer le joueur via socketService qui gère automatiquement la connexion
         // console.log('🔵 [PlayerRegister] About to register player on socket:', res.data.id)
         // console.log('🔵 [PlayerRegister] Socket state before register:', {
-          connected: this.socket.connected,
-          disconnected: this.socket.disconnected,
-          connecting: this.socket.connecting,
-          id: this.socket.id
-        })
+        //   connected: this.socket.connected,
+        //   disconnected: this.socket.disconnected,
+        //   connecting: this.socket.connecting,
+        //   id: this.socket.id
+        // })
         socketService.registerPlayer(res.data.id)
         // console.log('🔵 [PlayerRegister] registerPlayer called (socketService handles connection automatically)')
 
