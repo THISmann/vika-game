@@ -815,9 +815,9 @@ export default {
                 }
                 partyData.scheduledStartTime = date.toISOString()
                 // console.log('📅 [GameParties] Updating scheduledStartTime:', {
-                  formValue: form.value.scheduledStartTime,
-                  converted: partyData.scheduledStartTime
-                })
+                //   formValue: form.value.scheduledStartTime,
+                //   converted: partyData.scheduledStartTime
+                // })
               } catch (error) {
                 // console.error('❌ [GameParties] Error converting scheduledStartTime:', error)
                 // Essayer avec la valeur originale
