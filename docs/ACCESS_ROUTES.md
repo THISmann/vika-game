@@ -53,13 +53,17 @@
 
 ## 📊 Grafana Dashboards
 
-**URL de base**: `http://vika-game.ru/login` (page de connexion Grafana)
+**URL de base**: `http://vika-game.ru/grafana/login` (page de connexion Grafana)
 
 ### Routes principales :
-- **Page de connexion**: `http://vika-game.ru/login`
+- **Page de connexion**: `http://vika-game.ru/grafana/login`
 - **Dashboard API Gateway**: `http://vika-game.ru/api-gateway-monitoring`
 - **Dashboard Containers**: `http://vika-game.ru/container-monitoring`
 - **Dashboard principal**: `http://vika-game.ru/d/api-gateway-dashboard/api-gateway-monitoring`
+
+### Note importante :
+- La route `/login` est utilisée par le frontend utilisateur
+- Pour accéder à Grafana, utilisez `/grafana/login` au lieu de `/login`
 
 ### Identifiants par défaut :
 - **Username**: `admin`
