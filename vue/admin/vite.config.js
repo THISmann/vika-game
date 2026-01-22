@@ -6,6 +6,23 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
+// Plugin pour servir index.html pour toutes les routes SPA
+const spaFallback = () => {
+  return {
+    name: 'spa-fallback',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        // Si la requête n'est pas pour un fichier statique et commence par /vika-admin/
+        if (req.url.startsWith('/vika-admin/') && !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+          // Servir index.html pour toutes les routes SPA
+          req.url = '/vika-admin/index.html'
+        }
+        next()
+      })
+    }
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.VITE_BASE_URL || '/vika-admin/',
@@ -14,6 +31,7 @@ export default defineConfig({
     vueJsx(),
     vueDevTools(),
     tailwindcss(),
+    spaFallback(),
   ],
   resolve: {
     alias: {
