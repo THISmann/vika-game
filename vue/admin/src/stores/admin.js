@@ -55,7 +55,7 @@ export const useAdminStore = defineStore('admin', () => {
       ? '/api/game/socket.io' 
       : '/socket.io'
     
-    console.log('🔌 Admin: Connecting to WebSocket:', wsUrl, 'path:', socketPath)
+    // console.log('🔌 Admin: Connecting to WebSocket:', wsUrl, 'path:', socketPath)
     
     socket.value = io(wsUrl, {
       path: socketPath,
@@ -69,7 +69,7 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('connect', () => {
-      console.log('✅ Admin: WebSocket connected')
+      // console.log('✅ Admin: WebSocket connected')
       isConnected.value = true
       
       // Request initial data
@@ -77,37 +77,37 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('disconnect', () => {
-      console.warn('⚠️ Admin: WebSocket disconnected')
+      // console.warn('⚠️ Admin: WebSocket disconnected')
       isConnected.value = false
     })
     
     socket.value.on('connect_error', (error) => {
       // Ignore "server error" which is often temporary during connection
       if (error.message && error.message.includes('server error')) {
-        console.warn('⚠️ Admin: WebSocket connection error (temporary):', error.message)
+        // console.warn('⚠️ Admin: WebSocket connection error (temporary):', error.message)
         // Will retry automatically
         return
       }
-      console.error('❌ Admin: WebSocket connection error:', error.message)
+      // console.error('❌ Admin: WebSocket connection error:', error.message)
       isConnected.value = false
     })
     
     socket.value.on('error', (error) => {
       // Handle errors after connection
       if (error && error.message && !error.message.includes('server error')) {
-        console.error('❌ Admin: WebSocket error:', error.message)
+        // console.error('❌ Admin: WebSocket error:', error.message)
       }
     })
     
     // Listen for admin-specific events
     socket.value.on('admin:stats:update', (data) => {
-      console.log('📊 Admin: Stats updated via socket', data)
+      // console.log('📊 Admin: Stats updated via socket', data)
       userStats.value = data
       lastUpdateTime.value = new Date()
     })
     
     socket.value.on('admin:users:update', (data) => {
-      console.log('👥 Admin: Users updated via socket', data)
+      // console.log('👥 Admin: Users updated via socket', data)
       if (data.users) {
         users.value = data.users
       }
@@ -117,7 +117,7 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('admin:user:created', (user) => {
-      console.log('➕ Admin: New user created', user)
+      // console.log('➕ Admin: New user created', user)
       // Add to users list if it matches current filters
       if (shouldIncludeUser(user)) {
         users.value.push(user)
@@ -131,7 +131,7 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('admin:user:updated', (user) => {
-      console.log('🔄 Admin: User updated', user)
+      // console.log('🔄 Admin: User updated', user)
       const index = users.value.findIndex(u => u.id === user.id)
       if (index !== -1) {
         users.value[index] = user
@@ -141,7 +141,7 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('admin:user:deleted', (userId) => {
-      console.log('🗑️ Admin: User deleted', userId)
+      // console.log('🗑️ Admin: User deleted', userId)
       users.value = users.value.filter(u => u.id !== userId)
       // Update pagination total
       if (usersPagination.value) {
@@ -152,7 +152,7 @@ export const useAdminStore = defineStore('admin', () => {
     })
     
     socket.value.on('admin:analytics:update', (data) => {
-      console.log('📈 Admin: Analytics updated via socket', data)
+      // console.log('📈 Admin: Analytics updated via socket', data)
       analytics.value = data
     })
     
@@ -190,7 +190,7 @@ export const useAdminStore = defineStore('admin', () => {
       userStats.value = res.data
       lastUpdateTime.value = new Date()
     } catch (err) {
-      console.error('Error loading user stats:', err)
+      // console.error('Error loading user stats:', err)
       statsError.value = err.response?.data?.error || 'Failed to load user stats'
     } finally {
       loadingStats.value = false
@@ -216,7 +216,7 @@ export const useAdminStore = defineStore('admin', () => {
       users.value = res.data.users || []
       usersPagination.value = res.data.pagination || { page: 1, limit: 20, total: 0, pages: 0 }
     } catch (err) {
-      console.error('Error loading users:', err)
+      // console.error('Error loading users:', err)
       usersError.value = err.response?.data?.error || 'Failed to load users'
     } finally {
       loadingUsers.value = false
@@ -234,7 +234,7 @@ export const useAdminStore = defineStore('admin', () => {
       analytics.value = res.data
       selectedPeriod.value = periodToUse
     } catch (err) {
-      console.error('Error loading analytics:', err)
+      // console.error('Error loading analytics:', err)
       analyticsError.value = err.response?.data?.error || 'Failed to load analytics'
     } finally {
       loadingAnalytics.value = false

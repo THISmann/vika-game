@@ -6,37 +6,38 @@ import AdminDashboard from '../components/admin/AdminDashboard.vue'
 
 const routes = [
   // Admin - Protégé par guard
+  // Note: Les routes sont relatives au base path /vika-admin/
   { 
     path: '/',
-    redirect: '/admin/login'
+    redirect: '/login'
   },
   { 
-    path: '/admin/login', 
+    path: '/login', 
     component: AdminLogin,
     beforeEnter: loginGuard
   },
   { 
-    path: '/admin/dashboard', 
+    path: '/dashboard', 
     component: AdminDashboard,
     beforeEnter: adminGuard
   },
   { 
-    path: '/admin/users', 
+    path: '/users', 
     component: () => import('../components/admin/AdminUsers.vue'),
     beforeEnter: adminGuard
   },
   { 
-    path: '/admin/questions', 
+    path: '/questions', 
     component: () => import('../components/admin/AdminQuestions.vue'),
     beforeEnter: adminGuard
   },
   { 
-    path: '/admin/settings', 
+    path: '/settings', 
     component: () => import('../components/admin/AdminSettings.vue'),
     beforeEnter: adminGuard
   },
   { 
-    path: '/admin/analytics', 
+    path: '/analytics', 
     component: () => import('../components/admin/AdminAnalytics.vue'),
     beforeEnter: adminGuard
   },

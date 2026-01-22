@@ -99,12 +99,12 @@ export default {
           throw new Error('Token not stored after login')
         }
         
-        console.log('✅ Login successful, redirecting to dashboard')
+        // console.log('✅ Login successful, redirecting to dashboard')
         
-        const redirect = this.$route.query.redirect || '/admin/dashboard'
+        const redirect = this.$route.query.redirect || '/dashboard'
         this.$router.push(redirect)
       } catch (err) {
-        console.error('Login error:', err)
+        // console.error('Login error:', err)
         this.error = err.response?.data?.error || this.t('admin.login.invalidCredentials')
       } finally {
         this.loading = false

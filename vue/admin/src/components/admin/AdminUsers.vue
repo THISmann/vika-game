@@ -11,9 +11,9 @@
         <!-- Navigation Links -->
         <nav class="flex-1 px-3 py-4 space-y-1">
           <router-link
-            to="/admin/dashboard"
+            to="/dashboard"
             class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/dashboard' 
+            :class="$route.path === '/dashboard' 
               ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
           >
@@ -24,9 +24,9 @@
           </router-link>
 
           <router-link
-            to="/admin/users"
+            to="/users"
             class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/users' 
+            :class="$route.path === '/users' 
               ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
           >
@@ -37,9 +37,9 @@
           </router-link>
 
           <router-link
-            to="/admin/questions"
+            to="/questions"
             class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/questions' 
+            :class="$route.path === '/questions' 
               ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
           >
@@ -50,9 +50,9 @@
           </router-link>
 
           <router-link
-            to="/admin/settings"
+            to="/settings"
             class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/settings' 
+            :class="$route.path === '/settings' 
               ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
           >
@@ -64,9 +64,9 @@
           </router-link>
 
           <router-link
-            to="/admin/analytics"
+            to="/analytics"
             class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/analytics' 
+            :class="$route.path === '/analytics' 
               ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700' 
               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'"
           >

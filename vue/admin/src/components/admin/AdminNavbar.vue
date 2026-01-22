@@ -4,7 +4,7 @@
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center">
           <router-link
-            to="/admin/dashboard"
+            to="/dashboard"
             class="flex items-center space-x-2 text-gray-900 hover:text-gray-700"
           >
             <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,9 +16,9 @@
 
         <div class="flex items-center space-x-4">
           <router-link
-            to="/admin/dashboard"
+            to="/dashboard"
             class="px-3 py-2 text-sm font-medium rounded-md transition-colors"
-            :class="$route.path === '/admin/dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'"
+            :class="$route.path === '/dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'"
           >
             {{ t('admin.nav.dashboard') }}
           </router-link>
@@ -130,7 +130,7 @@ export default {
     logout() {
       localStorage.removeItem('adminToken')
       localStorage.removeItem('admin')
-      this.$router.push('/admin/login')
+      this.$router.push('/login')
     }
   }
 }

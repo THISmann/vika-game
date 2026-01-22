@@ -108,7 +108,7 @@ export function adminGuard(to, from, next) {
   } else {
     // Rediriger vers la page de login
     next({
-      path: '/admin/login',
+      path: '/login',
       query: { redirect: to.fullPath } // Sauvegarder la route demandée
     })
   }
@@ -121,7 +121,7 @@ export function adminGuard(to, from, next) {
 export function loginGuard(to, from, next) {
   if (isAdminAuthenticated()) {
     // Déjà authentifié, rediriger vers le dashboard
-    next('/admin/dashboard')
+    next('/dashboard')
   } else {
     next()
   }

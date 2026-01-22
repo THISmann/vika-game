@@ -84,12 +84,12 @@ const getBaseApiUrl = (service) => {
   if (isLocalhostAccess) {
     // Si on est sur localhost avec des chemins relatifs (/api/auth), utiliser l'API Gateway via port-forward
     if (baseUrl.startsWith('/api/')) {
-      console.log('🌐 Admin: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
+      // console.log('🌐 Admin: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
       return 'http://127.0.0.1:3000'
     }
     // Si l'URL est absolue mais pointe vers un autre hôte (192.168.x.x, etc.), utiliser localhost
     if (baseUrl.startsWith('http://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-      console.log('🌐 Admin: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
+      // console.log('🌐 Admin: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
       return 'http://127.0.0.1:3000'
     }
   }
@@ -293,14 +293,14 @@ export const API_URLS = {
       if (isProduction) {
         if (typeof window !== 'undefined') {
           const url = `${window.location.protocol}//${window.location.host}`
-          console.log('🌐 Production mode - Using WebSocket URL:', url)
+          // console.log('🌐 Production mode - Using WebSocket URL:', url)
           return url
         }
         return ''
       } else {
         if (typeof window !== 'undefined') {
           const url = `${window.location.protocol}//${window.location.host}`
-          console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
+          // console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
           return url
         }
         return 'http://localhost:5174'
