@@ -329,7 +329,7 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api`) && !PathPrefix(`/api/ds`) && !PathPrefix(`/api/annotations`) && !PathPrefix(`/api/dashboards`) && !PathPrefix(`/api/user`) && !PathPrefix(`/api/org`) && !PathPrefix(`/api/folders`) && !PathPrefix(`/api/datasources`) && !PathPrefix(`/api/search`) && !PathPrefix(`/api/public`)"
+      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api`) && !PathPrefix(`/api/ds`) && !PathPrefix(`/api/annotations`) && !PathPrefix(`/api/dashboards`) && !PathPrefix(`/api/user`) && !PathPrefix(`/api/org`) && !PathPrefix(`/api/folders`) && !PathPrefix(`/api/datasources`) && !PathPrefix(`/api/search`) && !PathPrefix(`/api/public`) && !PathPrefix(`/api/http`) && !PathPrefix(`/api/rawdata`) && !PathPrefix(`/api/overview`) && !PathPrefix(`/api/version`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`)"
       - "traefik.http.routers.api-gateway.entrypoints=web"
       - "traefik.http.routers.api-gateway.service=api-gateway"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
