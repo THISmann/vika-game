@@ -21,7 +21,14 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 5174, // Different port from front (5173)
+    allowedHosts: [
+      'vika-game.ru',
+      'www.vika-game.ru',
+      'localhost',
+      '.localhost'
+    ],
     proxy: {
       '/api/auth': {
         target: 'http://localhost:3001',
