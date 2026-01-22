@@ -85,11 +85,11 @@ class SocketService {
 
     // Logger immédiatement l'état du socket
     // console.log('🔌 Socket created, initial state:', {
-      connected: this.socket.connected,
-      disconnected: this.socket.disconnected,
-      connecting: this.socket.connecting,
-      id: this.socket.id
-    })
+    //   connected: this.socket.connected,
+    //   disconnected: this.socket.disconnected,
+    //   connecting: this.socket.connecting,
+    //   id: this.socket.id
+    // })
 
     // Gestion des événements de connexion
     this.socket.on('connect', () => {
