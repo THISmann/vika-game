@@ -155,6 +155,10 @@ secrets/
 *.p12
 *.pfx
 
+# Let's Encrypt certificates
+letsencrypt/
+*.acme.json
+
 # CI/CD
 .github/workflows/*.local.yml
 

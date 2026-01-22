@@ -14,26 +14,27 @@ IntelectGame is a real-time quiz platform where:
 
 ## 🌐 Production Server
 
-**Server**: `82.202.141.248`
+**Domain**: `vika-game.ru`  
+**Server IP**: `82.202.141.248`
 
 ### Quick Access Links
 
-- **User Frontend**: http://82.202.141.248/vika-game
-- **Admin Frontend**: http://82.202.141.248/vika-admin
-- **Traefik Dashboard**: http://82.202.141.248/dashboard/
-- **Grafana**: http://82.202.141.248:3005 or http://82.202.141.248/login
-- **Prometheus**: http://82.202.141.248:9090
+- **User Frontend**: https://vika-game.ru
+- **Admin Frontend**: https://admin.vika-game.ru or https://vika-game.ru/vika-admin
+- **Traefik Dashboard**: https://vika-game.ru/dashboard/
+- **Grafana**: https://vika-game.ru/login or https://vika-game.ru/api-gateway-monitoring
+- **Prometheus**: http://82.202.141.248:9090 (direct access)
 
 ### Test Routes
 
 You can test the following endpoints on the production server:
 
-- **User Login**: http://82.202.141.248/vika-game/api/auth/login
-- **User Registration**: http://82.202.141.248/vika-game/api/auth/register
-- **Admin Login**: http://82.202.141.248/vika-game/api/auth/admin/login
-- **Player Registration**: http://82.202.141.248/vika-game/player/register
-- **Quiz List**: http://82.202.141.248/vika-game/api/quiz
-- **Game Verification**: http://82.202.141.248/vika-game/api/game/:code/verify
+- **User Login**: https://vika-game.ru/vika-game/api/auth/login
+- **User Registration**: https://vika-game.ru/vika-game/api/auth/register
+- **Admin Login**: https://vika-game.ru/vika-game/api/auth/admin/login
+- **Player Registration**: https://vika-game.ru/vika-game/player/register
+- **Quiz List**: https://vika-game.ru/vika-game/api/quiz
+- **Game Verification**: https://vika-game.ru/vika-game/api/game/:code/verify
 
 ## 🏗️ Architecture
 
@@ -106,20 +107,20 @@ The application uses a microservices architecture with an API Gateway and revers
    - User interface for players
    - Game participation
    - Real-time WebSocket connection
-   - Production: http://82.202.141.248/vika-game
+   - Production: https://vika-game.ru
 
 2. **admin-frontend** (Port 5174 - Dev, `/vika-admin` - Production)
    - Administrator interface
    - Quiz and question management
    - Game session control
-   - Production: http://82.202.141.248/vika-admin
+   - Production: https://admin.vika-game.ru or https://vika-game.ru/vika-admin
 
 ### Infrastructure Services
 
 1. **traefik** (Ports 80, 8080)
    - Reverse proxy and load balancer
    - Automatic service discovery via Docker labels
-   - Dashboard: http://82.202.141.248/dashboard/
+   - Dashboard: https://vika-game.ru/dashboard/
    - Routes all HTTP traffic
 
 2. **mongodb** (Port 27017)
@@ -134,7 +135,7 @@ The application uses a microservices architecture with an API Gateway and revers
 4. **minio** (Ports 9000, 9001)
    - S3-compatible object storage
    - File and image storage
-   - Console: http://82.202.141.248:9001
+   - Console: http://82.202.141.248:9001 (direct access)
 
 ### Monitoring Stack
 
@@ -147,10 +148,10 @@ The application uses a microservices architecture with an API Gateway and revers
    - Metrics visualization and dashboards
    - API Gateway monitoring dashboard
    - Container monitoring dashboard
-   - Access: http://82.202.141.248:3005 or http://82.202.141.248/login
+   - Access: https://vika-game.ru/login or https://vika-game.ru/api-gateway-monitoring
    - Dashboards:
-     - API Gateway: http://82.202.141.248/api-gateway-monitoring
-     - Containers: http://82.202.141.248/container-monitoring
+     - API Gateway: https://vika-game.ru/api-gateway-monitoring
+     - Containers: https://vika-game.ru/container-monitoring
 
 3. **cadvisor** (Port 8081)
    - Docker container metrics
@@ -299,7 +300,7 @@ gameV2/
 
 ### Frontend User
 
-**URL**: http://82.202.141.248/vika-game
+**URL**: https://vika-game.ru
 
 | Type | Email | Password | Description |
 |------|-------|----------|-------------|
@@ -308,7 +309,7 @@ gameV2/
 
 ### Frontend Admin
 
-**URL**: http://82.202.141.248/vika-admin
+**URL**: https://admin.vika-game.ru or https://vika-game.ru/vika-admin
 
 | Type | Email | Password | Description |
 |------|-------|----------|-------------|
@@ -316,7 +317,7 @@ gameV2/
 
 ### Grafana
 
-**URL**: http://82.202.141.248:3005 or http://82.202.141.248/login
+**URL**: https://vika-game.ru/login or https://vika-game.ru/api-gateway-monitoring
 
 | Username | Password | Description |
 |----------|----------|-------------|
@@ -325,8 +326,8 @@ gameV2/
 ### Traefik Dashboard
 
 **URLs**:
-- http://82.202.141.248/dashboard/ (recommended)
-- http://82.202.141.248/traefik-dashboard (alternative)
+- https://vika-game.ru/dashboard/ (recommended)
+- https://vika-game.ru/traefik-dashboard (alternative)
 - http://82.202.141.248:8080/dashboard/ (direct port, may be blocked by firewall)
 
 No authentication required.
@@ -347,7 +348,7 @@ All API requests go through the API Gateway with the prefix `/vika-game/api`.
 
 **Base URL**: 
 - Local: `http://localhost:3000`
-- Production: `http://82.202.141.248/vika-game/api`
+- Production: `https://vika-game.ru/vika-game/api`
 
 All endpoints below are accessible via the API Gateway.
 
@@ -355,7 +356,7 @@ All endpoints below are accessible via the API Gateway.
 
 **Base URL**: 
 - Local: `http://localhost:3001`
-- Production: `http://82.202.141.248/vika-game/api/auth`
+- Production: `https://vika-game.ru/vika-game/api/auth`
 
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|---------------|
@@ -368,7 +369,7 @@ All endpoints below are accessible via the API Gateway.
 
 **Example Request**:
 ```bash
-curl -X POST http://82.202.141.248/vika-game/api/auth/login \
+curl -X POST https://vika-game.ru/vika-game/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@vika-game.com",
@@ -380,7 +381,7 @@ curl -X POST http://82.202.141.248/vika-game/api/auth/login \
 
 **Base URL**: 
 - Local: `http://localhost:3002`
-- Production: `http://82.202.141.248/vika-game/api/quiz`
+- Production: `https://vika-game.ru/vika-game/api/quiz`
 
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|---------------|
@@ -394,14 +395,14 @@ curl -X POST http://82.202.141.248/vika-game/api/auth/login \
 
 **Example Request**:
 ```bash
-curl http://82.202.141.248/vika-game/api/quiz
+curl https://vika-game.ru/vika-game/api/quiz
 ```
 
 ### Game Service
 
 **Base URL**: 
 - Local: `http://localhost:3003`
-- Production: `http://82.202.141.248/vika-game/api/game`
+- Production: `https://vika-game.ru/vika-game/api/game`
 
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|---------------|
@@ -416,14 +417,14 @@ curl http://82.202.141.248/vika-game/api/quiz
 
 **Example Request**:
 ```bash
-curl http://82.202.141.248/vika-game/api/game/ABC123/verify
+curl https://vika-game.ru/vika-game/api/game/ABC123/verify
 ```
 
 ### WebSocket (Socket.IO)
 
 **Connection URL**:
 - Local: `http://localhost:3003`
-- Production: `http://82.202.141.248/socket.io`
+- Production: `https://vika-game.ru/socket.io`
 
 #### Client → Server Events
 
@@ -448,7 +449,7 @@ curl http://82.202.141.248/vika-game/api/game/ABC123/verify
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('http://82.202.141.248', {
+const socket = io('https://vika-game.ru', {
   path: '/socket.io',
   transports: ['websocket', 'polling']
 });
@@ -477,21 +478,21 @@ socket.emit('answer', {
 
 ### Grafana Dashboards
 
-**Access**: http://82.202.141.248:3005 or http://82.202.141.248/login
+**Access**: https://vika-game.ru/login or https://vika-game.ru/api-gateway-monitoring
 
 **Credentials**: `admin` / `admin`
 
 #### Available Dashboards
 
 1. **API Gateway Monitoring**
-   - URL: http://82.202.141.248/api-gateway-monitoring
+   - URL: https://vika-game.ru/api-gateway-monitoring
    - HTTP error rates
    - Request latency
    - Requests per service
    - Error logs
 
 2. **Container Monitoring**
-   - URL: http://82.202.141.248/container-monitoring
+   - URL: https://vika-game.ru/container-monitoring
    - CPU usage per container
    - Memory usage per container
    - Network I/O
@@ -574,7 +575,7 @@ Exposes system metrics (CPU, memory, disk, network) in Prometheus format.
 - Verify that the game-service is running: `docker-compose ps game`
 - Check Traefik routes: `curl http://localhost:8080/api/http/routers`
 - Verify CORS configuration
-- Test WebSocket connection: `curl -I http://82.202.141.248/socket.io/`
+- Test WebSocket connection: `curl -I https://vika-game.ru/socket.io/`
 
 ### MongoDB Issues
 - Verify MongoDB is running: `docker-compose ps mongodb`
@@ -582,10 +583,10 @@ Exposes system metrics (CPU, memory, disk, network) in Prometheus format.
 - Verify the `MONGODB_URI` environment variable
 
 ### Traefik Routing Issues
-- Check Traefik dashboard: http://82.202.141.248/dashboard/
+- Check Traefik dashboard: https://vika-game.ru/dashboard/
 - Verify Docker labels on services
 - Check Traefik logs: `docker-compose logs traefik`
-- Test routes: `curl -I http://82.202.141.248/vika-game`
+- Test routes: `curl -I https://vika-game.ru`
 
 ### Monitoring Issues
 - Verify Prometheus is scraping: http://82.202.141.248:9090/targets
@@ -597,7 +598,7 @@ Exposes system metrics (CPU, memory, disk, network) in Prometheus format.
 
 ### 1. Test User Registration
 ```bash
-curl -X POST http://82.202.141.248/vika-game/api/auth/register \
+curl -X POST https://vika-game.ru/vika-game/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -608,7 +609,7 @@ curl -X POST http://82.202.141.248/vika-game/api/auth/register \
 
 ### 2. Test User Login
 ```bash
-curl -X POST http://82.202.141.248/vika-game/api/auth/login \
+curl -X POST https://vika-game.ru/vika-game/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@vika-game.com",
@@ -618,7 +619,7 @@ curl -X POST http://82.202.141.248/vika-game/api/auth/login \
 
 ### 3. Test Admin Login
 ```bash
-curl -X POST http://82.202.141.248/vika-game/api/auth/admin/login \
+curl -X POST https://vika-game.ru/vika-game/api/auth/admin/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@vika-game.com",
@@ -628,12 +629,12 @@ curl -X POST http://82.202.141.248/vika-game/api/auth/admin/login \
 
 ### 4. Test Quiz List
 ```bash
-curl http://82.202.141.248/vika-game/api/quiz
+curl https://vika-game.ru/vika-game/api/quiz
 ```
 
 ### 5. Test Game Verification
 ```bash
-curl http://82.202.141.248/vika-game/api/game/ABC123/verify
+curl https://vika-game.ru/vika-game/api/game/ABC123/verify
 ```
 
 ## 📄 License
@@ -647,4 +648,5 @@ Etienne
 ---
 
 **Last Updated**: January 2026
-**Production Server**: 82.202.141.248
+**Production Domain**: vika-game.ru  
+**Production Server IP**: 82.202.141.248

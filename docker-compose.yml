@@ -210,48 +210,74 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=user1_app-network"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
       - "--log.level=INFO"
       - "--accesslog=true"
       - "--api.dashboard=true"
       - "--api.debug=true"
+      # Let's Encrypt configuration
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@vika-game.ru"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"  # Dashboard (API accessible sur ce port)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
     networks:
       - app-network
     labels:
       - "traefik.enable=true"
+      # Middleware global pour rediriger HTTP vers HTTPS
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
       # Route pour exposer le dashboard Traefik sur /dashboard
       # Utiliser seulement /dashboard pour éviter de capturer /api-gateway-monitoring
-      - "traefik.http.routers.traefik-dashboard.rule=PathPrefix(`/dashboard`)"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`vika-game.ru`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard-http.rule=Host(`vika-game.ru`) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.traefik-dashboard-http.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard-http.middlewares=redirect-to-https"
       - "traefik.http.routers.traefik-dashboard.priority=30"
       # Route spécifique pour l'API Traefik avec priorité élevée pour éviter les conflits avec Grafana
-      - "traefik.http.routers.traefik-api.rule=PathPrefix(`/api/http`) || PathPrefix(`/api/rawdata`) || PathPrefix(`/api/overview`) || PathPrefix(`/api/version`)"
-      - "traefik.http.routers.traefik-api.entrypoints=web"
+      - "traefik.http.routers.traefik-api.rule=Host(`vika-game.ru`) && (PathPrefix(`/api/http`) || PathPrefix(`/api/rawdata`) || PathPrefix(`/api/overview`) || PathPrefix(`/api/version`))"
+      - "traefik.http.routers.traefik-api.entrypoints=websecure"
+      - "traefik.http.routers.traefik-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-api.service=api@internal"
+      - "traefik.http.routers.traefik-api-http.rule=Host(`vika-game.ru`) && (PathPrefix(`/api/http`) || PathPrefix(`/api/rawdata`) || PathPrefix(`/api/overview`) || PathPrefix(`/api/version`))"
+      - "traefik.http.routers.traefik-api-http.entrypoints=web"
+      - "traefik.http.routers.traefik-api-http.middlewares=redirect-to-https"
       - "traefik.http.routers.traefik-api.priority=60"
       # Middleware pour remplacer /traefik-dashboard par /dashboard/ (proxy direct)
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.regex=^/traefik-dashboard(.*)"
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
       # Middleware pour rediriger /treafik-dashboard (faute de frappe) vers /dashboard/
       - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.regex=^https?://[^/]+/treafik-dashboard(.*)"
-      - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.replacement=http://82.202.141.248/dashboard$${1}"
+      - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.replacement=https://vika-game.ru/dashboard$${1}"
       - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.permanent=true"
-      # Route alternative pour le dashboard Traefik sur /traefik-dashboard (port 80)
-      - "traefik.http.routers.traefik-dashboard-alt.rule=PathPrefix(`/traefik-dashboard`)"
-      - "traefik.http.routers.traefik-dashboard-alt.entrypoints=web"
+      # Route alternative pour le dashboard Traefik sur /traefik-dashboard
+      - "traefik.http.routers.traefik-dashboard-alt.rule=Host(`vika-game.ru`) && PathPrefix(`/traefik-dashboard`)"
+      - "traefik.http.routers.traefik-dashboard-alt.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard-alt.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-dashboard-alt.middlewares=traefik-dashboard-replace"
       - "traefik.http.routers.traefik-dashboard-alt.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard-alt-http.rule=Host(`vika-game.ru`) && PathPrefix(`/traefik-dashboard`)"
+      - "traefik.http.routers.traefik-dashboard-alt-http.entrypoints=web"
+      - "traefik.http.routers.traefik-dashboard-alt-http.middlewares=redirect-to-https"
       - "traefik.http.routers.traefik-dashboard-alt.priority=30"
-      # Route pour /treafik-dashboard (faute de frappe) sur port 80 - redirection vers /dashboard/
-      - "traefik.http.routers.treafik-dashboard.rule=PathPrefix(`/treafik-dashboard`)"
-      - "traefik.http.routers.treafik-dashboard.entrypoints=web"
+      # Route pour /treafik-dashboard (faute de frappe) - redirection vers /dashboard/
+      - "traefik.http.routers.treafik-dashboard.rule=Host(`vika-game.ru`) && PathPrefix(`/treafik-dashboard`)"
+      - "traefik.http.routers.treafik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.treafik-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.treafik-dashboard.middlewares=treafik-dashboard-redirect"
       - "traefik.http.routers.treafik-dashboard.service=noop@internal"
+      - "traefik.http.routers.treafik-dashboard-http.rule=Host(`vika-game.ru`) && PathPrefix(`/treafik-dashboard`)"
+      - "traefik.http.routers.treafik-dashboard-http.entrypoints=web"
+      - "traefik.http.routers.treafik-dashboard-http.middlewares=redirect-to-https"
       - "traefik.http.routers.treafik-dashboard.priority=50"
 
   # API Gateway
@@ -288,8 +314,13 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=PathPrefix(`/vika-game/api`)"
-      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`) || Host(`api.vika-game.ru`)"
+      - "traefik.http.routers.api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api-gateway.service=api-gateway"
+      - "traefik.http.routers.api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`) || Host(`api.vika-game.ru`)"
+      - "traefik.http.routers.api-gateway-http.entrypoints=web"
+      - "traefik.http.routers.api-gateway-http.middlewares=redirect-to-https"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/vika-game/api"
       - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
@@ -319,8 +350,13 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/vika-game`) || Path(`/vika-game`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.rule=Host(`vika-game.ru`) || Host(`www.vika-game.ru`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.service=frontend"
+      - "traefik.http.routers.frontend-http.rule=Host(`vika-game.ru`) || Host(`www.vika-game.ru`)"
+      - "traefik.http.routers.frontend-http.entrypoints=web"
+      - "traefik.http.routers.frontend-http.middlewares=redirect-to-https"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.http.routers.frontend.priority=10"
       - "traefik.docker.network=user1_app-network"
@@ -350,8 +386,13 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.admin-frontend.rule=PathPrefix(`/vika-admin`)"
-      - "traefik.http.routers.admin-frontend.entrypoints=web"
+      - "traefik.http.routers.admin-frontend.rule=Host(`admin.vika-game.ru`) || PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend.entrypoints=websecure"
+      - "traefik.http.routers.admin-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.admin-frontend.service=admin-frontend"
+      - "traefik.http.routers.admin-frontend-http.rule=Host(`admin.vika-game.ru`) || PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend-http.entrypoints=web"
+      - "traefik.http.routers.admin-frontend-http.middlewares=redirect-to-https"
       - "traefik.http.services.admin-frontend.loadbalancer.server.port=5174"
       - "traefik.http.routers.admin-frontend.priority=10"
       - "traefik.docker.network=user1_app-network"
@@ -386,10 +427,10 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://82.202.141.248
+      - GF_SERVER_ROOT_URL=https://vika-game.ru
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
-      - GF_SERVER_DOMAIN=82.202.141.248
-      - GF_SERVER_PROTOCOL=http
+      - GF_SERVER_DOMAIN=vika-game.ru
+      - GF_SERVER_PROTOCOL=https
       - GF_INSTALL_PLUGINS=
       - GF_APISERVER_ENABLED=false
       - GF_FEATURE_TOGGLES_ENABLE=
@@ -415,32 +456,48 @@ services:
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s$$1"
       # Middleware pour ajouter les headers nécessaires pour Grafana
-      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=http"
-      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=82.202.141.248"
+      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=vika-game.ru"
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
-      - "traefik.http.routers.grafana-api-gateway.rule=PathPrefix(`/api-gateway-monitoring`)"
-      - "traefik.http.routers.grafana-api-gateway.entrypoints=web"
+      - "traefik.http.routers.grafana-api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api-gateway-monitoring`)"
+      - "traefik.http.routers.grafana-api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.grafana-api-gateway.tls.certresolver=letsencrypt"
       - "traefik.http.routers.grafana-api-gateway.middlewares=grafana-api-gateway-replace,grafana-headers"
       - "traefik.http.routers.grafana-api-gateway.priority=35"
       - "traefik.http.routers.grafana-api-gateway.service=grafana"
+      - "traefik.http.routers.grafana-api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/api-gateway-monitoring`)"
+      - "traefik.http.routers.grafana-api-gateway-http.entrypoints=web"
+      - "traefik.http.routers.grafana-api-gateway-http.middlewares=redirect-to-https"
       # Route pour /container-monitoring (proxy vers Grafana)
-      - "traefik.http.routers.grafana-container.rule=PathPrefix(`/container-monitoring`)"
-      - "traefik.http.routers.grafana-container.entrypoints=web"
+      - "traefik.http.routers.grafana-container.rule=Host(`vika-game.ru`) && PathPrefix(`/container-monitoring`)"
+      - "traefik.http.routers.grafana-container.entrypoints=websecure"
+      - "traefik.http.routers.grafana-container.tls.certresolver=letsencrypt"
       - "traefik.http.routers.grafana-container.middlewares=grafana-container-replace,grafana-headers"
       - "traefik.http.routers.grafana-container.priority=35"
       - "traefik.http.routers.grafana-container.service=grafana"
+      - "traefik.http.routers.grafana-container-http.rule=Host(`vika-game.ru`) && PathPrefix(`/container-monitoring`)"
+      - "traefik.http.routers.grafana-container-http.entrypoints=web"
+      - "traefik.http.routers.grafana-container-http.middlewares=redirect-to-https"
       # Route pour /user/ (routes utilisateur Grafana)
-      - "traefik.http.routers.grafana-user.rule=PathPrefix(`/user/`)"
-      - "traefik.http.routers.grafana-user.entrypoints=web"
+      - "traefik.http.routers.grafana-user.rule=Host(`vika-game.ru`) && PathPrefix(`/user/`)"
+      - "traefik.http.routers.grafana-user.entrypoints=websecure"
+      - "traefik.http.routers.grafana-user.tls.certresolver=letsencrypt"
       - "traefik.http.routers.grafana-user.middlewares=grafana-headers"
       - "traefik.http.routers.grafana-user.priority=45"
       - "traefik.http.routers.grafana-user.service=grafana"
+      - "traefik.http.routers.grafana-user-http.rule=Host(`vika-game.ru`) && PathPrefix(`/user/`)"
+      - "traefik.http.routers.grafana-user-http.entrypoints=web"
+      - "traefik.http.routers.grafana-user-http.middlewares=redirect-to-https"
       # Route principale pour Grafana (login, API, dashboards, etc.) - routes spécifiques uniquement
-      - "traefik.http.routers.grafana-main.rule=PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`)"
-      - "traefik.http.routers.grafana-main.entrypoints=web"
+      - "traefik.http.routers.grafana-main.rule=Host(`vika-game.ru`) && (PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`))"
+      - "traefik.http.routers.grafana-main.entrypoints=websecure"
+      - "traefik.http.routers.grafana-main.tls.certresolver=letsencrypt"
       - "traefik.http.routers.grafana-main.middlewares=grafana-headers"
       - "traefik.http.routers.grafana-main.priority=40"
       - "traefik.http.routers.grafana-main.service=grafana"
+      - "traefik.http.routers.grafana-main-http.rule=Host(`vika-game.ru`) && (PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`))"
+      - "traefik.http.routers.grafana-main-http.entrypoints=web"
+      - "traefik.http.routers.grafana-main-http.middlewares=redirect-to-https"
 
   # cAdvisor for container metrics
   cadvisor:
