@@ -234,10 +234,6 @@ services:
       # Middleware global pour rediriger HTTP vers HTTPS
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
-      # Middleware pour rediriger / vers /vika-game
-      - "traefik.http.middlewares.redirect-root-to-vika-game.redirectregex.regex=^https?://[^/]+/?$$"
-      - "traefik.http.middlewares.redirect-root-to-vika-game.redirectregex.replacement=https://vika-game.ru/vika-game/"
-      - "traefik.http.middlewares.redirect-root-to-vika-game.redirectregex.permanent=false"
       # Route pour exposer le dashboard Traefik sur /dashboard
       # Utiliser seulement /dashboard pour éviter de capturer /api-gateway-monitoring
       - "traefik.http.routers.traefik-dashboard.rule=Host(`vika-game.ru`) && PathPrefix(`/dashboard`)"
@@ -319,15 +315,15 @@ services:
       retries: 5
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`)"
+      - "traefik.http.routers.api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api`)"
       - "traefik.http.routers.api-gateway.entrypoints=websecure"
       - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
       - "traefik.http.routers.api-gateway.service=api-gateway"
-      - "traefik.http.routers.api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-game/api`)"
+      - "traefik.http.routers.api-gateway-http.rule=Host(`vika-game.ru`) && PathPrefix(`/api`)"
       - "traefik.http.routers.api-gateway-http.entrypoints=web"
       - "traefik.http.routers.api-gateway-http.middlewares=redirect-to-https"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/vika-game/api"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
       - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
       - "traefik.http.routers.api-gateway.priority=20"
 
@@ -343,10 +339,10 @@ services:
     environment:
       # Use relative URLs for production (via Traefik/API Gateway)
       # In production, the browser accesses services through the same domain
-      - VITE_AUTH_SERVICE_URL=/vika-game/api
-      - VITE_QUIZ_SERVICE_URL=/vika-game/api
-      - VITE_GAME_SERVICE_URL=/vika-game/api
-    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base /vika-game/ --force"
+      - VITE_AUTH_SERVICE_URL=/api
+      - VITE_QUIZ_SERVICE_URL=/api
+      - VITE_GAME_SERVICE_URL=/api
+    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base / --force"
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -356,31 +352,20 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      # Route principale pour le frontend sur /vika-game
-      - "traefik.http.routers.frontend.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && PathPrefix(`/vika-game`)"
+      # Route principale pour le frontend à la racine (catch-all sauf routes spécifiques)
+      - "traefik.http.routers.frontend.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.frontend.service=frontend"
-      - "traefik.http.routers.frontend.priority=5"
+      - "traefik.http.routers.frontend.priority=1"
       # Route HTTP pour redirection vers HTTPS
-      - "traefik.http.routers.frontend-http.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && PathPrefix(`/vika-game`)"
+      - "traefik.http.routers.frontend-http.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`)"
       - "traefik.http.routers.frontend-http.entrypoints=web"
       - "traefik.http.routers.frontend-http.middlewares=redirect-to-https"
-      - "traefik.http.routers.frontend-http.priority=5"
+      - "traefik.http.routers.frontend-http.priority=1"
       # Service configuration
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.docker.network=user1_app-network"
-      # Route pour rediriger la racine / vers /vika-game
-      - "traefik.http.routers.frontend-root.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && Path(`/`)"
-      - "traefik.http.routers.frontend-root.entrypoints=websecure"
-      - "traefik.http.routers.frontend-root.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend-root.middlewares=redirect-root-to-vika-game"
-      - "traefik.http.routers.frontend-root.service=noop@internal"
-      - "traefik.http.routers.frontend-root.priority=1"
-      - "traefik.http.routers.frontend-root-http.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && Path(`/`)"
-      - "traefik.http.routers.frontend-root-http.entrypoints=web"
-      - "traefik.http.routers.frontend-root-http.middlewares=redirect-to-https"
-      - "traefik.http.routers.frontend-root-http.priority=1"
 
   # Admin Frontend (Mode Dev pour contourner le problème de build UTF-8)
   admin-frontend:
