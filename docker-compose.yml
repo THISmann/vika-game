@@ -530,10 +530,12 @@ services:
       # - "traefik.http.routers.grafana-user-secure.priority=45"
       # - "traefik.http.routers.grafana-user-secure.service=grafana"
       # Route pour Grafana (toutes les routes /grafana/*)
-      # Note: On ne supprime PAS le préfixe /grafana car Grafana doit le recevoir pour générer correctement le base href
+      # Middleware pour réécrire le path: /grafana/login -> /login (Grafana attend à la racine mais avec le préfixe dans root_url)
+      - "traefik.http.middlewares.grafana-path-rewrite.replacepathregex.regex=^/grafana(.*)"
+      - "traefik.http.middlewares.grafana-path-rewrite.replacepathregex.replacement=$$1"
       - "traefik.http.routers.grafana-main.rule=Host(`vika-game.ru`) && PathPrefix(`/grafana`)"
       - "traefik.http.routers.grafana-main.entrypoints=web"
-      - "traefik.http.routers.grafana-main.middlewares=grafana-headers"
+      - "traefik.http.routers.grafana-main.middlewares=grafana-path-rewrite,grafana-headers"
       - "traefik.http.routers.grafana-main.priority=40"
       - "traefik.http.routers.grafana-main.service=grafana"
       # Route HTTPS Grafana Main (désactivée temporairement)
