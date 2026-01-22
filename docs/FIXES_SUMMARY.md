@@ -1,111 +1,88 @@
 # Résumé des corrections apportées
 
-## Problèmes identifiés et corrigés
+## 🔧 Corrections effectuées
 
-### 1. ✅ Système de code de jeu
+### 1. Erreur de syntaxe dans guards.js (Admin Frontend)
 
-**Problème** : L'admin ne pouvait pas générer un code pour que les joueurs se connectent.
+**Problème** : Erreur de syntaxe à la ligne 18 dans `vue/admin/src/router/guards.js`
+```
+ERROR: Expected ";" but found ":"
+```
 
-**Solutions apportées** :
-- Ajout d'une fonction `generateGameCode()` dans `gameState.js` pour générer un code unique de 6 caractères
-- Ajout du champ `gameCode` dans l'état du jeu
-- Création d'une route `/game/code` pour obtenir le code de jeu
-- Affichage du code de jeu dans le dashboard admin avec un design visible
-- Le code est généré automatiquement au démarrage ou à la réinitialisation du jeu
+**Cause** : Commentaire mal formaté lors du script de commentaire automatique des console.log
+
+**Solution** : Correction du commentaire mal formé et commentaire des console.log restants
 
 **Fichiers modifiés** :
-- `node/game-service/gameState.js` : Ajout de la génération de code
-- `node/game-service/routes/game.routes.js` : Ajout de la route `/code`
-- `node/game-service/controllers/game.controller.js` : Ajout de `getGameCode()`
-- `vue/front/src/components/admin/AdminDashboard.vue` : Affichage du code
-- `vue/front/src/config/api.js` : Ajout de l'URL pour le code
+- `vue/admin/src/router/guards.js`
 
-### 2. ✅ Variables d'environnement pour les appels API
+### 2. Conflits de routage Grafana
 
-**Problème** : Les URLs des services étaient hardcodées (`localhost:3001`, `localhost:3002`).
+**Problème** : 
+- Les routes Grafana `/user/` et `/login` entraient en conflit avec le frontend
+- Les dashboards Grafana n'étaient pas accessibles
 
-**Solutions apportées** :
-- Création d'un fichier de configuration `node/game-service/config/services.js`
-- Remplacement de toutes les URLs hardcodées par des variables d'environnement
-- Les variables d'environnement sont déjà configurées dans les déploiements Kubernetes
+**Cause** : 
+- Route Grafana `/user/` avec priorité 45 capturait toutes les routes utilisateur
+- Route Grafana `/login` entrait en conflit avec le frontend
 
-**Fichiers modifiés** :
-- `node/game-service/config/services.js` : Nouveau fichier de configuration
-- `node/game-service/controllers/game.controller.js` : Remplacement de toutes les URLs hardcodées
-
-**Variables d'environnement utilisées** :
-- `AUTH_SERVICE_URL` : URL du service d'authentification (défaut: `http://auth-service:3001`)
-- `QUIZ_SERVICE_URL` : URL du service de quiz (défaut: `http://quiz-service:3002`)
-
-### 3. ⚠️ Affichage des questions dans le dashboard admin
-
-**Problème** : Les questions enregistrées ne s'affichent pas dans le dashboard admin.
-
-**Causes possibles** :
-- Le fichier `questions.json` n'existe pas dans les pods quiz-service
-- Erreur 500 lors de la création/lecture des questions
-
-**Solutions apportées** :
-- Correction du code du quiz-service pour créer automatiquement le fichier s'il n'existe pas
-- Mise à jour du Dockerfile pour créer le répertoire `/app/data`
-- Script `k8s/init-quiz-questions.sh` pour initialiser le fichier dans les pods existants
-
-**Actions à effectuer** :
-```bash
-# Sur la VM, initialiser le fichier questions.json
-./k8s/init-quiz-questions.sh
-```
-
-### 4. ⚠️ Vérification avant de démarrer le jeu
-
-**Amélioration** : Ajout d'une vérification pour s'assurer qu'il y a des questions avant de démarrer le jeu.
+**Solution** :
+- Suppression de la route Grafana `/user/`
+- Exclusion de `/login` de la route Grafana principale
+- Ajout d'une route spécifique `/grafana/login` pour Grafana
 
 **Fichiers modifiés** :
-- `vue/front/src/components/admin/AdminDashboard.vue` : Vérification du nombre de questions
+- `docker-compose.yml`
 
-## Actions à effectuer
+### 3. Nettoyage des console.log
 
-### 1. Initialiser le fichier questions.json
+**Problème** : Trop de console.log dans le navigateur
 
-Sur votre VM, exécutez :
+**Solution** : Commentaire de tous les console.log dans le frontend (24 fichiers)
+
+**Fichiers modifiés** :
+- Tous les fichiers Vue et JS du frontend
+
+## 📋 Routes d'accès mises à jour
+
+### Frontend Admin
+- **URL** : `http://vika-game.ru/vika-admin/`
+- **Login** : `http://vika-game.ru/vika-admin/login`
+
+### Grafana
+- **Login** : `http://vika-game.ru/grafana/login` ⚠️ **NOUVEAU**
+- **Dashboard API Gateway** : `http://vika-game.ru/api-gateway-monitoring`
+- **Dashboard Containers** : `http://vika-game.ru/container-monitoring`
+
+### Traefik Dashboard
+- **URL** : `http://vika-game.ru/dashboard/`
+
+## 🚀 Déploiement
+
+Pour déployer ces corrections :
 
 ```bash
-./k8s/init-quiz-questions.sh
+# Sur le serveur
+ssh user1@82.202.141.248
+cd ~/vika-game
+git pull origin main
+docker-compose build admin-frontend
+docker-compose up -d admin-frontend traefik
 ```
 
-### 2. Reconstruire et redéployer les services
+## ✅ Tests à effectuer
 
-Les modifications du code nécessitent une reconstruction des images Docker :
+1. **Admin Frontend** :
+   - Accéder à `http://vika-game.ru/vika-admin/`
+   - Vérifier qu'il n'y a plus d'erreur de syntaxe
+   - Vérifier que la console du navigateur est propre
 
-```bash
-# Sur votre machine locale ou dans le pipeline CI/CD
-# Les images seront automatiquement reconstruites et poussées sur DockerHub
-```
+2. **Grafana** :
+   - Accéder à `http://vika-game.ru/grafana/login`
+   - Se connecter avec admin/admin
+   - Vérifier l'accès aux dashboards
 
-Ou sur la VM si vous reconstruisez localement :
-
-```bash
-eval $(minikube docker-env)
-docker build -t thismann17/gamev2-game-service:latest ./node/game-service
-docker build -t thismann17/gamev2-quiz-service:latest ./node/quiz-service
-kubectl rollout restart deployment/game-service -n intelectgame
-kubectl rollout restart deployment/quiz-service -n intelectgame
-```
-
-### 3. Vérifier que tout fonctionne
-
-1. Accédez au dashboard admin
-2. Vérifiez que le code de jeu s'affiche
-3. Ajoutez des questions
-4. Vérifiez que les questions s'affichent dans la liste
-5. Démarrez le jeu (le bouton devrait être activé s'il y a des questions)
-
-## Prochaines étapes (optionnel)
-
-Pour que les joueurs utilisent le code de jeu lors de la connexion, il faudra :
-1. Ajouter un champ de saisie du code dans la page d'inscription des joueurs
-2. Vérifier le code lors de la connexion WebSocket
-3. Empêcher la connexion si le code est incorrect
-
-Cette fonctionnalité peut être ajoutée dans une prochaine itération.
-
+3. **Frontend Utilisateur** :
+   - Accéder à `http://vika-game.ru/user/dashboard`
+   - Vérifier que la route fonctionne correctement
+   - Vérifier que la console est propre
