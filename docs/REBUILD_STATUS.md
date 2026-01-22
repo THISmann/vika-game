@@ -44,13 +44,31 @@ docker-compose restart traefik
 - ✅ Health check fonctionnel (`/health` - 200 OK)
 - ✅ Logs de requêtes normaux
 
+## ⚠️ Problème Rencontré et Résolu
+
+### Erreur ContainerConfig
+- **Erreur**: `KeyError: 'ContainerConfig'` lors du rebuild du service `auth`
+- **Cause**: Problème connu avec docker-compose lors de la recréation de containers
+- **Solution**: Suppression forcée du container (`docker-compose rm -f auth`) puis recréation
+
+### Résolution
+```bash
+docker-compose rm -f auth
+docker-compose up -d auth
+```
+
 ## ✅ Statut Final
 
 Tous les services sont opérationnels après le rebuild :
-- ✅ Admin Frontend - Up et fonctionnel
-- ✅ API Gateway - Up et fonctionnel
-- ✅ Auth Service - Up et fonctionnel
-- ✅ Traefik - Up et fonctionnel
-- ✅ Grafana - Up et fonctionnel
+- ✅ Admin Frontend - Up et fonctionnel (Port 5174)
+- ✅ API Gateway - Up et fonctionnel (Port 3000)
+- ✅ Auth Service - Up et healthy (Port 3001)
+- ✅ Traefik - Up et fonctionnel (Ports 80, 8080)
+- ✅ Grafana - Up et fonctionnel (Port 3005)
+
+### Tests de Vérification Post-Rebuild
+- ✅ Admin Login API : `POST /api/auth/admin/login` → **200 OK** (Token reçu)
+- ✅ Admin Frontend : `http://vika-game.ru/vika-admin/login` → **200 OK**
+- ✅ Grafana : `http://vika-game.ru/grafana/login` → **200 OK**
 
 Le système est prêt pour la production.
