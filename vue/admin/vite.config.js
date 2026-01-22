@@ -11,14 +11,19 @@ const spaFallback = () => {
   return {
     name: 'spa-fallback',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
-        // Si la requête n'est pas pour un fichier statique et commence par /vika-admin/
-        if (req.url.startsWith('/vika-admin/') && !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
-          // Servir index.html pour toutes les routes SPA
-          req.url = '/vika-admin/index.html'
-        }
-        next()
-      })
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          // Si la requête n'est pas pour un fichier statique et commence par /vika-admin/
+          if (req.url && req.url.startsWith('/vika-admin/') && !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|map)$/)) {
+            // Vérifier si c'est une route API ou un fichier statique
+            if (!req.url.startsWith('/vika-admin/@') && !req.url.startsWith('/vika-admin/api')) {
+              // Servir index.html pour toutes les routes SPA
+              req.url = '/vika-admin/index.html'
+            }
+          }
+          next()
+        })
+      }
     }
   }
 }
