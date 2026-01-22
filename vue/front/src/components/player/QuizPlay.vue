@@ -538,11 +538,11 @@ export default {
         const hadCurrentQuestionId = this.current?.id
         
         // console.log('📊 loadGameState() - Current state:', {
-          isStarted: state.isStarted,
-          currentQuestionId: state.currentQuestionId,
-          wasGameStarted,
-          hasCurrent: !!this.current
-        })
+        //   isStarted: state.isStarted,
+        //   currentQuestionId: state.currentQuestionId,
+        //   wasGameStarted,
+        //   hasCurrent: !!this.current
+        // })
         
         this.gameStarted = state.isStarted
         this.currentQuestionIndex = state.currentQuestionIndex
@@ -560,10 +560,10 @@ export default {
           
           if (shouldLoad) {
             // console.log('🔄 Loading current question in loadGameState()', {
-              reason: !this.current ? 'no current' : !wasGameStarted ? 'game just started' : 'question ID changed',
-              currentQuestionId: state.currentQuestionId,
-              hadCurrentId: hadCurrentQuestionId
-            })
+            //   reason: !this.current ? 'no current' : !wasGameStarted ? 'game just started' : 'question ID changed',
+            //   currentQuestionId: state.currentQuestionId,
+            //   hadCurrentId: hadCurrentQuestionId
+            // })
             await this.loadCurrentQuestion()
             // Si la question est chargée et que le jeu vient de démarrer, démarrer le timer
             if (this.current && !wasGameStarted) {
@@ -593,11 +593,11 @@ export default {
         const state = stateRes.data
         
         // console.log('📊 Game state:', {
-          isStarted: state.isStarted,
-          currentQuestionId: state.currentQuestionId,
-          currentQuestionIndex: state.currentQuestionIndex,
-          questionStartTime: state.questionStartTime
-        })
+        //   isStarted: state.isStarted,
+        //   currentQuestionId: state.currentQuestionId,
+        //   currentQuestionIndex: state.currentQuestionIndex,
+        //   questionStartTime: state.questionStartTime
+        // })
         
         if (state.isStarted && state.currentQuestionId) {
           // Charger la question actuelle
@@ -622,9 +622,9 @@ export default {
               // Toujours démarrer le timer (il calculera le temps restant même sans startTime)
               this.startTimer()
               // console.log('✅ Current question loaded and timer started:', question.question, {
-                startTime: this.questionStartTime,
-                duration: this.questionDuration
-              })
+              //   startTime: this.questionStartTime,
+              //   duration: this.questionDuration
+              // })
             } else {
               // console.warn('⚠️ Question not found in quiz list:', state.currentQuestionId)
               // Ne pas mettre current à null, garder l'état précédent
@@ -635,9 +635,9 @@ export default {
           }
         } else {
           // console.log('ℹ️ Game not started or no current question:', {
-            isStarted: state.isStarted,
-            currentQuestionId: state.currentQuestionId
-          })
+          //   isStarted: state.isStarted,
+          //   currentQuestionId: state.currentQuestionId
+          // })
         }
       } catch (err) {
         // console.error('❌ Erreur chargement question actuelle:', err)
