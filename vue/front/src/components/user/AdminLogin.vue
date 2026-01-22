@@ -114,15 +114,15 @@ export default {
         const axios = (await import('axios')).default
         const { API_URLS } = await import('@/config/api')
         
-        console.log('🔑 Attempting user login to:', API_URLS.auth.userLogin)
-        console.log('📧 Email:', this.username)
+        // console.log('🔑 Attempting user login to:', API_URLS.auth.userLogin)
+        // console.log('📧 Email:', this.username)
         
         const response = await axios.post(API_URLS.auth.userLogin, {
           email: this.username, // Use email for user login
           password: this.password
         })
 
-        console.log('📥 Login response:', response.data)
+        // console.log('📥 Login response:', response.data)
 
         if (response.data && response.data.token && response.data.user) {
           // Store token and user info
@@ -134,7 +134,7 @@ export default {
             this.$router.push('/auth/waiting-validation')
             return
           } else if (response.data.user.status === 'approved') {
-            console.log('✅ Login successful, redirecting to dashboard')
+            // console.log('✅ Login successful, redirecting to dashboard')
             const redirect = this.$route.query.redirect || '/user/dashboard'
             this.$router.push(redirect)
             return
@@ -145,21 +145,21 @@ export default {
         }
         
         // Si la réponse n'a pas la structure attendue, logger pour debug
-        console.error('❌ Unexpected response structure:', response.data)
+        // console.error('❌ Unexpected response structure:', response.data)
         throw new Error('No token received')
       } catch (err) {
-        console.error('❌ Login error:', err)
-        console.error('❌ Error response:', err.response)
+        // console.error('❌ Login error:', err)
+        // console.error('❌ Error response:', err.response)
         
         // Améliorer le message d'erreur
         if (err.response) {
           // Erreur HTTP (4xx, 5xx)
           this.error = err.response.data?.error || err.response.data?.message || 'Invalid credentials'
-          console.error('❌ HTTP Error:', err.response.status, err.response.statusText)
+          // console.error('❌ HTTP Error:', err.response.status, err.response.statusText)
         } else if (err.request) {
           // Requête envoyée mais pas de réponse (CORS, réseau, etc.)
           this.error = 'Network error. Please check if the API Gateway is accessible.'
-          console.error('❌ Network Error:', err.request)
+          // console.error('❌ Network Error:', err.request)
         } else {
           // Autre erreur
           this.error = err.message || this.t('admin.login.invalidCredentials') || 'Invalid credentials'

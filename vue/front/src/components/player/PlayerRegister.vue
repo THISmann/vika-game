@@ -309,8 +309,8 @@ export default {
         this.socket = socketService.getSocket()
         const componentId = 'PlayerRegister'
         
-        console.log('📝 Player registered via API, playerId:', res.data.id)
-        console.log('📝 Socket state:', {
+        // console.log('📝 Player registered via API, playerId:', res.data.id)
+        // console.log('📝 Socket state:', {
           connected: this.socket.connected,
           disconnected: this.socket.disconnected,
           id: this.socket.id,
@@ -318,49 +318,49 @@ export default {
         })
         
         // Enregistrer le joueur via socketService qui gère automatiquement la connexion
-        console.log('🔵 [PlayerRegister] About to register player on socket:', res.data.id)
-        console.log('🔵 [PlayerRegister] Socket state before register:', {
+        // console.log('🔵 [PlayerRegister] About to register player on socket:', res.data.id)
+        // console.log('🔵 [PlayerRegister] Socket state before register:', {
           connected: this.socket.connected,
           disconnected: this.socket.disconnected,
           connecting: this.socket.connecting,
           id: this.socket.id
         })
         socketService.registerPlayer(res.data.id)
-        console.log('🔵 [PlayerRegister] registerPlayer called (socketService handles connection automatically)')
+        // console.log('🔵 [PlayerRegister] registerPlayer called (socketService handles connection automatically)')
 
         // Écouter le démarrage du jeu
         socketService.on('game:started', (data) => {
-          console.log('🎮 Game started event received in PlayerRegister:', data)
+          // console.log('🎮 Game started event received in PlayerRegister:', data)
           // Rediriger vers le quiz immédiatement (sans délai pour éviter de manquer la question)
           this.$router.push('/player/quiz').catch(err => {
             // Ignorer l'erreur de navigation si on est déjà sur la route
             if (err.name !== 'NavigationDuplicated') {
-              console.error('Navigation error:', err)
+              // console.error('Navigation error:', err)
             }
           })
         }, componentId)
 
         socketService.on('question:next', (data) => {
-          console.log('❓ Question next event received in PlayerRegister:', data)
+          // console.log('❓ Question next event received in PlayerRegister:', data)
           // Rediriger vers le quiz immédiatement si une question arrive
           // Le composant QuizPlay chargera la question via le polling ou recevra l'événement
           this.$router.push('/player/quiz').catch(err => {
             // Ignorer l'erreur de navigation si on est déjà sur la route
             if (err.name !== 'NavigationDuplicated') {
-              console.error('Navigation error:', err)
+              // console.error('Navigation error:', err)
             }
           })
         }, componentId)
 
         socketService.on('error', (data) => {
-          console.error('❌ Socket error:', data)
+          // console.error('❌ Socket error:', data)
           // Si c'est une erreur de jeu déjà commencé, ne pas bloquer si le joueur était déjà enregistré
           if (data.code === 'GAME_ALREADY_STARTED') {
             // Vérifier si le joueur était déjà enregistré avant le démarrage
             // Si oui, permettre la reconnexion
             const wasRegistered = localStorage.getItem('playerId') === res.data.id
             if (wasRegistered) {
-              console.log('🔄 Player was already registered, allowing reconnection')
+              // console.log('🔄 Player was already registered, allowing reconnection')
               // Ne pas afficher l'erreur, juste rediriger vers le quiz
         setTimeout(() => {
           this.$router.push('/player/quiz')

@@ -195,7 +195,7 @@ export default {
           return JSON.parse(userInfoStr)
         }
       } catch (error) {
-        console.error('Error parsing user info:', error)
+        // console.error('Error parsing user info:', error)
       }
       return null
     })

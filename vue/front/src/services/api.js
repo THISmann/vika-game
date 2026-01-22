@@ -27,8 +27,8 @@ apiClient.interceptors.request.use(
     } else {
       // Log si pas de token (toujours actif pour diagnostiquer)
       if (config.url && (config.url.includes('/quiz/') || config.url.includes('/game/'))) {
-        console.warn('⚠️ No auth token found for user request:', config.url)
-        console.warn('⚠️ localStorage.getItem("authToken"):', localStorage.getItem('authToken'))
+        // console.warn('⚠️ No auth token found for user request:', config.url)
+        // console.warn('⚠️ localStorage.getItem("authToken"):', localStorage.getItem('authToken'))
       }
     }
     
@@ -47,9 +47,9 @@ apiClient.interceptors.response.use(
   async (error) => {
     // Si erreur 401 (non autorisé), rediriger vers la page de login
     if (error.response && error.response.status === 401) {
-      console.warn('🔒 401 Unauthorized - clearing auth and redirecting to login')
-      console.warn('🔒 Request URL:', error.config?.url)
-      console.warn('🔒 Error details:', error.response?.data)
+      // console.warn('🔒 401 Unauthorized - clearing auth and redirecting to login')
+      // console.warn('🔒 Request URL:', error.config?.url)
+      // console.warn('🔒 Error details:', error.response?.data)
       
       // Vérifier si c'est une erreur de token invalide ou manquant
       const errorMessage = error.response?.data?.message || error.response?.data?.error || ''
@@ -79,7 +79,7 @@ apiClient.interceptors.response.use(
               window.location.href = '/user/login'
             }
           } catch (routerError) {
-            console.error('Error importing router:', routerError)
+            // console.error('Error importing router:', routerError)
             window.location.href = '/user/login'
           }
         }
@@ -105,7 +105,7 @@ export const authService = {
     // API_URLS.auth.userLogin gère automatiquement les chemins pour production/dev
     const loginUrl = API_URLS.auth.userLogin
     
-    console.log('🔑 Attempting user login to:', loginUrl)
+    // console.log('🔑 Attempting user login to:', loginUrl)
     
     const response = await axios.post(loginUrl, {
       email,

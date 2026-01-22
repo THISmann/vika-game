@@ -329,7 +329,7 @@ export default {
           return JSON.parse(userInfoStr)
         }
       } catch (error) {
-        console.error('Error parsing user info:', error)
+        // console.error('Error parsing user info:', error)
       }
       return null
     })
@@ -346,7 +346,7 @@ export default {
     let playersPollingInterval = null
 
     onMounted(async () => {
-      console.log('🟠 [AdminDashboard] Component mounted, loading initial data...')
+      // console.log('🟠 [AdminDashboard] Component mounted, loading initial data...')
       // Load initial data
       await Promise.all([
         questionsStore.loadQuestions(),
@@ -354,16 +354,16 @@ export default {
         gameStore.loadGameCode(),
         gameStore.loadConnectedPlayers()
       ])
-      console.log('🟠 [AdminDashboard] Initial data loaded. Connected players:', connectedPlayers.value)
+      // console.log('🟠 [AdminDashboard] Initial data loaded. Connected players:', connectedPlayers.value)
       
       // Setup socket listeners for real-time updates
       gameStore.setupSocketListeners()
       
       // Poll for connected players every 5 seconds to ensure the list stays up to date
       playersPollingInterval = setInterval(async () => {
-        console.log('🟠 [AdminDashboard] Polling for connected players...')
+        // console.log('🟠 [AdminDashboard] Polling for connected players...')
         await gameStore.loadConnectedPlayers()
-        console.log('🟠 [AdminDashboard] Polling completed. Connected players:', connectedPlayers.value)
+        // console.log('🟠 [AdminDashboard] Polling completed. Connected players:', connectedPlayers.value)
       }, 5000)
     })
 

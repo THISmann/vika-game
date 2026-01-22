@@ -54,17 +54,17 @@ class SocketService {
       // L'API Gateway (port 3000) ne supporte pas les WebSockets
       wsUrl = 'http://localhost:3003'
       socketPath = '/socket.io'
-      console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
+      // console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     } else {
       // En production, utiliser l'URL de base du navigateur (via proxy Nginx)
       wsUrl = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : ''
       socketPath = '/socket.io' // En production, le proxy Nginx route /socket.io vers game-service
-      console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
+      // console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
     }
 
-    console.log('🔌 Creating WebSocket connection:', wsUrl)
-    console.log('🔌 Socket path:', socketPath)
-    console.log('🔌 Connection options:', {
+    // console.log('🔌 Creating WebSocket connection:', wsUrl)
+    // console.log('🔌 Socket path:', socketPath)
+    // console.log('🔌 Connection options:', {
       path: socketPath,
       transports: ['polling', 'websocket'],
       autoConnect: true,
@@ -84,7 +84,7 @@ class SocketService {
     })
 
     // Logger immédiatement l'état du socket
-    console.log('🔌 Socket created, initial state:', {
+    // console.log('🔌 Socket created, initial state:', {
       connected: this.socket.connected,
       disconnected: this.socket.disconnected,
       connecting: this.socket.connecting,
@@ -93,13 +93,13 @@ class SocketService {
 
     // Gestion des événements de connexion
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', this.socket.id, 'Transport:', this.socket.io.engine.transport.name)
+      // console.log('✅ WebSocket connected:', this.socket.id, 'Transport:', this.socket.io.engine.transport.name)
       this.isConnecting = false
       
       // Réenregistrer le joueur si on a un playerId
       const playerId = localStorage.getItem('playerId')
       if (playerId) {
-        console.log('🔄 Auto re-registering player after connect:', playerId)
+        // console.log('🔄 Auto re-registering player after connect:', playerId)
         // Petit délai pour s'assurer que la connexion est stable
         setTimeout(() => {
           this.socket.emit('register', playerId)
@@ -122,35 +122,35 @@ class SocketService {
       }
       // Logger seulement les autres erreurs critiques
       if (error && error.message) {
-        console.error('❌ WebSocket connection error:', error.message)
+        // console.error('❌ WebSocket connection error:', error.message)
       }
       this.isConnecting = false
     })
 
     this.socket.on('disconnect', (reason) => {
-      console.warn('⚠️ WebSocket disconnected:', reason)
+      // console.warn('⚠️ WebSocket disconnected:', reason)
       this.isConnecting = false
       
       // Si c'est une déconnexion involontaire, la reconnexion automatique se fera
       if (reason === 'io server disconnect') {
         // Le serveur a déconnecté, on peut se reconnecter
-        console.log('🔄 Server disconnected, will reconnect automatically')
+        // console.log('🔄 Server disconnected, will reconnect automatically')
       }
     })
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log('✅ WebSocket reconnected after', attemptNumber, 'attempts')
+      // console.log('✅ WebSocket reconnected after', attemptNumber, 'attempts')
       
       // Réenregistrer le joueur après reconnexion
       const playerId = localStorage.getItem('playerId')
       if (playerId) {
-        console.log('🔄 Re-registering player after reconnect:', playerId)
+        // console.log('🔄 Re-registering player after reconnect:', playerId)
         this.socket.emit('register', playerId)
       }
     })
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('🔄 Reconnection attempt:', attemptNumber)
+      // console.log('🔄 Reconnection attempt:', attemptNumber)
     })
 
     this.socket.on('reconnect_error', (error) => {
@@ -165,25 +165,25 @@ class SocketService {
       }
       // Logger seulement les autres erreurs critiques
       if (error && error.message) {
-        console.error('❌ Reconnection error:', error.message)
+        // console.error('❌ Reconnection error:', error.message)
       }
     })
 
     this.socket.on('reconnect_failed', () => {
       // Seulement logger si la reconnexion a vraiment échoué après tous les essais
-      console.error('❌ Reconnection failed after all attempts')
+      // console.error('❌ Reconnection failed after all attempts')
     })
     
     // Gérer les paquets d'erreur du serveur (après connexion)
     this.socket.on('error', (errorData) => {
       // Ignorer les erreurs GAME_ALREADY_STARTED qui sont normales dans certains cas
       if (errorData && errorData.code === 'GAME_ALREADY_STARTED') {
-        console.log('ℹ️ Game already started - player may need to reconnect')
+        // console.log('ℹ️ Game already started - player may need to reconnect')
         return
       }
       // Logger seulement les autres erreurs
       if (errorData && errorData.message) {
-        console.error('❌ WebSocket server error:', errorData.message)
+        // console.error('❌ WebSocket server error:', errorData.message)
       }
     })
 
@@ -193,20 +193,20 @@ class SocketService {
   // Enregistrer un joueur (sans créer de nouvelle connexion)
   registerPlayer(playerId) {
     if (!playerId) {
-      console.error('🔵 [socketService] ❌ Cannot register player: playerId is required')
+      // console.error('🔵 [socketService] ❌ Cannot register player: playerId is required')
       return
     }
 
-    console.log('🔵 [socketService] registerPlayer called with playerId:', playerId)
+    // console.log('🔵 [socketService] registerPlayer called with playerId:', playerId)
 
     if (!this.socket) {
-      console.log('🔵 [socketService] No socket found, creating connection...')
+      // console.log('🔵 [socketService] No socket found, creating connection...')
       this.connect()
       // Après connect(), le socket peut ne pas être immédiatement disponible
       // On attend un peu puis on réessaye
       setTimeout(() => {
         if (this.socket && this.socket.connected) {
-          console.log('🔵 [socketService] Socket now connected, registering player:', playerId)
+          // console.log('🔵 [socketService] Socket now connected, registering player:', playerId)
           this.socket.emit('register', playerId)
         }
       }, 500)
@@ -215,19 +215,19 @@ class SocketService {
 
     // Si le socket est connecté, enregistrer immédiatement
     if (this.socket.connected) {
-      console.log('🔵 [socketService] Socket connected, registering player:', playerId, 'Socket ID:', this.socket.id)
+      // console.log('🔵 [socketService] Socket connected, registering player:', playerId, 'Socket ID:', this.socket.id)
       this.socket.emit('register', playerId)
-      console.log('🔵 [socketService] Register event emitted')
+      // console.log('🔵 [socketService] Register event emitted')
       return
     }
 
     // Si le socket est en train de se connecter, attendre
     if (this.socket.connecting) {
-      console.log('🔵 [socketService] Socket is connecting, will register after connection...')
+      // console.log('🔵 [socketService] Socket is connecting, will register after connection...')
       const connectHandler = () => {
-        console.log('🔵 [socketService] Socket connected (was connecting), registering player:', playerId, 'Socket ID:', this.socket.id)
+        // console.log('🔵 [socketService] Socket connected (was connecting), registering player:', playerId, 'Socket ID:', this.socket.id)
         this.socket.emit('register', playerId)
-        console.log('🔵 [socketService] Register event emitted after connection')
+        // console.log('🔵 [socketService] Register event emitted after connection')
         this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
       }
       this.socket.once('connect', connectHandler)
@@ -236,12 +236,12 @@ class SocketService {
 
     // Si le socket est déconnecté, le reconnecter puis enregistrer
     if (this.socket.disconnected) {
-      console.log('🔵 [socketService] Socket disconnected, calling connect()...')
+      // console.log('🔵 [socketService] Socket disconnected, calling connect()...')
       this.socket.connect()
       const connectHandler = () => {
-        console.log('🔵 [socketService] Socket connected after reconnect, registering player:', playerId, 'Socket ID:', this.socket.id)
+        // console.log('🔵 [socketService] Socket connected after reconnect, registering player:', playerId, 'Socket ID:', this.socket.id)
         this.socket.emit('register', playerId)
-        console.log('🔵 [socketService] Register event emitted after reconnect')
+        // console.log('🔵 [socketService] Register event emitted after reconnect')
         this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
       }
       this.socket.once('connect', connectHandler)
@@ -249,11 +249,11 @@ class SocketService {
     }
 
     // Par défaut, attendre la connexion
-    console.log('🔵 [socketService] Waiting for socket connection to register player...')
+    // console.log('🔵 [socketService] Waiting for socket connection to register player...')
     const connectHandler = () => {
-      console.log('🔵 [socketService] Socket connected (default handler), registering player:', playerId, 'Socket ID:', this.socket.id)
+      // console.log('🔵 [socketService] Socket connected (default handler), registering player:', playerId, 'Socket ID:', this.socket.id)
       this.socket.emit('register', playerId)
-      console.log('🔵 [socketService] Register event emitted after connection')
+      // console.log('🔵 [socketService] Register event emitted after connection')
       this.socket.off('connect', connectHandler) // Remove handler to avoid duplicates
     }
     this.socket.once('connect', connectHandler)
@@ -294,14 +294,14 @@ class SocketService {
     if (this.socket && this.socket.connected) {
       this.socket.emit(event, data)
     } else {
-      console.warn('⚠️ Cannot emit event, socket not connected:', event)
+      // console.warn('⚠️ Cannot emit event, socket not connected:', event)
     }
   }
 
   // Déconnecter (seulement si nécessaire)
   disconnect() {
     if (this.socket) {
-      console.log('🔌 Disconnecting WebSocket')
+      // console.log('🔌 Disconnecting WebSocket')
       this.socket.disconnect()
       this.socket = null
       this.isConnecting = false

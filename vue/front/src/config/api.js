@@ -85,17 +85,17 @@ const getBaseApiUrl = (service) => {
   if (isLocalhostAccess) {
     // Si on est sur localhost avec des chemins relatifs (/api/auth), utiliser l'API Gateway via port-forward
     if (baseUrl.startsWith('/api/')) {
-      console.log('🌐 Frontend: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
+      // console.log('🌐 Frontend: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')
       return 'http://127.0.0.1:3000'
     }
     // Si l'URL est absolue mais pointe vers un autre hôte (192.168.x.x, etc.), utiliser localhost
     if (baseUrl.startsWith('http://') && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-      console.log('🌐 Frontend: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
+      // console.log('🌐 Frontend: Détection localhost: Redirection de', baseUrl, 'vers http://127.0.0.1:3000')
       return 'http://127.0.0.1:3000'
     }
     // Si l'URL est vide ou invalide, utiliser localhost
     if (!baseUrl || baseUrl === '' || baseUrl === '/') {
-      console.log('🌐 Frontend: Détection localhost: URL vide, utilisation de http://127.0.0.1:3000')
+      // console.log('🌐 Frontend: Détection localhost: URL vide, utilisation de http://127.0.0.1:3000')
       return 'http://127.0.0.1:3000'
     }
   }
@@ -359,7 +359,7 @@ export const API_URLS = {
           // En production avec Kubernetes/Nginx, le proxy route /socket.io vers game-service
           // Utiliser l'URL de base du navigateur avec le chemin socket.io
           const url = `${window.location.protocol}//${window.location.host}`
-          console.log('🌐 Production mode - Using WebSocket URL:', url)
+          // console.log('🌐 Production mode - Using WebSocket URL:', url)
           return url
         }
         return ''
@@ -369,7 +369,7 @@ export const API_URLS = {
         if (typeof window !== 'undefined') {
           // Utiliser l'URL de base du navigateur (via proxy Nginx)
           const url = `${window.location.protocol}//${window.location.host}`
-          console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
+          // console.log('🏠 Development mode (Kubernetes) - Using WebSocket URL via proxy:', url)
           return url
         }
         // Fallback si window n'est pas disponible

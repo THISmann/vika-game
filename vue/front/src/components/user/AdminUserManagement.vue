@@ -229,7 +229,7 @@ export default {
         pagination.value = response.data.pagination
       } catch (err) {
         error.value = err.response?.data?.error || t('admin.users.loadError')
-        console.error('Error loading users:', err)
+        // console.error('Error loading users:', err)
       } finally {
         loading.value = false
       }
@@ -255,7 +255,7 @@ export default {
         await loadUsers()
       } catch (err) {
         error.value = err.response?.data?.error || t('admin.users.approveError')
-        console.error('Error approving user:', err)
+        // console.error('Error approving user:', err)
       }
     }
 
@@ -276,7 +276,7 @@ export default {
         await loadUsers()
       } catch (err) {
         error.value = err.response?.data?.error || t('admin.users.rejectError')
-        console.error('Error rejecting user:', err)
+        // console.error('Error rejecting user:', err)
       }
     }
 
@@ -286,7 +286,7 @@ export default {
         await loadUsers()
       } catch (err) {
         error.value = err.response?.data?.error || t('admin.users.blockError')
-        console.error('Error blocking user:', err)
+        // console.error('Error blocking user:', err)
       }
     }
 
@@ -296,7 +296,7 @@ export default {
         await loadUsers()
       } catch (err) {
         error.value = err.response?.data?.error || t('admin.users.unblockError')
-        console.error('Error unblocking user:', err)
+        // console.error('Error unblocking user:', err)
       }
     }
 

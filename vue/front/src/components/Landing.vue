@@ -641,7 +641,7 @@ export default {
           }
         }
       } catch (error) {
-        console.error('Login error:', error)
+        // console.error('Login error:', error)
         this.loginError = error.response?.data?.error || this.t('landing.loginError') || 'Invalid credentials'
       } finally {
         this.loginLoading = false

@@ -36,7 +36,7 @@ export const useGameStore = defineStore('game', () => {
       }
       gameCode.value = res.data.gameCode || null
     } catch (err) {
-      console.error('Error loading game state:', err)
+      // console.error('Error loading game state:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to load game state'
     }
   }
@@ -46,7 +46,7 @@ export const useGameStore = defineStore('game', () => {
       const res = await apiClient.get(API_URLS.game.code)
       gameCode.value = res.data.gameCode
     } catch (err) {
-      console.error('Error loading game code:', err)
+      // console.error('Error loading game code:', err)
     }
   }
 
@@ -55,7 +55,7 @@ export const useGameStore = defineStore('game', () => {
       const res = await apiClient.get(API_URLS.quiz.all)
       totalQuestions.value = res.data.length || 0
     } catch (err) {
-      console.error('Error loading questions count:', err)
+      // console.error('Error loading questions count:', err)
     }
   }
 
@@ -68,28 +68,28 @@ export const useGameStore = defineStore('game', () => {
       const res = await apiClient.get(API_URLS.game.playersCount)
       gameState.value.connectedPlayersCount = res.data.count || 0
     } catch (err) {
-      console.error('Error loading players count:', err)
+      // console.error('Error loading players count:', err)
     }
   }
 
   async function loadConnectedPlayers() {
     try {
-      console.log('🟣 [game store] Loading connected players from:', API_URLS.game.players)
+      // console.log('🟣 [game store] Loading connected players from:', API_URLS.game.players)
       const res = await apiClient.get(API_URLS.game.players)
-      console.log('🟣 [game store] Response received:', {
+      // console.log('🟣 [game store] Response received:', {
         players: res.data.players,
         count: res.data.count,
         fullResponse: res.data
       })
       connectedPlayers.value = res.data.players || []
       gameState.value.connectedPlayersCount = res.data.count || 0
-      console.log('🟣 [game store] Connected players updated:', {
+      // console.log('🟣 [game store] Connected players updated:', {
         connectedPlayers: connectedPlayers.value,
         count: gameState.value.connectedPlayersCount
       })
     } catch (err) {
-      console.error('🟣 [game store] ❌ Error loading connected players:', err)
-      console.error('🟣 [game store] Error details:', err.response?.data || err.message)
+      // console.error('🟣 [game store] ❌ Error loading connected players:', err)
+      // console.error('🟣 [game store] Error details:', err.response?.data || err.message)
     }
   }
 
@@ -111,7 +111,7 @@ export const useGameStore = defineStore('game', () => {
         message.value = ''
       }, 5000)
     } catch (err) {
-      console.error('❌ Error starting game:', err)
+      // console.error('❌ Error starting game:', err)
       if (err.response?.status === 401) {
         error.value = 'Session expired. Please reconnect.'
       } else {
@@ -218,7 +218,7 @@ export const useGameStore = defineStore('game', () => {
     
     const trySetup = (sock) => {
       if (!sock) {
-        console.warn('⚠️ Socket not available for game store')
+        // console.warn('⚠️ Socket not available for game store')
         return
       }
       
@@ -239,7 +239,7 @@ export const useGameStore = defineStore('game', () => {
         s.on('question:next', handleQuestionNext)
         s.on('game:code', handleGameCode)
 
-        console.log('✅ Socket listeners set up for game store')
+        // console.log('✅ Socket listeners set up for game store')
       }
 
       if (sock.connected) {
@@ -255,7 +255,7 @@ export const useGameStore = defineStore('game', () => {
       socket.then(sock => {
         trySetup(sock)
       }).catch(err => {
-        console.error('Error getting socket for game store:', err)
+        // console.error('Error getting socket for game store:', err)
       })
     } else {
       trySetup(socket)
@@ -263,19 +263,19 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handlePlayersCount(data) {
-    console.log('🟣 [game store] 📊 Received players:count event:', data)
-    console.log('🟣 [game store] Current connectedPlayers before update:', connectedPlayers.value)
+    // console.log('🟣 [game store] 📊 Received players:count event:', data)
+    // console.log('🟣 [game store] Current connectedPlayers before update:', connectedPlayers.value)
     updatePlayersCountFromSocket(data.count)
-    console.log('🟣 [game store] ConnectedPlayers after update:', connectedPlayers.value)
+    // console.log('🟣 [game store] ConnectedPlayers after update:', connectedPlayers.value)
   }
 
   function handleGameStarted(data) {
-    console.log('🎮 Game store received game:started event:', data)
+    // console.log('🎮 Game store received game:started event:', data)
     loadGameState()
   }
 
   function handleGameEnded() {
-    console.log('🏁 Game store received game:ended event')
+    // console.log('🏁 Game store received game:ended event')
     loadGameState()
     message.value = 'Game ended'
     setTimeout(() => {
@@ -284,12 +284,12 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handleQuestionNext() {
-    console.log('❓ Game store received question:next event')
+    // console.log('❓ Game store received question:next event')
     loadGameState()
   }
 
   function handleGameCode(data) {
-    console.log('🎯 Game store received game:code event:', data)
+    // console.log('🎯 Game store received game:code event:', data)
     if (data && data.gameCode) {
       gameCode.value = data.gameCode
     }
@@ -316,7 +316,7 @@ export const useGameStore = defineStore('game', () => {
       removeFromSocket(socketOrPromise)
     }
     
-    console.log('✅ Socket listeners removed for game store')
+    // console.log('✅ Socket listeners removed for game store')
   }
 
   function clearMessage() {

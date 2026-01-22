@@ -654,7 +654,7 @@ export default {
         
         form.value.imageUrl = response.data.url
       } catch (err) {
-        console.error('Error uploading image:', err)
+        // console.error('Error uploading image:', err)
         error.value = err.response?.data?.error || t('parties.uploadError') || 'Erreur lors de l\'upload de l\'image'
       } finally {
         uploadingImage.value = false
@@ -678,7 +678,7 @@ export default {
         
         form.value.audioUrl = response.data.url
       } catch (err) {
-        console.error('Error uploading audio:', err)
+        // console.error('Error uploading audio:', err)
         error.value = err.response?.data?.error || t('parties.uploadError') || 'Erreur lors de l\'upload de l\'audio'
       } finally {
         uploadingAudio.value = false
@@ -725,7 +725,7 @@ export default {
         // Charger le comptage des joueurs pour chaque partie active
         await loadPlayerCounts()
       } catch (err) {
-        console.error('Error loading parties:', err)
+        // console.error('Error loading parties:', err)
         error.value = err.response?.data?.error || t('parties.loadError') || 'Erreur lors du chargement'
       } finally {
         loading.value = false
@@ -746,7 +746,7 @@ export default {
               playerCounts.value[party.id] = 0
             }
           } catch (err) {
-            console.error(`Error loading player count for party ${party.id}:`, err)
+            // console.error(`Error loading player count for party ${party.id}:`, err)
             playerCounts.value[party.id] = 0
           }
         } else {
@@ -757,12 +757,12 @@ export default {
 
     const loadQuestions = async () => {
       try {
-        console.log('📋 [GameParties] Loading questions from:', API_URLS.quiz.all)
+        // console.log('📋 [GameParties] Loading questions from:', API_URLS.quiz.all)
         const response = await apiClient.get(API_URLS.quiz.all)
         availableQuestions.value = response.data || []
-        console.log('✅ [GameParties] Loaded', availableQuestions.value.length, 'questions')
+        // console.log('✅ [GameParties] Loaded', availableQuestions.value.length, 'questions')
       } catch (err) {
-        console.error('❌ [GameParties] Error loading questions:', err)
+        // console.error('❌ [GameParties] Error loading questions:', err)
         availableQuestions.value = []
       }
     }
@@ -810,23 +810,23 @@ export default {
                 // Créer une date à partir de la string datetime-local
                 const date = new Date(dateStr)
                 if (isNaN(date.getTime())) {
-                  console.error('❌ [GameParties] Invalid date format:', dateStr)
+                  // console.error('❌ [GameParties] Invalid date format:', dateStr)
                   throw new Error('Invalid date format')
                 }
                 partyData.scheduledStartTime = date.toISOString()
-                console.log('📅 [GameParties] Updating scheduledStartTime:', {
+                // console.log('📅 [GameParties] Updating scheduledStartTime:', {
                   formValue: form.value.scheduledStartTime,
                   converted: partyData.scheduledStartTime
                 })
               } catch (error) {
-                console.error('❌ [GameParties] Error converting scheduledStartTime:', error)
+                // console.error('❌ [GameParties] Error converting scheduledStartTime:', error)
                 // Essayer avec la valeur originale
                 partyData.scheduledStartTime = new Date(form.value.scheduledStartTime).toISOString()
               }
             } else {
               // Si la case est décochée ou vide, envoyer null pour supprimer la date
               partyData.scheduledStartTime = null
-              console.log('📅 [GameParties] Removing scheduledStartTime (schedule unchecked)')
+              // console.log('📅 [GameParties] Removing scheduledStartTime (schedule unchecked)')
             }
           } else {
             // Si c'est une nouvelle partie, envoyer seulement si schedule est coché
@@ -852,7 +852,7 @@ export default {
         await loadParties()
         closeModal()
       } catch (err) {
-        console.error('Error saving party:', err)
+        // console.error('Error saving party:', err)
         error.value = err.response?.data?.error || t('parties.saveError') || 'Erreur lors de l\'enregistrement'
       } finally {
         loading.value = false
@@ -882,14 +882,14 @@ export default {
       }
 
       try {
-        console.log('🛑 [GameParties] Deactivating party:', partyId)
+        // console.log('🛑 [GameParties] Deactivating party:', partyId)
         const updatedParty = await apiClient.put(API_URLS.game.updateParty(partyId), {
           status: 'cancelled'
         })
-        console.log('✅ [GameParties] Party deactivated:', updatedParty.data)
+        // console.log('✅ [GameParties] Party deactivated:', updatedParty.data)
         await loadParties()
       } catch (err) {
-        console.error('❌ [GameParties] Error deactivating party:', err)
+        // console.error('❌ [GameParties] Error deactivating party:', err)
         error.value = err.response?.data?.error || t('parties.deactivateError') || 'Erreur lors de la désactivation'
       }
     }
@@ -903,7 +903,7 @@ export default {
         await apiClient.delete(API_URLS.game.deleteParty(partyId))
         await loadParties()
       } catch (err) {
-        console.error('Error deleting party:', err)
+        // console.error('Error deleting party:', err)
         error.value = err.response?.data?.error || t('parties.deleteError') || 'Erreur lors de la suppression'
       }
     }
@@ -920,7 +920,7 @@ export default {
           const partyRes = await apiClient.get(API_URLS.game.getParty(party.id))
           partyDetails.value = partyRes.data
         } catch (partyErr) {
-          console.error('Error loading party details, using cached party:', partyErr)
+          // console.error('Error loading party details, using cached party:', partyErr)
           partyDetails.value = party
         }
 
@@ -935,14 +935,14 @@ export default {
               connectedPlayersCount.value = 0
             }
           } catch (playersErr) {
-            console.error('Error loading connected players:', playersErr)
+            // console.error('Error loading connected players:', playersErr)
             connectedPlayersCount.value = 0
           }
         } else {
           connectedPlayersCount.value = 0
         }
       } catch (err) {
-        console.error('Error loading party details:', err)
+        // console.error('Error loading party details:', err)
         partyDetails.value = party
       } finally {
         partyDetailsLoading.value = false
@@ -999,7 +999,7 @@ export default {
           answer: newQuestionForm.value.answer.trim()
         }
 
-        console.log('➕ [GameParties] Creating question:', questionData)
+        // console.log('➕ [GameParties] Creating question:', questionData)
         await quizService.createQuestion(questionData)
         
         // Recharger les questions
@@ -1013,9 +1013,9 @@ export default {
         }
         showCreateQuestionModal.value = false
         
-        console.log('✅ [GameParties] Question created successfully')
+        // console.log('✅ [GameParties] Question created successfully')
       } catch (err) {
-        console.error('❌ [GameParties] Error creating question:', err)
+        // console.error('❌ [GameParties] Error creating question:', err)
         error.value = err.response?.data?.error || t('parties.createQuestionError') || 'Erreur lors de la création de la question'
       } finally {
         creatingQuestion.value = false
@@ -1064,7 +1064,7 @@ export default {
             }
           }
         } catch (err) {
-          console.error('Error updating player count from WebSocket:', err)
+          // console.error('Error updating player count from WebSocket:', err)
         }
       }, 'GameParties')
       

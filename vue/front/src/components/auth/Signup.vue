@@ -354,7 +354,7 @@ export default {
           router.push('/auth/waiting-validation')
         }
       } catch (err) {
-        console.error('Signup error:', err)
+        // console.error('Signup error:', err)
         error.value = err.response?.data?.error || t('auth.signup.error')
       } finally {
         loading.value = false

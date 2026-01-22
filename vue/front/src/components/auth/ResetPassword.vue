@@ -218,7 +218,7 @@ export default {
           router.push('/auth/login')
         }, 2000)
       } catch (err) {
-        console.error('Reset password error:', err)
+        // console.error('Reset password error:', err)
         error.value = err.response?.data?.error || t('auth.resetPassword.error')
       } finally {
         loading.value = false

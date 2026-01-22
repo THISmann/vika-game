@@ -60,9 +60,9 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
         currentPage.value = 1
       }
       
-      console.log('✅ Leaderboard loaded:', leaderboard.value.length, 'entries')
+      // console.log('✅ Leaderboard loaded:', leaderboard.value.length, 'entries')
     } catch (err) {
-      console.error('Error loading leaderboard:', err)
+      // console.error('Error loading leaderboard:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to load leaderboard'
       leaderboard.value = []
     } finally {
@@ -72,7 +72,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
 
   function updateLeaderboardFromSocket(scores) {
     if (!Array.isArray(scores)) {
-      console.warn('⚠️ Invalid leaderboard data from socket:', scores)
+      // console.warn('⚠️ Invalid leaderboard data from socket:', scores)
       return
     }
 
@@ -91,7 +91,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
       currentPage.value = 1
     }
     
-    console.log('✅ Leaderboard updated from socket:', leaderboard.value.length, 'entries')
+    // console.log('✅ Leaderboard updated from socket:', leaderboard.value.length, 'entries')
   }
 
   function setupSocketListeners() {
@@ -100,7 +100,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
     
     const trySetup = (sock) => {
       if (!sock) {
-        console.warn('⚠️ Socket not available')
+        // console.warn('⚠️ Socket not available')
         return
       }
       
@@ -118,7 +118,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
       socket.then(sock => {
         trySetup(sock)
       }).catch(err => {
-        console.error('Error getting socket:', err)
+        // console.error('Error getting socket:', err)
       })
     } else {
       trySetup(socket)
@@ -127,7 +127,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
 
   function setupListener(socket) {
     if (!socket || !socket.on) {
-      console.warn('⚠️ Invalid socket instance')
+      // console.warn('⚠️ Invalid socket instance')
       return
     }
 
@@ -137,11 +137,11 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
     // Listen for leaderboard updates
     socket.on('leaderboard:update', handleLeaderboardUpdate)
 
-    console.log('✅ Socket listeners set up for leaderboard')
+    // console.log('✅ Socket listeners set up for leaderboard')
   }
 
   function handleLeaderboardUpdate(scores) {
-    console.log('📢 Received leaderboard:update event:', scores)
+    // console.log('📢 Received leaderboard:update event:', scores)
     updateLeaderboardFromSocket(scores)
   }
 
@@ -158,7 +158,7 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
       socketOrPromise.off('leaderboard:update', handleLeaderboardUpdate)
     }
     
-    console.log('✅ Socket listeners removed for leaderboard')
+    // console.log('✅ Socket listeners removed for leaderboard')
   }
 
   function nextPage() {

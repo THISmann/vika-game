@@ -157,7 +157,7 @@ export default {
           }, 2000)
         }
       } catch (err) {
-        console.error('Forgot password error:', err)
+        // console.error('Forgot password error:', err)
         error.value = err.response?.data?.error || t('auth.forgotPassword.error')
       } finally {
         loading.value = false

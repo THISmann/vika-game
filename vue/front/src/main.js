@@ -10,7 +10,7 @@ import { debugSocket } from './utils/debugSocket'
 if (typeof window !== 'undefined') {
   window.socketService = socketService
   window.debugSocket = debugSocket
-  console.log('🔧 Debug tools available: window.socketService, window.debugSocket()')
+  // console.log('🔧 Debug tools available: window.socketService, window.debugSocket()')
 }
 
 const pinia = createPinia()

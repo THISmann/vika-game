@@ -161,7 +161,7 @@ export default {
           this.score = res.data.score || 0
         }
       } catch (err) {
-        console.error('Error loading initial score:', err)
+        // console.error('Error loading initial score:', err)
       }
     }
   },
@@ -180,7 +180,7 @@ export default {
           this.questions = res.data
         }
       } catch (err) {
-        console.error('Error loading questions:', err)
+        // console.error('Error loading questions:', err)
         this.error = this.t('panel.loadError')
       } finally {
         this.loading = false
@@ -207,13 +207,13 @@ export default {
           if (res.data.correct) {
             // Optionnel: afficher un message de succès
             // Vous pouvez remplacer alert par une notification toast
-            console.log('✅ Correct answer!')
+            // console.log('✅ Correct answer!')
           } else {
-            console.log('❌ Wrong answer. Correct was:', res.data.correctAnswer)
+            // console.log('❌ Wrong answer. Correct was:', res.data.correctAnswer)
           }
         }
       } catch (err) {
-        console.error('Error submitting answer:', err)
+        // console.error('Error submitting answer:', err)
         this.error = err.response?.data?.error || this.t('panel.answerError')
       } finally {
         this.answering = false

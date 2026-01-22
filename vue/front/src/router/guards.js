@@ -26,13 +26,13 @@ export function isUserAuthenticated() {
     
     // Vérifier que l'utilisateur est approuvé
     if (userInfo.status !== 'approved') {
-      console.log('🔒 Auth check failed: user not approved', userInfo.status)
+      // console.log('🔒 Auth check failed: user not approved', userInfo.status)
       return false
     }
 
     // Vérifier que le rôle est user ou admin
     if (userInfo.role !== 'user' && userInfo.role !== 'admin') {
-      console.log('🔒 Auth check failed: invalid role', userInfo.role)
+      // console.log('🔒 Auth check failed: invalid role', userInfo.role)
       return false
     }
 
@@ -74,7 +74,7 @@ export function isUserAuthenticated() {
         
         // Vérifier que le timestamp est valide
         if (isNaN(timestamp) || timestamp <= 0) {
-          console.log('🔒 Auth check failed: invalid timestamp')
+          // console.log('🔒 Auth check failed: invalid timestamp')
           localStorage.removeItem('authToken')
           localStorage.removeItem('userInfo')
           return false
@@ -95,14 +95,14 @@ export function isUserAuthenticated() {
         // Token valide
         return true
     } catch (error) {
-      console.error('🔒 Error verifying token:', error)
+      // console.error('🔒 Error verifying token:', error)
       // En cas d'erreur de décodage, considérer comme non authentifié
       localStorage.removeItem('authToken')
       localStorage.removeItem('userInfo')
       return false
     }
   } catch (error) {
-    console.error('🔒 Error parsing user info:', error)
+    // console.error('🔒 Error parsing user info:', error)
     localStorage.removeItem('authToken')
     localStorage.removeItem('userInfo')
     return false

@@ -21,9 +21,9 @@ export const useQuestionsStore = defineStore('questions', () => {
     try {
       const res = await apiClient.get(API_URLS.quiz.all)
       questions.value = res.data || []
-      console.log('✅ Questions loaded:', questions.value.length, 'questions')
+      // console.log('✅ Questions loaded:', questions.value.length, 'questions')
     } catch (err) {
-      console.error('Error loading questions:', err)
+      // console.error('Error loading questions:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to load questions'
       questions.value = []
     } finally {
@@ -41,7 +41,7 @@ export const useQuestionsStore = defineStore('questions', () => {
       await loadQuestions()
       return newQuestion
     } catch (err) {
-      console.error('Error creating question:', err)
+      // console.error('Error creating question:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to create question'
       throw err
     } finally {
@@ -59,7 +59,7 @@ export const useQuestionsStore = defineStore('questions', () => {
       await loadQuestions()
       return updatedQuestion
     } catch (err) {
-      console.error('Error updating question:', err)
+      // console.error('Error updating question:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to update question'
       throw err
     } finally {
@@ -78,7 +78,7 @@ export const useQuestionsStore = defineStore('questions', () => {
       // Also reload to ensure consistency
       await loadQuestions()
     } catch (err) {
-      console.error('Error deleting question:', err)
+      // console.error('Error deleting question:', err)
       error.value = err.response?.data?.error || err.message || 'Failed to delete question'
       throw err
     } finally {

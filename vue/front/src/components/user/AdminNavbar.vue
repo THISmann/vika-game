@@ -84,7 +84,7 @@ export default {
           return userInfo.name || userInfo.email || 'User'
         }
       } catch (error) {
-        console.error('Error parsing user info:', error)
+        // console.error('Error parsing user info:', error)
       }
       return 'User'
     })

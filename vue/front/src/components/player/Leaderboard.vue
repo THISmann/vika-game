@@ -276,12 +276,12 @@ export default {
     // --- 1. Load initial leaderboard from API
     try {
       const res = await axios.get(API_URLS.game.leaderboard)
-      console.log('📊 Raw leaderboard response:', res.data)
+      // console.log('📊 Raw leaderboard response:', res.data)
       
       // S'assurer que les données sont un tableau
       let data = res.data
       if (!Array.isArray(data)) {
-        console.warn('⚠️ Leaderboard response is not an array:', typeof data)
+        // console.warn('⚠️ Leaderboard response is not an array:', typeof data)
         data = []
       }
       
@@ -296,9 +296,9 @@ export default {
       
       // Trier par score décroissant
       this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
-      console.log(`✅ Leaderboard loaded: ${this.leaderboard.length} players`, this.leaderboard)
+      // console.log(`✅ Leaderboard loaded: ${this.leaderboard.length} players`, this.leaderboard)
     } catch (err) {
-      console.error('❌ Erreur chargement leaderboard:', err)
+      // console.error('❌ Erreur chargement leaderboard:', err)
       this.leaderboard = []
     } finally {
       this.loading = false
@@ -314,9 +314,9 @@ export default {
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
     
     if (isProduction) {
-      console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
+      // console.log('🌐 Production mode - Using WebSocket URL:', wsUrl)
     } else {
-      console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
+      // console.log('🏠 Development mode - Using WebSocket URL (direct to game-service):', wsUrl)
     }
     
     this.socket = io(wsUrl, {
@@ -363,7 +363,7 @@ export default {
         this.leaderboard = Array.isArray(res.data) ? res.data : []
         this.leaderboard.sort((a, b) => (b.score || 0) - (a.score || 0))
       } catch (err) {
-        console.error('❌ Erreur polling leaderboard:', err)
+        // console.error('❌ Erreur polling leaderboard:', err)
       }
     }, 3000) // Toutes les 3 secondes
   },

@@ -106,7 +106,7 @@ export default {
           error.value = t('auth.waitingValidation.blocked')
         }
       } catch (err) {
-        console.error('Check status error:', err)
+        // console.error('Check status error:', err)
         error.value = t('auth.waitingValidation.error')
       } finally {
         checking.value = false

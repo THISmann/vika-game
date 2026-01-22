@@ -190,7 +190,7 @@ export default {
           }
         }
       } catch (err) {
-        console.error('Login error:', err)
+        // console.error('Login error:', err)
         error.value = err.response?.data?.error || t('auth.login.error')
       } finally {
         loading.value = false
