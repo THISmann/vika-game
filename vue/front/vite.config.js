@@ -8,7 +8,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE_URL || '/vika-game/',
+  base: process.env.VITE_BASE_URL || '/',
   plugins: [
     vue(),
     vueJsx(),
@@ -21,6 +21,14 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: [
+      'vika-game.ru',
+      'www.vika-game.ru',
+      'localhost',
+      '.localhost'
+    ],
     proxy: {
       '/api/auth': {
         target: 'http://localhost:3001',
