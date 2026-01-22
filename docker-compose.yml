@@ -454,10 +454,10 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=https://vika-game.ru
+      - GF_SERVER_ROOT_URL=http://vika-game.ru
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_SERVER_DOMAIN=vika-game.ru
-      - GF_SERVER_PROTOCOL=https
+      - GF_SERVER_PROTOCOL=http
       - GF_INSTALL_PLUGINS=
       - GF_APISERVER_ENABLED=false
       - GF_FEATURE_TOGGLES_ENABLE=
@@ -483,7 +483,7 @@ services:
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.regex=^/container-monitoring(.*)"
       - "traefik.http.middlewares.grafana-container-replace.replacepathregex.replacement=/d/containers-dashboard/containers-monitoring?orgId=1&from=now-6h&to=now&timezone=browser&refresh=10s$$1"
       # Middleware pour ajouter les headers nécessaires pour Grafana
-      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Proto=http"
       - "traefik.http.middlewares.grafana-headers.headers.customrequestheaders.X-Forwarded-Host=vika-game.ru"
       # Route pour /api-gateway-monitoring (proxy vers Grafana)
       - "traefik.http.routers.grafana-api-gateway.rule=Host(`vika-game.ru`) && PathPrefix(`/api-gateway-monitoring`)"
