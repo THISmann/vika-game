@@ -219,8 +219,6 @@ services:
       - "--entrypoints.web.transport.respondingTimeouts.readTimeout=60s"
       - "--entrypoints.web.transport.respondingTimeouts.writeTimeout=60s"
       - "--entrypoints.web.transport.respondingTimeouts.idleTimeout=180s"
-      - "--entrypoints.web.http.redirections.entrypoint.to=web"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=http"
       # Let's Encrypt configuration
       - "--certificatesresolvers.letsencrypt.acme.email=admin@vika-game.ru"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
