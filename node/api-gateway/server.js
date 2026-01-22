@@ -24,9 +24,29 @@ app.use(cors({
 }));
 
 // Middleware
-// IMPORTANT: Ne pas utiliser express.json() globalement car il consomme le body
-// et le proxy ne peut plus le lire. On l'utilisera seulement pour les routes non-proxy
-app.use(express.urlencoded({ extended: true }));
+// IMPORTANT: Pour les requêtes proxifiées, http-proxy-middleware gère automatiquement le body
+// On parse le JSON seulement pour les routes non-proxy (comme /test, /health, etc.)
+// Pour les routes proxifiées, le body est transmis directement au service backend
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Parse JSON body pour les routes non-proxy (http-proxy-middleware gère le body pour les routes proxifiées)
+app.use((req, res, next) => {
+  // Si c'est une route non-proxy (health, metrics, test, api-docs), parser le JSON
+  if (req.path === '/health' || 
+      req.path === '/metrics' || 
+      req.path.startsWith('/test') ||
+      req.path.startsWith('/api-docs')) {
+    return express.json({ limit: '10mb' })(req, res, next);
+  }
+  // Pour les routes proxifiées, http-proxy-middleware gère le body automatiquement
+  // On doit juste s'assurer que le Content-Type est correct
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+      // Le body sera lu par http-proxy-middleware directement depuis le stream
+      // Pas besoin de le parser ici
+    }
+  }
+  next();
+});
 app.use(metricsMiddleware); // Prometheus metrics collection
 app.use(loggerMiddleware); // Request logging
 

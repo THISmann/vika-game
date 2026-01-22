@@ -56,6 +56,9 @@ const createServiceProxy = (target, pathPrefix = '') => {
       // On s'assure juste que les headers sont corrects
       if (req.headers['content-type']) {
         proxyReq.setHeader('Content-Type', req.headers['content-type']);
+      } else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+        // Si Content-Type n'est pas défini mais qu'on a un body, définir application/json par défaut
+        proxyReq.setHeader('Content-Type', 'application/json');
       }
       
       // Transmettre tous les autres headers importants
@@ -70,6 +73,11 @@ const createServiceProxy = (target, pathPrefix = '') => {
       proxyReq.setHeader('X-Forwarded-For', req.ip);
       proxyReq.setHeader('X-Forwarded-Host', req.get('host'));
       proxyReq.setHeader('X-Forwarded-Proto', req.protocol);
+      
+      // Logger le body pour déboguer (seulement pour les requêtes POST/PUT)
+      if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') && req.body) {
+        console.log(`📦 Request body:`, JSON.stringify(req.body));
+      }
     },
     onProxyRes: (proxyRes, req, res) => {
       // Logger les réponses si nécessaire
