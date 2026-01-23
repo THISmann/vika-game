@@ -87,7 +87,7 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span class="mr-2">Code:</span>
+                <span class="mr-2">{{ t('parties.gameCode') || 'Code de jeu' }}:</span>
                 <span 
                   @click="copyGameCode(party.gameCode)" 
                   class="font-mono font-bold cursor-pointer hover:text-blue-600 transition-colors select-all"
@@ -230,8 +230,25 @@
                 <p class="text-gray-800">{{ getStatusLabel(partyDetails.status) }}</p>
               </div>
               <div v-if="partyDetails.gameCode">
-                <p class="text-sm font-medium text-gray-700">{{ t('parties.gameCode') || 'Code de jeu' }}</p>
-                <p class="text-lg text-gray-900 font-mono font-bold">{{ partyDetails.gameCode }}</p>
+                <p class="text-sm font-medium text-gray-700 mb-2">{{ t('parties.gameCode') || 'Code de jeu' }}</p>
+                <div class="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                  <p 
+                    @click="copyGameCode(partyDetails.gameCode)" 
+                    class="text-lg text-gray-900 font-mono font-bold cursor-pointer hover:text-blue-600 transition-colors select-all flex-1"
+                    :title="t('parties.copyCode') || 'Cliquez pour copier'"
+                  >
+                    {{ partyDetails.gameCode }}
+                  </p>
+                  <button
+                    @click="copyGameCode(partyDetails.gameCode)"
+                    class="p-1 text-gray-500 hover:text-blue-600 transition-colors ml-2"
+                    :title="t('parties.copyCode') || 'Copier le code'"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div v-if="partyDetails.scheduledStartTime">
                 <p class="text-sm font-medium text-gray-700">{{ t('parties.scheduledTime') || 'Heure programmée' }}</p>
@@ -1099,17 +1116,17 @@ export default {
     }
 
     const shareOnWhatsApp = (gameCode, partyName) => {
-      const message = encodeURIComponent(
-        `${partyName ? `${partyName}\n\n` : ''}Code de la partie: ${gameCode}\n\nRejoignez la partie sur: http://www.vika-game.ru`
-      )
+      // Message simple avec juste le code, dans la langue de l'utilisateur
+      const shareMessage = t('parties.shareMessage').replace('{code}', gameCode)
+      const message = encodeURIComponent(shareMessage)
       const whatsappUrl = `https://wa.me/?text=${message}`
       window.open(whatsappUrl, '_blank')
     }
 
     const shareOnTelegram = (gameCode, partyName) => {
-      const message = encodeURIComponent(
-        `${partyName ? `${partyName}\n\n` : ''}Code de la partie: ${gameCode}\n\nRejoignez la partie sur: http://www.vika-game.ru`
-      )
+      // Message simple avec juste le code, dans la langue de l'utilisateur
+      const shareMessage = t('parties.shareMessage').replace('{code}', gameCode)
+      const message = encodeURIComponent(shareMessage)
       const telegramUrl = `https://t.me/share/url?url=http://www.vika-game.ru&text=${message}`
       window.open(telegramUrl, '_blank')
     }
