@@ -537,6 +537,7 @@ services:
       - "traefik.http.routers.grafana-main.middlewares=grafana-headers"
       - "traefik.http.routers.grafana-main.priority=40"
       - "traefik.http.routers.grafana-main.service=grafana"
+      # Service Grafana avec path rewrite pour préserver /grafana
       # Route HTTPS Grafana Main (désactivée temporairement)
       # - "traefik.http.routers.grafana-main-secure.rule=Host(`vika-game.ru`) && (PathPrefix(`/login`) || PathPrefix(`/api/ds`) || PathPrefix(`/api/annotations`) || PathPrefix(`/api/dashboards`) || PathPrefix(`/api/user`) || PathPrefix(`/api/org`) || PathPrefix(`/api/folders`) || PathPrefix(`/api/datasources`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/search`) || PathPrefix(`/api/public`) || PathPrefix(`/public/`) || PathPrefix(`/avatar/`) || PathPrefix(`/d/`) || PathPrefix(`/img/`) || Path(`/favicon.ico`))"
       # - "traefik.http.routers.grafana-main-secure.entrypoints=websecure"
