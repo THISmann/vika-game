@@ -1099,17 +1099,17 @@ export default {
     }
 
     const shareOnWhatsApp = (gameCode, partyName) => {
-      const message = encodeURIComponent(
-        `${partyName ? `${partyName}\n\n` : ''}Code de la partie: ${gameCode}\n\nRejoignez la partie sur: http://www.vika-game.ru`
-      )
+      // Message simple avec juste le code, dans la langue de l'utilisateur
+      const shareMessage = t('parties.shareMessage').replace('{code}', gameCode)
+      const message = encodeURIComponent(shareMessage)
       const whatsappUrl = `https://wa.me/?text=${message}`
       window.open(whatsappUrl, '_blank')
     }
 
     const shareOnTelegram = (gameCode, partyName) => {
-      const message = encodeURIComponent(
-        `${partyName ? `${partyName}\n\n` : ''}Code de la partie: ${gameCode}\n\nRejoignez la partie sur: http://www.vika-game.ru`
-      )
+      // Message simple avec juste le code, dans la langue de l'utilisateur
+      const shareMessage = t('parties.shareMessage').replace('{code}', gameCode)
+      const message = encodeURIComponent(shareMessage)
       const telegramUrl = `https://t.me/share/url?url=http://www.vika-game.ru&text=${message}`
       window.open(telegramUrl, '_blank')
     }

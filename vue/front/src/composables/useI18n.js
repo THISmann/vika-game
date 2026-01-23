@@ -289,6 +289,15 @@ const translations = {
     'parties.createQuestionError': 'Erreur lors de la création de la question',
     'parties.creating': 'Création...',
     'parties.create': 'Créer',
+    'parties.player': 'joueur',
+    'parties.players': 'joueurs',
+    'parties.gameCode': 'Code de jeu',
+    'parties.copyCode': 'Copier le code',
+    'parties.codeCopied': 'Code copié !',
+    'parties.copyError': 'Erreur lors de la copie',
+    'parties.shareWhatsApp': 'Partager sur WhatsApp',
+    'parties.shareTelegram': 'Partager sur Telegram',
+    'parties.shareMessage': 'Code de la partie: {code}',
     
     // Sidebar
     'sidebar.appName': 'Vika-Game',
@@ -931,6 +940,15 @@ const translations = {
     'parties.createQuestionError': 'Error creating question',
     'parties.creating': 'Creating...',
     'parties.create': 'Create',
+    'parties.player': 'player',
+    'parties.players': 'players',
+    'parties.gameCode': 'Game Code',
+    'parties.copyCode': 'Copy code',
+    'parties.codeCopied': 'Code copied!',
+    'parties.copyError': 'Error copying',
+    'parties.shareWhatsApp': 'Share on WhatsApp',
+    'parties.shareTelegram': 'Share on Telegram',
+    'parties.shareMessage': 'Game code: {code}',
     
     // Sidebar
     'sidebar.appName': 'Vika-Game',
