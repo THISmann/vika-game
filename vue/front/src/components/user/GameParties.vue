@@ -7,7 +7,7 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-7xl mx-auto px-2 sm:px-3 md:px-6 lg:px-8 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-7xl mx-auto px-4 sm:px-3 md:px-6 lg:px-8 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
       <!-- Header -->
       <div class="mb-6 sm:mb-8">
         <div class="flex items-center justify-between mb-4">
@@ -21,7 +21,7 @@
           </div>
           <button
             @click="showCreateModal = true"
-            class="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+            class="min-h-[44px] px-4 sm:px-6 py-3 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 active:scale-[0.98] transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center sm:justify-start space-x-2"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />

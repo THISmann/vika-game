@@ -7,7 +7,7 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-0 md:ml-64 max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-4 sm:px-3 md:px-6 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-200 p-4 sm:p-5 md:p-6">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ t('admin.questions.title') }}</h1>

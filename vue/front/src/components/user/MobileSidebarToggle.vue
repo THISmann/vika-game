@@ -10,17 +10,18 @@
     </svg>
   </button>
   
-  <!-- Mobile Sidebar Overlay -->
+  <!-- Overlay: séparation visuelle du contenu, fermeture au tap -->
   <div
     v-if="isOpen"
-    class="md:hidden fixed inset-0 bg-black/50 z-40"
+    class="md:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-[2px] transition-opacity duration-300"
     @click="closeMobileSidebar"
+    aria-hidden="true"
   ></div>
   
-  <!-- Mobile Sidebar: icon-only layout like reference image -->
+  <!-- Mobile Sidebar: plus fine, pas collée au contenu (ombre + bordure droite), présente sur toutes les pages user -->
   <aside
     v-if="isOpen"
-    class="md:hidden fixed left-0 top-0 h-full w-24 sm:w-28 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white z-50 shadow-2xl transform transition-transform duration-300 flex flex-col"
+    class="md:hidden fixed left-0 top-0 h-full w-20 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white z-50 flex flex-col border-r border-white/10 shadow-[4px_0_24px_rgba(0,0,0,0.25)] transform transition-transform duration-300 ease-out"
   >
     <UserSidebar :mobile="true" @close="closeMobileSidebar" />
   </aside>

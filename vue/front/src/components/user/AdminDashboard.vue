@@ -7,7 +7,7 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-4 sm:px-3 md:px-6 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-200 p-3 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
@@ -52,7 +52,7 @@
             <!-- Bouton Copier -->
             <button
               @click="copyGameCode"
-              class="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 flex items-center space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl"
+              class="min-h-[44px] px-4 sm:px-4 py-3 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 active:scale-[0.98] transition-all transform hover:scale-105 flex items-center justify-center sm:justify-start space-x-1 sm:space-x-2 shadow-lg hover:shadow-xl"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

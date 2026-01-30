@@ -7,22 +7,23 @@
       !mobile && (isCollapsed ? 'w-20' : 'w-64')
     ]"
   >
-    <div class="flex flex-col h-full" :class="{ 'items-center': mobile }">
-      <!-- Logo/Header: on mobile = close X + icon in gradient square -->
-      <div class="p-2 sm:p-4 md:p-6 border-b border-white/20 relative flex-shrink-0" :class="mobile ? 'w-full flex flex-col items-center py-4' : ''">
-        <!-- Mobile: close button (X) at top -->
+    <!-- Mobile: padding horizontal pour ne pas coller aux bords -->
+    <div class="flex flex-col h-full" :class="[mobile ? 'items-center px-2' : '']">
+      <!-- Logo/Header: on mobile = close X + icon -->
+      <div class="p-2 sm:p-4 md:p-6 border-b border-white/20 relative flex-shrink-0" :class="mobile ? 'w-full flex flex-col items-center py-3' : ''">
+        <!-- Mobile: close (X) en haut, zone tactile 44px -->
         <button
           v-if="mobile"
           @click="emit('close')"
-          class="absolute top-3 left-3 w-10 h-10 flex items-center justify-center rounded-lg text-white hover:bg-white/20 transition-colors z-10"
-          aria-label="Fermer"
+          class="absolute top-2 left-0 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-white hover:bg-white/20 active:bg-white/30 transition-colors z-10"
+          aria-label="Fermer le menu"
         >
-          <svg class="w-6 h-6 stroke-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 stroke-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
         <div class="flex items-center justify-center md:space-x-3" :class="{ 'md:justify-start': !isCollapsed }">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl flex-shrink-0 shadow-lg" :class="mobile ? 'w-14 h-14 rounded-2xl' : ''">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl flex-shrink-0 shadow-lg" :class="mobile ? 'w-12 h-12 rounded-xl' : ''">
             🎮
           </div>
           <div v-if="!isCollapsed && !mobile" class="flex-1 min-w-0 ml-3 hidden md:block">
@@ -43,20 +44,20 @@
         </button>
       </div>
 
-      <!-- Navigation: on mobile = vertical icon-only buttons, centered; icons white and visible -->
-      <nav class="flex-1 p-2 sm:p-4 overflow-y-auto flex flex-col text-white" :class="mobile ? 'items-center space-y-3 py-6 w-full' : 'space-y-2'">
+      <!-- Navigation: mobile = icônes centrées, zone tactile 44px min, espacement -->
+      <nav class="flex-1 p-2 sm:p-4 overflow-y-auto flex flex-col text-white" :class="mobile ? 'items-center gap-2 py-4 w-full' : 'space-y-2'">
         <router-link
           to="/user/dashboard"
           @click="mobile && emit('close')"
-          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 group flex-shrink-0 text-white"
+          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 active:bg-white/20 group flex-shrink-0 text-white"
           :class="[
-            mobile ? 'w-14 h-14 md:w-14 md:h-14' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
+            mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
             $route.path === '/user/dashboard' ? 'bg-white/20' : '',
             (isCollapsed || mobile) ? 'justify-center' : ''
           ]"
           :title="t('sidebar.dashboard') || 'Dashboard'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
           <span v-if="!isCollapsed && !mobile" class="truncate hidden md:inline">{{ t('sidebar.dashboard') || 'Dashboard' }}</span>
@@ -65,15 +66,15 @@
         <router-link
           to="/user/parties"
           @click="mobile && emit('close')"
-          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 group flex-shrink-0 text-white"
+          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 active:bg-white/20 group flex-shrink-0 text-white"
           :class="[
-            mobile ? 'w-14 h-14 md:w-14 md:h-14' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
+            mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
             $route.path === '/user/parties' ? 'bg-white/20' : '',
             (isCollapsed || mobile) ? 'justify-center' : ''
           ]"
           :title="t('sidebar.parties') || 'Parties'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
           <span v-if="!isCollapsed && !mobile" class="truncate hidden md:inline">{{ t('sidebar.parties') || 'Parties' }}</span>
@@ -82,15 +83,15 @@
         <router-link
           to="/user/questions"
           @click="mobile && emit('close')"
-          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 group flex-shrink-0 text-white"
+          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 active:bg-white/20 group flex-shrink-0 text-white"
           :class="[
-            mobile ? 'w-14 h-14 md:w-14 md:h-14' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
+            mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
             $route.path === '/user/questions' ? 'bg-white/20' : '',
             (isCollapsed || mobile) ? 'justify-center' : ''
           ]"
           :title="t('sidebar.questions') || 'Questions'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span v-if="!isCollapsed && !mobile" class="truncate hidden md:inline">{{ t('sidebar.questions') || 'Questions' }}</span>
@@ -99,15 +100,15 @@
         <router-link
           to="/user/leaderboard"
           @click="mobile && emit('close')"
-          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 group flex-shrink-0 text-white"
+          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 active:bg-white/20 group flex-shrink-0 text-white"
           :class="[
-            mobile ? 'w-14 h-14 md:w-14 md:h-14' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
+            mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
             $route.path === '/user/leaderboard' ? 'bg-white/20' : '',
             (isCollapsed || mobile) ? 'justify-center' : ''
           ]"
           :title="t('sidebar.leaderboard') || 'Classement'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           </svg>
           <span v-if="!isCollapsed && !mobile" class="truncate hidden md:inline">{{ t('sidebar.leaderboard') || 'Classement' }}</span>
@@ -116,15 +117,15 @@
         <router-link
           to="/user/settings"
           @click="mobile && emit('close')"
-          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 group flex-shrink-0 text-white"
+          class="flex items-center justify-center rounded-xl transition-all hover:bg-white/10 active:bg-white/20 group flex-shrink-0 text-white"
           :class="[
-            mobile ? 'w-14 h-14 md:w-14 md:h-14' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
+            mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12' : 'md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 justify-center',
             $route.path === '/user/settings' ? 'bg-white/20' : '',
             (isCollapsed || mobile) ? 'justify-center' : ''
           ]"
           :title="t('sidebar.settings') || 'Paramètres'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -145,9 +146,9 @@
             </div>
           </div>
         </div>
-        <!-- Mobile: avatar circle only -->
-        <div v-if="currentUser && mobile" class="flex justify-center">
-          <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg" :title="currentUser.name || currentUser.email || 'User'">
+        <!-- Mobile: avatar circle, pas collé -->
+        <div v-if="currentUser && mobile" class="flex justify-center py-1">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg" :title="currentUser.name || currentUser.email || 'User'">
             {{ currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U' }}
           </div>
         </div>
@@ -159,11 +160,11 @@
         <!-- Logout: red rounded button, icon only on mobile -->
         <button
           @click="logout"
-          class="flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 transition-all flex-shrink-0 text-white"
-          :class="mobile ? 'w-14 h-14 shadow-lg' : 'w-full md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 md:justify-center'"
+          class="flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all flex-shrink-0 text-white"
+          :class="mobile ? 'min-w-[44px] min-h-[44px] w-12 h-12 shadow-lg' : 'w-full md:justify-start md:space-x-3 px-2 md:px-3 sm:px-4 py-2 sm:py-3 md:justify-center'"
           :title="t('sidebar.logout') || 'Déconnexion'"
         >
-          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-8 h-8' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <svg class="flex-shrink-0 text-white stroke-white" :class="mobile ? 'w-6 h-6' : 'w-6 h-6 md:w-5 md:h-5'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
           <span v-if="!isCollapsed && !mobile" class="truncate hidden md:inline">{{ t('sidebar.logout') || 'Déconnexion' }}</span>
