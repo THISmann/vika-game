@@ -159,7 +159,7 @@
               {{ t('landing.description.title') }}
             </h2>
 
-            <!-- What is IntelectGame -->
+            <!-- What is Vika-Game -->
             <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-100 mb-8 sm:mb-10 md:mb-12 leading-relaxed text-center max-w-4xl mx-auto drop-shadow-lg">
               {{ t('landing.description.whatIs') }}
             </p>

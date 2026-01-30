@@ -1,45 +1,58 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
-    <!-- Navigation - Top Left -->
-    <div class="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 flex items-center gap-2">
-      <router-link
-        to="/"
-        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-700 bg-white/90 hover:bg-white border-2 border-gray-200 hover:border-blue-300 shadow-sm transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        {{ t('common.home') || 'Accueil' }}
-      </router-link>
-      <button
-        type="button"
-        @click="router.back()"
-        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-700 bg-white/90 hover:bg-white border-2 border-gray-200 hover:border-blue-300 shadow-sm transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        {{ t('common.back') || 'Retour' }}
-      </button>
+  <div class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 relative overflow-y-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+      <div class="absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+      <div class="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
     </div>
-    <!-- Language Selector - Top Right -->
-    <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
-      <LanguageSelector />
-    </div>
-    
-    <div class="max-w-lg w-full">
-      <div class="bg-white rounded-3xl shadow-2xl border-2 border-blue-100 p-8 sm:p-10">
-        <!-- Header -->
+
+    <header class="relative z-10 w-full flex-shrink-0 mb-6 sm:mb-8">
+      <div class="max-w-7xl mx-auto px-2 sm:px-4 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <router-link
+            to="/"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 border border-white/30 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            {{ t('common.home') || 'Accueil' }}
+          </router-link>
+          <button
+            type="button"
+            @click="router.back()"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 border border-white/30 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            {{ t('common.back') || 'Retour' }}
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center transform rotate-12 shadow-lg flex-shrink-0">
+            <span class="text-2xl sm:text-3xl">🎮</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-bold text-white whitespace-nowrap drop-shadow-lg">Vika-Game</h1>
+        </div>
+        <div class="flex-shrink-0">
+          <LanguageSelector />
+        </div>
+      </div>
+    </header>
+
+    <div class="relative z-10 max-w-lg w-full mx-auto flex-1 flex items-start justify-center py-4">
+      <div class="w-full bg-gradient-to-br from-white/15 to-purple-900/40 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-white/30 p-8 sm:p-10">
         <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-blue-600 mb-4 shadow-lg">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-4 shadow-lg ring-4 ring-yellow-200/50">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-2">
+          <h2 class="text-3xl font-extrabold text-white mb-2 drop-shadow-lg">
             {{ t('auth.signup.title') || 'Créer un compte' }}
           </h2>
-          <p class="text-sm text-gray-600">
+          <p class="text-sm text-gray-200">
             {{ t('auth.signup.subtitle') || 'Rejoignez-nous dès aujourd\'hui' }}
           </p>
         </div>
@@ -47,7 +60,7 @@
         <form class="space-y-5" @submit.prevent="handleSignup">
           <!-- Name Field -->
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="name" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.name') || 'Nom complet' }}
             </label>
             <div class="relative">
@@ -62,7 +75,7 @@
                 name="name"
                 type="text"
                 required
-                class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
+                class="block w-full pl-10 pr-3 py-3 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
                 :placeholder="t('auth.signup.namePlaceholder') || 'Jean Dupont'"
               />
             </div>
@@ -70,7 +83,7 @@
 
           <!-- Email Field -->
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="email" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.email') || 'Email' }}
             </label>
             <div class="relative">
@@ -86,7 +99,7 @@
                 type="email"
                 autocomplete="email"
                 required
-                class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
+                class="block w-full pl-10 pr-3 py-3 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
                 :placeholder="t('auth.signup.emailPlaceholder') || 'votre@email.com'"
               />
             </div>
@@ -94,7 +107,7 @@
 
           <!-- Password Field -->
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="password" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.password') || 'Mot de passe' }}
             </label>
             <div class="relative">
@@ -110,14 +123,14 @@
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="new-password"
                 required
-                class="block w-full pl-10 pr-12 py-3 border-2 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
-                :class="passwordError ? 'border-red-500' : 'border-gray-300'"
+                class="block w-full pl-10 pr-12 py-3 bg-gray-800/90 border-2 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
+                :class="passwordError ? 'border-red-500' : 'border-gray-600'"
                 :placeholder="t('auth.signup.passwordPlaceholder') || 'Minimum 6 caractères'"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
               >
                 <svg v-if="showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.995 4.995 0 0112 15c1.921 0 3.536 1.367 3.918 3.107M21 12c-1.372 4.957-5.162 7.9-9.543 7.9a9.97 9.97 0 01-1.563-.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.995 4.995 0 0112 15c1.921 0 3.536 1.367 3.918 3.107M21 12c-1.372 4.957-5.162 7.9-9.543 7.9a9.97 9.97 0 01-1.563-.029" />
@@ -128,13 +141,13 @@
                 </svg>
               </button>
             </div>
-            <p v-if="passwordError" class="mt-1 text-sm text-red-600">{{ passwordError }}</p>
-            <p v-else-if="form.password" class="mt-1 text-xs text-gray-500">{{ t('auth.signup.passwordHint') || 'Le mot de passe doit contenir au moins 6 caractères' }}</p>
+            <p v-if="passwordError" class="mt-1 text-sm text-red-300">{{ passwordError }}</p>
+            <p v-else-if="form.password" class="mt-1 text-xs text-gray-400">{{ t('auth.signup.passwordHint') || 'Le mot de passe doit contenir au moins 6 caractères' }}</p>
           </div>
 
           <!-- Confirm Password Field -->
           <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.confirmPassword') || 'Confirmer le mot de passe' }}
             </label>
             <div class="relative">
@@ -150,14 +163,14 @@
                 :type="showConfirmPassword ? 'text' : 'password'"
                 autocomplete="new-password"
                 required
-                class="block w-full pl-10 pr-12 py-3 border-2 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
-                :class="confirmPasswordError ? 'border-red-500' : 'border-gray-300'"
+                class="block w-full pl-10 pr-12 py-3 bg-gray-800/90 border-2 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
+                :class="confirmPasswordError ? 'border-red-500' : 'border-gray-600'"
                 :placeholder="t('auth.signup.confirmPasswordPlaceholder') || 'Répétez votre mot de passe'"
               />
               <button
                 type="button"
                 @click="showConfirmPassword = !showConfirmPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
               >
                 <svg v-if="showConfirmPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.995 4.995 0 0112 15c1.921 0 3.536 1.367 3.918 3.107M21 12c-1.372 4.957-5.162 7.9-9.543 7.9a9.97 9.97 0 01-1.563-.029m5.858.908a3 3 0 114.243 4.243M9.879 16.121A4.995 4.995 0 0112 15c1.921 0 3.536 1.367 3.918 3.107M21 12c-1.372 4.957-5.162 7.9-9.543 7.9a9.97 9.97 0 01-1.563-.029" />
@@ -168,12 +181,12 @@
                 </svg>
               </button>
             </div>
-            <p v-if="confirmPasswordError" class="mt-1 text-sm text-red-600">{{ confirmPasswordError }}</p>
+            <p v-if="confirmPasswordError" class="mt-1 text-sm text-red-300">{{ confirmPasswordError }}</p>
           </div>
 
           <!-- Contact Field -->
           <div>
-            <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="contact" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.contact') || 'Contact' }}
             </label>
             <div class="relative">
@@ -188,7 +201,7 @@
                 name="contact"
                 type="tel"
                 required
-                class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
+                class="block w-full pl-10 pr-3 py-3 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
                 :placeholder="t('auth.signup.contactPlaceholder') || '+33 6 12 34 56 78'"
               />
             </div>
@@ -196,7 +209,7 @@
 
           <!-- Use Case Field -->
           <div>
-            <label for="useCase" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="useCase" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.useCase') || 'Cas d\'utilisation' }}
             </label>
             <div class="relative">
@@ -210,7 +223,7 @@
                 v-model="form.useCase"
                 name="useCase"
                 required
-                class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 bg-white rounded-xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all appearance-none"
+                class="block w-full pl-10 pr-3 py-3 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white shadow-lg focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all appearance-none"
               >
                 <option value="">{{ t('auth.signup.useCasePlaceholder') || 'Sélectionnez un cas d\'utilisation' }}</option>
                 <option value="education">{{ t('auth.signup.useCase.education') || 'Éducation' }}</option>
@@ -229,7 +242,7 @@
 
           <!-- Country Field -->
           <div>
-            <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="country" class="block text-sm font-medium text-gray-200 mb-2">
               {{ t('auth.signup.country') || 'Pays' }}
             </label>
             <div class="relative">
@@ -244,24 +257,15 @@
                 name="country"
                 type="text"
                 required
-                class="block w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm focus:shadow-md"
+                class="block w-full pl-10 pr-3 py-3 bg-gray-800/90 border-2 border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all shadow-lg"
                 :placeholder="t('auth.signup.countryPlaceholder') || 'France'"
               />
             </div>
           </div>
 
           <!-- Error Message -->
-          <div v-if="error" class="rounded-xl bg-red-50 border-2 border-red-200 p-4">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-red-800">{{ error }}</p>
-              </div>
-            </div>
+          <div v-if="error" class="rounded-xl bg-red-500/20 border-2 border-red-500/50 text-red-200 px-4 py-3 text-sm font-medium">
+            {{ error }}
           </div>
 
           <!-- Submit Button -->
@@ -269,7 +273,7 @@
             <button
               type="submit"
               :disabled="loading || !!passwordError || !!confirmPasswordError"
-              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 hover:from-green-700 hover:via-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+              class="relative w-full flex justify-center py-3 px-4 rounded-xl font-bold text-base text-white bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl hover:shadow-2xl border-2 border-yellow-300/50"
             >
               <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
                 <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -283,11 +287,11 @@
 
           <!-- Login Link -->
           <div class="text-center">
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-gray-300">
               {{ t('auth.signup.hasAccount') || 'Vous avez déjà un compte?' }}
               <router-link
                 to="/auth/login"
-                class="font-semibold text-blue-600 hover:text-blue-800 ml-1 transition-colors"
+                class="font-semibold text-yellow-300 hover:text-yellow-200 ml-1 transition-colors"
               >
                 {{ t('auth.signup.login') || 'Se connecter' }}
               </router-link>

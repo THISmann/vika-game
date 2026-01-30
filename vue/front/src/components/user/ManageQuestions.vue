@@ -28,24 +28,59 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">
             {{ t('admin.questions.choices') }}
           </label>
-          <input
-            v-model="choicesRaw"
-            type="text"
-            required
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
-            :placeholder="t('admin.questions.choicesPlaceholder')"
-          />
+          <div class="space-y-3">
+            <div
+              v-for="(choice, index) in choiceItems"
+              :key="index"
+              class="flex items-center gap-2 sm:gap-3"
+            >
+              <input
+                v-model="choiceItems[index]"
+                type="text"
+                class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
+                :placeholder="t('admin.questions.choicePlaceholder') || `Option ${index + 1}`"
+              />
+              <button
+                v-if="choiceItems.length > 2"
+                type="button"
+                @click="removeChoice(index)"
+                class="flex-shrink-0 p-2.5 rounded-xl text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                :title="t('admin.questions.removeChoice') || 'Supprimer'"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <button
+              type="button"
+              @click="addChoice"
+              class="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:bg-blue-50 hover:border-blue-400 transition-all font-medium"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              {{ t('admin.questions.addChoice') || 'Ajouter une option' }}
+            </button>
+          </div>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2"> {{ t('admin.questions.correctAnswer') }} </label>
-          <input
+          <select
             v-model="answer"
-            type="text"
             required
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl"
-            :placeholder="t('admin.questions.correctAnswerPlaceholder')"
-          />
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-lg focus:shadow-xl appearance-none cursor-pointer"
+          >
+            <option value="" disabled>{{ t('admin.questions.correctAnswerPlaceholder') || 'Choisir la bonne réponse' }}</option>
+            <option
+              v-for="c in validChoices"
+              :key="c"
+              :value="c"
+            >
+              {{ c }}
+            </option>
+          </select>
         </div>
 
         <div
@@ -103,30 +138,42 @@
         <p class="mt-2">{{ t('admin.questions.empty') }}</p>
       </div>
 
-      <div v-else class="space-y-4">
+      <div v-else class="space-y-4 sm:space-y-5 md:space-y-6 px-2 sm:px-0">
         <div
-          v-for="q in questions"
+          v-for="(q, index) in questions"
           :key="q.id"
-          class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+          class="border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-white to-blue-50/50 hover:shadow-lg hover:border-blue-200 transition-all duration-200"
         >
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                {{ q.question }}
-              </h3>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div class="flex items-start justify-between gap-3 sm:gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 sm:gap-3 mb-3">
+                <span
+                  class="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm sm:text-base font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md"
+                >
+                  {{ index + 1 }}
+                </span>
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 leading-snug break-words">
+                  {{ q.question }}
+                </h3>
+              </div>
+              <p class="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 font-medium">
+                {{ t('admin.questions.choices') }}:
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                 <span
                   v-for="choice in q.choices"
                   :key="choice"
-                  class="px-3 py-2 bg-gray-100 rounded-md text-sm text-gray-700"
+                  class="px-3 py-2.5 sm:py-2 bg-white/80 border border-gray-200 rounded-lg text-sm text-gray-700 shadow-sm"
+                  :class="{ 'ring-2 ring-green-400 border-green-400 bg-green-50': choice === q.answer }"
                 >
                   {{ choice }}
+                  <span v-if="choice === q.answer" class="ml-1 text-green-600 font-semibold">✓</span>
                 </span>
               </div>
             </div>
             <button
               @click="deleteQuestion(q.id)"
-              class="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              class="flex-shrink-0 p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-xl transition-colors"
               :title="t('admin.questions.delete')"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,9 +216,25 @@ export default {
     }
     
     const question = ref('')
-    const choicesRaw = ref('')
+    const choiceItems = ref(['', ''])
     const answer = ref('')
     const success = ref(false)
+
+    const validChoices = computed(() =>
+      choiceItems.value.map((c) => c.trim()).filter(Boolean)
+    )
+
+    const addChoice = () => {
+      choiceItems.value.push('')
+    }
+    const removeChoice = (index) => {
+      if (choiceItems.value.length > 2) {
+        choiceItems.value.splice(index, 1)
+        if (answer.value && !choiceItems.value.includes(answer.value)) {
+          answer.value = ''
+        }
+      }
+    }
 
     const questions = computed(() => questionsStore.questions)
     const loading = computed(() => questionsStore.loading)
@@ -197,18 +260,13 @@ export default {
       questionsStore.clearError()
       success.value = false
 
-      if (!question.value || !choicesRaw.value || !answer.value) {
+      const choices = validChoices.value
+      if (!question.value || choices.length < 2 || !answer.value) {
         questionsStore.error = t('admin.questions.allFieldsRequired')
         return
       }
-
-      const choices = choicesRaw.value
-        .split(',')
-        .map((c) => c.trim())
-        .filter((c) => c)
-
-      if (choices.length < 2) {
-        questionsStore.error = t('admin.questions.minChoices')
+      if (!choices.includes(answer.value)) {
+        questionsStore.error = t('admin.questions.correctAnswerMustBeChoice') || 'La bonne réponse doit être une des options.'
         return
       }
 
@@ -220,7 +278,7 @@ export default {
         })
 
         question.value = ''
-        choicesRaw.value = ''
+        choiceItems.value = ['', '']
         answer.value = ''
         success.value = true
 
@@ -250,9 +308,12 @@ export default {
       loading,
       error,
       question,
-      choicesRaw,
+      choiceItems,
+      validChoices,
       answer,
       success,
+      addChoice,
+      removeChoice,
       addQuestion,
       deleteQuestion,
       sidebarCollapsed

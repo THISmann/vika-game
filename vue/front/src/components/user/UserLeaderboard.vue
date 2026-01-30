@@ -1,9 +1,9 @@
 <template>
   <div class="flex min-h-screen">
     <UserSidebar />
-    <div class="flex-1 ml-20 md:ml-64 min-h-screen max-w-4xl mx-auto px-4 sm:px-3 md:px-4 lg:px-6 py-4 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-20 md:ml-64 min-h-screen max-w-4xl mx-auto px-4 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
-    <div class="bg-gradient-to-br from-white to-yellow-50 rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl border-0 sm:border-2 border-yellow-200 p-3 sm:p-4 md:p-5 lg:p-6 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
+    <div class="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl border-0 sm:border-2 border-yellow-200/80 p-3 sm:p-4 md:p-5 lg:p-6 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
       <div class="text-center">
         <div
           class="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-3 sm:mb-4 shadow-lg ring-4 ring-yellow-200"
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Leaderboard List -->
-    <div class="bg-gradient-to-br from-white to-gray-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 overflow-hidden">
+    <div class="bg-gradient-to-br from-white via-gray-50/80 to-blue-50/50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 overflow-hidden mx-2 sm:mx-0 md:mx-0">
       <!-- Loading State -->
       <div v-if="loading" class="p-10 sm:p-12 md:p-16 text-center">
         <div
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Leaderboard Table -->
-      <div v-else class="divide-y divide-gray-200">
+      <div v-else class="divide-y divide-gray-200 px-3 sm:px-4 md:px-5 py-2 sm:py-3">
         <div
           v-for="(entry, index) in paginatedLeaderboard"
           :key="entry.playerId || entry.id"
