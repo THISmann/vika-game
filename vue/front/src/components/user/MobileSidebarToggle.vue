@@ -17,12 +17,12 @@
     @click="closeMobileSidebar"
   ></div>
   
-  <!-- Mobile Sidebar -->
+  <!-- Mobile Sidebar: icon-only layout like reference image -->
   <aside
     v-if="isOpen"
-    class="md:hidden fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white z-50 shadow-2xl transform transition-transform duration-300"
+    class="md:hidden fixed left-0 top-0 h-full w-24 sm:w-28 bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white z-50 shadow-2xl transform transition-transform duration-300 flex flex-col"
   >
-    <UserSidebar @close="closeMobileSidebar" />
+    <UserSidebar :mobile="true" @close="closeMobileSidebar" />
   </aside>
 </template>
 
