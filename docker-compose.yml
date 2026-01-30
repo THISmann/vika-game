@@ -355,9 +355,9 @@ services:
       - "5173:5173"
     environment:
       - NODE_ENV=production
-      - VITE_AUTH_SERVICE_URL=/api
-      - VITE_QUIZ_SERVICE_URL=/api
-      - VITE_GAME_SERVICE_URL=/api
+      - VITE_AUTH_SERVICE_URL=/api/auth
+      - VITE_QUIZ_SERVICE_URL=/api/quiz
+      - VITE_GAME_SERVICE_URL=/api/game
     command: sh -c "npm install --legacy-peer-deps --include=dev && npm run build && npx vite preview --host 0.0.0.0 --port 5173"
     depends_on:
       api-gateway:
@@ -395,9 +395,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5174
-      - VITE_AUTH_SERVICE_URL=/api
-      - VITE_QUIZ_SERVICE_URL=/api
-      - VITE_GAME_SERVICE_URL=/api
+      - VITE_AUTH_SERVICE_URL=/api/auth
+      - VITE_QUIZ_SERVICE_URL=/api/quiz
+      - VITE_GAME_SERVICE_URL=/api/game
     command: sh -c "npm install --legacy-peer-deps --include=dev && npm run build && node server.cjs"
     depends_on:
       api-gateway:
