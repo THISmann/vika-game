@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 shadow-lg border-b border-purple-700 fixed top-0 z-[60] transition-all duration-300" :class="sidebarCollapsed ? 'left-16 md:left-20 right-0' : 'left-0 md:left-64 right-0'">
+  <nav class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 shadow-lg border-b border-purple-700 fixed top-0 z-[60] transition-all duration-300" :class="sidebarCollapsed ? 'left-16 md:left-20 right-0' : 'left-16 md:left-64 right-0'">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex items-center space-x-1">

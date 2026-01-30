@@ -1,12 +1,15 @@
 <template>
   <div class="flex min-h-screen">
+    <!-- Mobile Sidebar Toggle -->
+    <MobileSidebarToggle />
+    
     <!-- Sidebar -->
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 transition-all duration-300 mt-16 pt-6">
+    <div class="flex-1 ml-16 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
-    <div class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6">
+    <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-200 p-3 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
         <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-2">{{ t('admin.dashboard.title') }}</h1>
         <p class="text-sm sm:text-base md:text-lg text-gray-600 px-2">{{ t('admin.dashboard.subtitle') }}</p>
@@ -24,7 +27,7 @@
       </div>
 
       <!-- Game Code -->
-      <div v-if="gameCode" class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-yellow-300">
+      <div v-if="gameCode" class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-none sm:rounded-xl p-3 sm:p-6 mb-3 sm:mb-6 border-0 sm:border-2 border-yellow-300">
         <div class="text-center">
           <div class="text-xs sm:text-sm text-gray-600 mb-2">{{ t('admin.dashboard.gameCode') }}</div>
           <div class="text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-600 mb-2 font-mono tracking-wider">
@@ -83,7 +86,7 @@
       </div>
 
       <!-- Game State Info -->
-      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-4 sm:p-6 mb-6 border-2 border-blue-200 shadow-xl">
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-none sm:rounded-3xl p-3 sm:p-6 mb-4 sm:mb-6 border-0 sm:border-2 border-blue-200 shadow-none sm:shadow-xl">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div class="text-center">
             <div class="text-2xl sm:text-3xl font-bold text-purple-600">{{ gameState.connectedPlayersCount }}</div>
@@ -126,7 +129,7 @@
       <!-- Game Controls -->
       <div class="space-y-4 mb-4 sm:mb-6">
         <!-- Configuration du temps par question -->
-        <div v-if="!gameState.isStarted" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-3 sm:p-4 border-2 border-blue-200 shadow-lg space-y-4">
+        <div v-if="!gameState.isStarted" class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-none sm:rounded-3xl p-3 sm:p-4 border-0 sm:border-2 border-blue-200 shadow-none sm:shadow-lg space-y-3 sm:space-y-4">
           <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
             {{ t('admin.dashboard.timePerQuestion') }}
           </label>
@@ -209,10 +212,10 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
       <div
         @click="$router.push('/user/questions')"
-        class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
+        class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-none sm:rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-0 sm:border-2 border-blue-400 shadow-none sm:shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
           <h3 class="text-xl sm:text-2xl font-bold">{{ t('admin.nav.questions') }}</h3>
@@ -241,7 +244,7 @@
 
       <div
         @click="$router.push('/user/leaderboard')"
-        class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-2 border-blue-400 shadow-xl"
+        class="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-none sm:rounded-3xl p-4 sm:p-6 text-white cursor-pointer transform transition-all hover:scale-105 hover:shadow-2xl border-0 sm:border-2 border-blue-400 shadow-none sm:shadow-xl"
       >
         <div class="flex items-center justify-between mb-3 sm:mb-4">
           <h3 class="text-xl sm:text-2xl font-bold">Classement</h3>
@@ -301,6 +304,13 @@ export default {
     const copyButtonText = ref('')
     const scheduleMode = ref(false)
     const scheduledDateTime = ref('')
+    const sidebarCollapsed = ref(false)
+    
+    // Check sidebar state periodically
+    const checkSidebarState = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      sidebarCollapsed.value = savedState === 'true'
+    }
     
     // Calculer la date/heure minimale (maintenant)
     const minDateTime = computed(() => {
@@ -346,6 +356,11 @@ export default {
     let playersPollingInterval = null
 
     onMounted(async () => {
+      checkSidebarState()
+      // Check periodically for changes (every 100ms)
+      const interval = setInterval(checkSidebarState, 100)
+      window.sidebarCheckInterval = interval
+      
       // console.log('🟠 [AdminDashboard] Component mounted, loading initial data...')
       // Load initial data
       await Promise.all([
@@ -375,6 +390,11 @@ export default {
       if (playersPollingInterval) {
         clearInterval(playersPollingInterval)
         playersPollingInterval = null
+      }
+      
+      // Clear sidebar check interval
+      if (window.sidebarCheckInterval) {
+        clearInterval(window.sidebarCheckInterval)
       }
     })
 
@@ -506,7 +526,8 @@ export default {
       scheduleMode,
       scheduledDateTime,
       minDateTime,
-      formatScheduledTime
+      formatScheduledTime,
+      sidebarCollapsed
     }
   },
 }

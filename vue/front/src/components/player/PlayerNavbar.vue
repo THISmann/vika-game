@@ -1,6 +1,6 @@
 <template>
   <nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 shadow-lg border-b border-purple-700">
-    <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full">
       <div class="flex justify-between items-center h-14 sm:h-16">
         <!-- Logo -->
         <div class="flex items-center space-x-1 sm:space-x-2">
@@ -102,7 +102,8 @@
 
           <!-- Hamburger Menu Button -->
           <button
-            @click="toggleMobileMenu"
+            ref="hamburgerButtonRef"
+            @click.stop="toggleMobileMenu"
             class="px-2 py-2 rounded-lg text-white hover:bg-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label="Toggle menu"
           >
@@ -142,7 +143,9 @@
       <transition name="slide-down">
         <div
           v-if="showMobileMenu"
+          ref="mobileMenuRef"
           class="md:hidden border-t border-purple-700/50 py-3 sm:py-4"
+          @click.stop
         >
           <div class="flex flex-col space-y-2">
             <router-link
@@ -188,6 +191,8 @@ export default {
     const showMobileMenu = ref(false)
     const languageMenuRef = ref(null)
     const languageMenuRefMobile = ref(null)
+    const hamburgerButtonRef = ref(null)
+    const mobileMenuRef = ref(null)
     
     const getLanguageName = (lang) => {
       const names = {
@@ -221,15 +226,25 @@ export default {
     
     // Fermer les menus en cliquant à l'extérieur
     const handleClickOutside = (event) => {
+      // Vérifier le menu de langue desktop
       if (languageMenuRef.value && !languageMenuRef.value.contains(event.target)) {
         showLanguageMenu.value = false
       }
+      // Vérifier le menu de langue mobile
       if (languageMenuRefMobile.value && !languageMenuRefMobile.value.contains(event.target)) {
         showLanguageMenu.value = false
       }
-      // Fermer le menu mobile si on clique ailleurs (sauf sur le bouton hamburger)
-      if (showMobileMenu.value && !event.target.closest('nav')) {
-        showMobileMenu.value = false
+      // Fermer le menu mobile si on clique ailleurs
+      // Exclure explicitement le bouton hamburger et le menu mobile lui-même
+      if (showMobileMenu.value) {
+        const isClickOnHamburger = hamburgerButtonRef.value && hamburgerButtonRef.value.contains(event.target)
+        const isClickOnMobileMenu = mobileMenuRef.value && mobileMenuRef.value.contains(event.target)
+        const isClickInsideNav = event.target.closest('nav')
+        
+        // Ne fermer que si le clic est en dehors du nav OU si c'est un clic sur un lien du menu
+        if (!isClickOnHamburger && !isClickOnMobileMenu && !isClickInsideNav) {
+          showMobileMenu.value = false
+        }
       }
     }
     
@@ -262,7 +277,9 @@ export default {
       toggleMobileMenu,
       closeMobileMenu,
       languageMenuRef,
-      languageMenuRefMobile
+      languageMenuRefMobile,
+      hamburgerButtonRef,
+      mobileMenuRef
     }
   }
 }

@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6">
+  <div class="min-h-[calc(100vh-3.5rem)] sm:min-h-screen max-w-4xl mx-auto px-0 sm:px-3 md:px-4 lg:px-6 py-0 sm:py-3 md:py-4 lg:py-6 safe-area-inset-mobile bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 sm:bg-gradient-to-br sm:from-blue-50 sm:via-purple-50 sm:to-pink-50 w-full">
     <!-- Waiting for game to start -->
     <div
       v-if="!gameStarted && !gameEnded"
-      class="bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-100 p-6 sm:p-8 md:p-10 lg:p-12 text-center min-h-[70vh] flex flex-col items-center justify-center"
+      class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-100 p-6 sm:p-8 md:p-10 lg:p-12 text-center min-h-[calc(100vh-3.5rem)] sm:min-h-[70vh] flex flex-col items-center justify-center"
     >
       <div
         class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-blue-600 mb-5 sm:mb-6 md:mb-8"
@@ -17,7 +17,7 @@
     <!-- Loading State -->
     <div
       v-else-if="loading && !current"
-      class="bg-gradient-to-br from-white to-purple-50 rounded-3xl shadow-2xl border-2 border-purple-100 p-8 sm:p-10 md:p-12 text-center min-h-[70vh] flex flex-col items-center justify-center"
+      class="bg-gradient-to-br from-white to-purple-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-purple-100 p-8 sm:p-10 md:p-12 text-center min-h-[calc(100vh-3.5rem)] sm:min-h-[70vh] flex flex-col items-center justify-center"
     >
       <div
         class="inline-block animate-spin rounded-full h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20 border-4 sm:border-[5px] border-purple-600 mb-5 sm:mb-6 md:mb-8"
@@ -26,16 +26,46 @@
     </div>
 
     <!-- Quiz Question -->
-    <div v-else-if="current && !gameEnded" class="space-y-3 sm:space-y-4 md:space-y-6 pb-4 sm:pb-6">
-      <!-- Timer -->
-      <div class="bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-4 sm:p-5 md:p-6 sticky top-0 z-10 backdrop-blur-md bg-white/98 mb-3 sm:mb-4">
-        <div class="flex items-center justify-between mb-3 sm:mb-4">
-          <span class="text-sm sm:text-base md:text-lg font-bold text-gray-800">
+    <div v-else-if="current && !gameEnded" class="space-y-0 sm:space-y-4 md:space-y-6 pb-0 sm:pb-6 w-full">
+      <!-- Timer Header (Mobile) -->
+      <div class="sm:hidden bg-white/98 backdrop-blur-sm border-b border-indigo-100 px-4 pt-3 pb-3 sticky top-0 z-10 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-base font-bold text-gray-700">
+            {{ t('quiz.question') }} {{ currentQuestionIndex + 1 }}⸻{{ totalQuestions }}
+          </span>
+          <div
+            class="w-14 h-14 rounded-full border-3 flex items-center justify-center font-extrabold text-xl shadow-md"
+            :class="{
+              'border-indigo-500 text-indigo-600 bg-indigo-50': timeLeft > 10,
+              'border-amber-500 text-amber-600 bg-amber-50': timeLeft <= 10 && timeLeft > 5,
+              'border-red-500 text-red-600 bg-red-50 animate-pulse': timeLeft <= 5,
+            }"
+          >
+            {{ timeLeft }}
+          </div>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2">
+          <div
+            class="h-2 rounded-full transition-all duration-1000"
+            :class="{
+              'bg-indigo-500': timeLeft > 10,
+              'bg-amber-500': timeLeft <= 10 && timeLeft > 5,
+              'bg-red-500': timeLeft <= 5,
+            }"
+            :style="{ width: `${(timeLeft / questionDuration) * 100}%` }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Timer (Desktop) -->
+      <div class="hidden sm:block bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-2xl border-2 border-blue-200 p-5 md:p-6 sticky top-0 z-10 backdrop-blur-md bg-white/98 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-base md:text-lg font-bold text-gray-800">
             {{ t('quiz.question') }} {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
           </span>
-          <div class="flex items-center space-x-2 sm:space-x-3">
+          <div class="flex items-center space-x-3">
             <div
-              class="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-4 sm:border-[6px] flex items-center justify-center font-extrabold text-xl sm:text-2xl md:text-3xl shadow-xl ring-4 ring-opacity-20"
+              class="w-16 h-16 md:w-20 md:h-20 rounded-full border-[6px] flex items-center justify-center font-extrabold text-2xl md:text-3xl shadow-xl ring-4 ring-opacity-20"
               :class="{
                 'border-green-500 text-green-600 ring-green-500': timeLeft > 10,
                 'border-yellow-500 text-yellow-600 ring-yellow-500': timeLeft <= 10 && timeLeft > 5,
@@ -46,9 +76,9 @@
             </div>
           </div>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-3 sm:h-3.5 md:h-4 shadow-inner">
+        <div class="w-full bg-gray-200 rounded-full h-3.5 md:h-4 shadow-inner">
           <div
-            class="h-3 sm:h-3.5 md:h-4 rounded-full transition-all duration-1000 shadow-md"
+            class="h-3.5 md:h-4 rounded-full transition-all duration-1000 shadow-md"
             :class="{
               'bg-green-500': timeLeft > 10,
               'bg-yellow-500': timeLeft <= 10 && timeLeft > 5,
@@ -60,85 +90,92 @@
       </div>
 
       <!-- Question Card -->
-      <div class="bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl border-2 border-indigo-100 p-5 sm:p-6 md:p-7 lg:p-9">
-        <div class="text-center mb-5 sm:mb-6 md:mb-7 lg:mb-9">
-          <div
-            class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 mb-4 sm:mb-5 md:mb-6 shadow-2xl ring-4 ring-purple-200"
-          >
-            <svg class="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-5 md:mb-6 px-3 sm:px-4 leading-tight break-words">
+      <div class="bg-transparent sm:bg-gradient-to-br sm:from-white sm:to-indigo-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 sm:border-indigo-100 p-5 sm:p-6 md:p-7 lg:p-9 w-full">
+        <div class="text-center mb-6 sm:mb-6 md:mb-7 lg:mb-9">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 sm:text-gray-900 mb-0 sm:mb-5 md:mb-6 px-4 sm:px-4 leading-tight break-words">
             {{ current.question }}
           </h2>
         </div>
 
         <!-- Choices -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6 px-4 sm:px-0">
           <button
             v-for="(choice, index) in current.choices"
             :key="choice"
             @click="answer(choice)"
             :disabled="answering || hasAnswered"
-            class="group relative p-5 sm:p-6 md:p-7 lg:p-8 bg-gradient-to-br from-white to-gray-50 border-4 sm:border-[4px] rounded-2xl sm:rounded-3xl transition-all transform hover:scale-[1.03] active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[70px] sm:min-h-[80px] md:min-h-[90px] shadow-lg hover:shadow-2xl"
-            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none;"
+            class="group relative p-5 sm:p-6 md:p-7 lg:p-8 bg-white/90 sm:bg-gradient-to-br sm:from-white sm:to-gray-50 backdrop-blur-sm border-0 sm:border-[4px] rounded-2xl sm:rounded-3xl transition-all transform active:scale-[0.98] sm:hover:scale-[1.03] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[85px] sm:min-h-[80px] md:min-h-[90px] shadow-md sm:shadow-lg sm:hover:shadow-2xl"
+            style="touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-touch-callout: none;"
             :class="{
-              'border-gray-200 hover:border-blue-500 hover:shadow-lg': !hasAnswered,
-              'border-green-500 bg-green-50': hasAnswered && choice === selectedAnswer,
-              'border-gray-300': hasAnswered && choice !== selectedAnswer,
+              'sm:border-gray-200 sm:hover:border-indigo-500 sm:hover:shadow-lg': !hasAnswered,
+              'bg-indigo-50 sm:bg-indigo-50 sm:border-indigo-500': hasAnswered && choice === selectedAnswer,
+              'sm:border-gray-300': hasAnswered && choice !== selectedAnswer,
             }"
           >
-            <div class="flex items-center justify-between gap-3 sm:gap-4 w-full">
-              <span class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 break-words text-left flex-1 leading-snug">{{ choice }}</span>
+            <div class="flex items-center gap-4 sm:gap-4 w-full">
+              <!-- Letter Circle -->
               <div
-                class="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white border-4 sm:border-[4px] flex items-center justify-center transition-colors flex-shrink-0 shadow-lg ring-2 ring-gray-200"
+                class="w-12 h-12 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-indigo-100 sm:bg-white border-2 sm:border-[4px] flex items-center justify-center transition-colors flex-shrink-0 shadow-sm sm:shadow-lg"
                 :class="{
-                  'border-gray-300 group-hover:border-blue-500': !hasAnswered,
-                  'border-green-500': hasAnswered && choice === selectedAnswer,
-                  'border-gray-300': hasAnswered && choice !== selectedAnswer,
+                  'border-indigo-200 sm:border-gray-300 sm:group-hover:border-indigo-500': !hasAnswered,
+                  'border-indigo-500 sm:border-indigo-500 bg-indigo-200 sm:bg-indigo-100': hasAnswered && choice === selectedAnswer,
+                  'border-gray-200 sm:border-gray-300': hasAnswered && choice !== selectedAnswer,
                 }"
               >
-                <span class="text-base sm:text-lg md:text-xl font-extrabold text-gray-800">{{
+                <span class="text-lg sm:text-lg md:text-xl font-extrabold text-indigo-700 sm:text-gray-800">{{
                   String.fromCharCode(65 + index)
                 }}</span>
               </div>
+              <!-- Choice Text -->
+              <span class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-medium text-gray-700 sm:text-gray-900 break-words text-left flex-1 leading-snug">{{ choice }}</span>
             </div>
           </button>
         </div>
 
-        <div v-if="hasAnswered" class="mt-5 sm:mt-6 md:mt-7 text-center p-4 sm:p-5 md:p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-3 sm:border-[3px] border-green-300 rounded-2xl shadow-lg">
-          <p class="text-base sm:text-lg md:text-xl font-bold text-green-800">{{ t('quiz.answerRecorded') }}</p>
+        <div v-if="hasAnswered" class="mt-4 sm:mt-6 md:mt-7 text-center p-3 sm:p-5 md:p-6 bg-indigo-50 sm:bg-gradient-to-r sm:from-indigo-50 sm:to-purple-50 backdrop-blur-sm border-0 sm:border-[3px] sm:border-indigo-200 rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg mx-4 sm:mx-0">
+          <p class="text-sm sm:text-lg md:text-xl font-semibold text-indigo-700 sm:text-indigo-800">{{ t('quiz.answerRecorded') }}</p>
         </div>
       </div>
 
-      <!-- Player Info -->
-      <div class="bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-xl border-2 border-blue-200 p-4 sm:p-5 md:p-6">
+      <!-- Player Info (Hidden on mobile, shown on desktop) -->
+      <div class="hidden sm:block bg-gradient-to-r from-white to-blue-50 rounded-3xl shadow-xl border-2 border-blue-200 p-5 md:p-6">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3 sm:space-x-4">
+          <div class="flex items-center space-x-2 sm:space-x-4">
             <div
-              class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg ring-4 ring-blue-200"
+              class="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-md sm:shadow-lg ring-2 sm:ring-4 ring-blue-200"
             >
-              <span class="text-white font-extrabold text-base sm:text-lg md:text-xl">{{
+              <span class="text-white font-extrabold text-sm sm:text-lg md:text-xl">{{
                 playerName ? playerName.charAt(0).toUpperCase() : '?'
               }}</span>
             </div>
             <div>
-              <p class="text-sm text-gray-600">{{ t('quiz.player') }}</p>
-              <p class="font-semibold text-gray-900">{{ playerName || t('quiz.anonymous') }}</p>
+              <p class="text-xs sm:text-sm text-gray-600">{{ t('quiz.player') }}</p>
+              <p class="text-sm sm:text-base font-semibold text-gray-900">{{ playerName || t('quiz.anonymous') }}</p>
             </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Player Info (Mobile - Compact) -->
+      <div class="sm:hidden px-4 pb-3 pt-2">
+        <div class="flex items-center space-x-3">
+          <div
+            class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm ring-1 ring-indigo-200"
+          >
+            <span class="text-white font-extrabold text-sm">{{
+              playerName ? playerName.charAt(0).toUpperCase() : '?'
+            }}</span>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">{{ t('quiz.player') }}</p>
+            <p class="text-sm font-semibold text-gray-700">{{ playerName || t('quiz.anonymous') }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Game Ended - Show Results -->
-    <div v-else-if="gameEnded" class="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center">
+    <div v-else-if="gameEnded" class="bg-white rounded-none sm:rounded-2xl shadow-none sm:shadow-xl border-0 sm:border border-gray-200 p-6 sm:p-12 text-center">
       <div
         class="mx-auto flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 mb-6"
       >
@@ -731,3 +768,67 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+/* Safe area support for iPhone notch and home indicator */
+.safe-area-inset-mobile {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Full screen on mobile, no padding */
+@media (max-width: 639px) { /* Tailwind's 'sm' breakpoint is 640px */
+  .safe-area-inset-mobile {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .rounded-none {
+    border-radius: 0 !important;
+  }
+  .shadow-none {
+    box-shadow: none !important;
+  }
+  .border-none {
+    border-width: 0 !important;
+  }
+}
+
+/* Touch-friendly improvements */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Prevent text selection on buttons */
+button {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Improve input focus on mobile */
+input:focus {
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+
+/* Smooth transitions for better UX */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Better visual feedback on touch */
+@media (max-width: 639px) {
+  button:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+}
+</style>

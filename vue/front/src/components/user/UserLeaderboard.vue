@@ -7,9 +7,9 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-6">
+    <div class="flex-1 ml-16 md:ml-64 min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
-    <div class="bg-gradient-to-br from-white to-yellow-50 rounded-2xl sm:rounded-3xl shadow-xl border-2 border-yellow-200 p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6">
+    <div class="bg-gradient-to-br from-white to-yellow-50 rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl border-0 sm:border-2 border-yellow-200 p-3 sm:p-4 md:p-5 lg:p-6 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
       <div class="text-center">
         <div
           class="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 mb-3 sm:mb-4 shadow-lg ring-4 ring-yellow-200"
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Leaderboard List -->
-    <div class="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden">
+    <div class="bg-gradient-to-br from-white to-gray-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 overflow-hidden">
       <!-- Loading State -->
       <div v-if="loading" class="p-10 sm:p-12 md:p-16 text-center">
         <div
@@ -171,17 +171,15 @@
 </template>
 
 <script>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useLeaderboardStore } from '@/stores/leaderboard'
 import UserSidebar from './UserSidebar.vue'
-import MobileSidebarToggle from './MobileSidebarToggle.vue'
 
 export default {
   name: 'UserLeaderboard',
   components: {
-    UserSidebar,
-    MobileSidebarToggle
+    UserSidebar
   },
   setup() {
     const { t } = useI18n()
@@ -203,6 +201,14 @@ export default {
 
     const getGlobalIndex = (localIndex) => {
       return (store.currentPage - 1) * store.itemsPerPage + localIndex
+    }
+    
+    const sidebarCollapsed = ref(false)
+    
+    // Check sidebar state periodically
+    const checkSidebarState = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      sidebarCollapsed.value = savedState === 'true'
     }
 
     // Computed for visible pages (show max 5 page numbers)
@@ -226,6 +232,11 @@ export default {
     })
 
     onMounted(async () => {
+      checkSidebarState()
+      // Check periodically for changes (every 100ms)
+      const interval = setInterval(checkSidebarState, 100)
+      window.sidebarCheckInterval = interval
+      
       // Load initial data
       await store.loadLeaderboard()
       
@@ -236,6 +247,11 @@ export default {
     onUnmounted(() => {
       // Cleanup socket listeners
       store.removeSocketListeners()
+      
+      // Clear sidebar check interval
+      if (window.sidebarCheckInterval) {
+        clearInterval(window.sidebarCheckInterval)
+      }
     })
 
     return {
@@ -257,6 +273,7 @@ export default {
       nextPage: () => store.nextPage(),
       previousPage: () => store.previousPage(),
       goToPage: (page) => store.goToPage(page),
+      sidebarCollapsed
     }
   },
 }

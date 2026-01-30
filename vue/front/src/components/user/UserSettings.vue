@@ -7,14 +7,14 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 transition-all duration-300 mt-16 pt-6">
-      <div class="bg-white rounded-3xl shadow-2xl border-2 border-gray-200 p-6 sm:p-8">
+    <div class="flex-1 ml-16 md:ml-64 min-h-screen max-w-4xl mx-auto px-2 sm:px-3 md:px-6 lg:px-8 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+      <div class="bg-white rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 p-4 sm:p-5 md:p-6 lg:p-8">
         <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
           {{ t('settings.title') || 'Paramètres' }}
         </h1>
         
-        <div class="space-y-6">
-          <div class="p-6 bg-gray-50 rounded-xl border-2 border-gray-200">
+        <div class="space-y-4 sm:space-y-6">
+          <div class="p-4 sm:p-5 md:p-6 bg-gray-50 rounded-none sm:rounded-xl border-0 sm:border-2 border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">
               {{ t('settings.profile') || 'Profil' }}
             </h2>
@@ -72,20 +72,25 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import UserSidebar from './UserSidebar.vue'
-import MobileSidebarToggle from './MobileSidebarToggle.vue'
 
 export default {
   name: 'UserSettings',
   components: {
-    UserSidebar,
-    MobileSidebarToggle
+    UserSidebar
   },
   setup() {
     const { t, language, changeLanguage: changeI18nLanguage } = useI18n()
     const selectedLanguage = ref(language.value)
+    const sidebarCollapsed = ref(false)
+    
+    // Check sidebar state periodically
+    const checkSidebarState = () => {
+      const savedState = localStorage.getItem('sidebarCollapsed')
+      sidebarCollapsed.value = savedState === 'true'
+    }
 
     const userInfo = computed(() => {
       try {
@@ -107,13 +112,24 @@ export default {
 
     onMounted(() => {
       selectedLanguage.value = language.value
+      checkSidebarState()
+      // Check periodically for changes (every 100ms)
+      const interval = setInterval(checkSidebarState, 100)
+      window.sidebarCheckInterval = interval
+    })
+    
+    onUnmounted(() => {
+      if (window.sidebarCheckInterval) {
+        clearInterval(window.sidebarCheckInterval)
+      }
     })
 
     return {
       t,
       userInfo,
       selectedLanguage,
-      changeLanguage
+      changeLanguage,
+      sidebarCollapsed
     }
   }
 }

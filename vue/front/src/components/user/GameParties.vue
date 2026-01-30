@@ -7,7 +7,7 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 transition-all duration-300 mt-16 pt-6">
+    <div class="flex-1 ml-16 md:ml-64 min-h-screen max-w-7xl mx-auto px-2 sm:px-3 md:px-6 lg:px-8 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
       <!-- Header -->
       <div class="mb-6 sm:mb-8">
         <div class="flex items-center justify-between mb-4">
@@ -37,7 +37,7 @@
         <p class="text-gray-600">{{ t('parties.loading') || 'Chargement...' }}</p>
       </div>
 
-      <div v-else-if="parties.length === 0" class="text-center py-12 bg-white rounded-2xl shadow-lg border-2 border-gray-200">
+      <div v-else-if="parties.length === 0" class="text-center py-12 bg-white rounded-none sm:rounded-2xl shadow-none sm:shadow-lg border-0 sm:border-2 border-gray-200">
         <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
@@ -50,11 +50,11 @@
         </button>
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <div
           v-for="party in parties"
           :key="party.id"
-          class="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-6 hover:shadow-xl transition-all transform hover:scale-105"
+          class="bg-white rounded-none sm:rounded-2xl shadow-none sm:shadow-lg border-0 sm:border-2 border-gray-200 p-4 sm:p-6 hover:shadow-xl transition-all transform hover:scale-105"
         >
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
@@ -191,8 +191,8 @@
       <!-- View Party Modal -->
       <div
         v-if="viewingParty"
-        class="fixed top-16 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[70] p-4"
-        :class="sidebarCollapsed ? 'left-16 md:left-20' : 'left-0 md:left-64'"
+        class="fixed top-16 left-0 md:left-64 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[70] p-4"
+        :class="sidebarCollapsed ? 'md:left-20' : ''"
         @click.self="closeViewModal"
       >
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -285,8 +285,8 @@
       <!-- Create/Edit Modal -->
       <div
         v-if="showCreateModal || editingParty"
-        class="fixed top-16 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[70] p-4"
-        :class="sidebarCollapsed ? 'left-16 md:left-20' : 'left-0 md:left-64'"
+        class="fixed top-16 left-0 md:left-64 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[70] p-4"
+        :class="sidebarCollapsed ? 'md:left-20' : ''"
         @click.self="closeModal"
       >
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -544,8 +544,8 @@
     <!-- Create Question Modal -->
     <div
       v-if="showCreateQuestionModal"
-      class="fixed top-16 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[80] p-4"
-      :class="sidebarCollapsed ? 'left-16 md:left-20' : 'left-0 md:left-64'"
+      class="fixed top-16 left-0 md:left-64 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[80] p-4"
+      :class="sidebarCollapsed ? 'md:left-20' : ''"
       @click.self="closeCreateQuestionModal"
     >
       <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -660,7 +660,6 @@ export default {
     const partyDetailsLoading = ref(false)
     const connectedPlayersCount = ref(null)
     const playerCounts = ref({}) // Store player counts per party
-    const sidebarCollapsed = ref(false)
     const showCreateQuestionModal = ref(false)
     const newQuestionForm = ref({
       question: '',
@@ -1131,20 +1130,22 @@ export default {
       window.open(telegramUrl, '_blank')
     }
     
+    const sidebarCollapsed = ref(false)
+    let countInterval = null
+    
     // Check sidebar state periodically
     const checkSidebarState = () => {
       const savedState = localStorage.getItem('sidebarCollapsed')
       sidebarCollapsed.value = savedState === 'true'
     }
     
-    let sidebarCheckInterval = null
-    
-    let countInterval = null
-    
     onMounted(async () => {
       checkSidebarState()
-      // Check periodically for changes
-      sidebarCheckInterval = setInterval(checkSidebarState, 100)
+      // Check periodically for changes (every 100ms)
+      const interval = setInterval(checkSidebarState, 100)
+      window.sidebarCheckInterval = interval
+      
+      // Load initial data
       await Promise.all([loadParties(), loadQuestions()])
       
       // Écouter les événements WebSocket pour mettre à jour le comptage en temps réel
@@ -1174,11 +1175,11 @@ export default {
     })
     
     onUnmounted(() => {
-      if (sidebarCheckInterval) {
-        clearInterval(sidebarCheckInterval)
-      }
       if (countInterval) {
         clearInterval(countInterval)
+      }
+      if (window.sidebarCheckInterval) {
+        clearInterval(window.sidebarCheckInterval)
       }
       socketService.off('GameParties')
     })
@@ -1198,13 +1199,13 @@ export default {
       playerCounts,
       form,
       minDateTime,
-      sidebarCollapsed,
       uploadingImage,
       uploadingAudio,
       imageInput,
       audioInput,
       getStatusLabel,
       formatDate,
+      sidebarCollapsed,
       getFileUrl,
       handleImageUpload,
       handleAudioUpload,
