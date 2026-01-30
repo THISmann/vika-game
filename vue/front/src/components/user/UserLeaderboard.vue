@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-h-screen">
     <UserSidebar />
-    <div class="flex-1 ml-20 md:ml-64 min-h-screen max-w-4xl mx-auto px-4 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-20 md:ml-64 min-h-screen w-full max-w-4xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-3 md:py-4 lg:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6 overflow-x-hidden" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
     <div class="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl border-0 sm:border-2 border-yellow-200/80 p-3 sm:p-4 md:p-5 lg:p-6 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
       <div class="text-center">
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Leaderboard List -->
-    <div class="bg-gradient-to-br from-white via-gray-50/80 to-blue-50/50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 overflow-hidden mx-2 sm:mx-0 md:mx-0">
+    <div class="bg-gradient-to-br from-white via-gray-50/80 to-blue-50/50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-gray-200 overflow-hidden mx-1 sm:mx-0 md:mx-0 w-full max-w-full">
       <!-- Loading State -->
       <div v-if="loading" class="p-10 sm:p-12 md:p-16 text-center">
         <div
@@ -51,22 +51,22 @@
       </div>
 
       <!-- Leaderboard Table -->
-      <div v-else class="divide-y divide-gray-200 px-3 sm:px-4 md:px-5 py-2 sm:py-3">
+      <div v-else class="divide-y divide-gray-200 px-3 sm:px-4 md:px-5 py-2 sm:py-3 overflow-x-hidden">
         <div
           v-for="(entry, index) in paginatedLeaderboard"
           :key="entry.playerId || entry.id"
-          class="p-4 sm:p-5 md:p-6 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200"
+          class="p-3 sm:p-5 md:p-6 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 min-w-0"
           :class="{
             'bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400': getGlobalIndex(index) === 0,
             'bg-gradient-to-r from-gray-50 to-slate-50 border-l-4 border-gray-400': getGlobalIndex(index) === 1,
             'bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-400': getGlobalIndex(index) === 2,
           }"
         >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3 sm:space-x-4 md:space-x-5 flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 sm:gap-4 min-w-0">
+            <div class="flex items-center space-x-2 sm:space-x-4 md:space-x-5 flex-1 min-w-0 overflow-hidden">
               <!-- Rank -->
               <div
-                class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-base sm:text-lg md:text-xl shadow-lg"
+                class="flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg md:text-xl shadow-lg"
                 :class="{
                   'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': getGlobalIndex(index) === 0,
                   'bg-gradient-to-br from-gray-400 to-slate-500 text-white': getGlobalIndex(index) === 1,
@@ -78,31 +78,29 @@
               </div>
 
               <!-- Player Info -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center space-x-2">
-                  <h3
-                    class="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate"
-                  >
+              <div class="flex-1 min-w-0 overflow-hidden">
+                <div class="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
+                  <h3 class="text-sm sm:text-lg md:text-xl font-bold text-gray-900 truncate">
                     {{ entry.playerName || entry.name || 'Anonymous' }}
                   </h3>
                   <span
                     v-if="getGlobalIndex(index) < 3"
-                    class="text-lg sm:text-xl md:text-2xl"
+                    class="flex-shrink-0 text-base sm:text-xl md:text-2xl"
                     :title="getMedalTitle(getGlobalIndex(index))"
                   >
                     {{ getMedalEmoji(getGlobalIndex(index)) }}
                   </span>
                 </div>
-                <p class="text-xs sm:text-sm md:text-base text-gray-600 mt-1">
+                <p class="text-xs sm:text-sm md:text-base text-gray-600 mt-0.5 truncate">
                   {{ t('leaderboard.playerId') }}: {{ entry.playerId || entry.id }}
                 </p>
               </div>
             </div>
 
-            <!-- Score -->
-            <div class="flex-shrink-0 ml-4">
+            <!-- Score: compact on mobile so it doesn't overflow -->
+            <div class="flex-shrink-0 ml-2 sm:ml-4">
               <div
-                class="px-4 sm:px-5 md:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-base sm:text-lg md:text-xl shadow-lg"
+                class="px-2 py-1.5 sm:px-5 sm:py-3 md:px-6 rounded-lg sm:rounded-2xl font-bold text-xs sm:text-lg md:text-xl shadow-lg whitespace-nowrap"
                 :class="{
                   'bg-gradient-to-br from-yellow-400 to-orange-500 text-white': getGlobalIndex(index) === 0,
                   'bg-gradient-to-br from-gray-400 to-slate-500 text-white': getGlobalIndex(index) === 1,
@@ -110,7 +108,7 @@
                   'bg-gradient-to-br from-blue-500 to-purple-600 text-white': getGlobalIndex(index) > 2,
                 }"
               >
-                {{ entry.score || 0 }} {{ t('leaderboard.points') }}
+                {{ entry.score || 0 }} <span class="hidden sm:inline">{{ t('leaderboard.points') }}</span><span class="sm:hidden">{{ t('leaderboard.pointsShort') || 'pt' }}</span>
               </div>
             </div>
           </div>

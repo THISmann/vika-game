@@ -108,9 +108,10 @@
 
     <!-- Questions List -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-200 p-4 sm:p-5 md:p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">
-          {{ t('admin.questions.listTitle') }} ({{ questions.length }})
+      <!-- Title: clearer hierarchy, more spacing on mobile -->
+      <div class="flex items-center justify-between mb-5 sm:mb-6 pb-3 border-b-2 border-gray-200/80">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          {{ t('admin.questions.listTitle') }} <span class="text-blue-600 font-extrabold">({{ questions.length }})</span>
         </h2>
       </div>
 
@@ -138,49 +139,66 @@
         <p class="mt-2">{{ t('admin.questions.empty') }}</p>
       </div>
 
-      <div v-else class="space-y-4 sm:space-y-5 md:space-y-6 px-2 sm:px-0">
+      <!-- List: more spacing, clearer cards, touch-friendly -->
+      <div v-else class="space-y-5 sm:space-y-6 md:space-y-6 px-1 sm:px-0 pb-2">
         <div
           v-for="(q, index) in questions"
           :key="q.id"
-          class="border-2 border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-white to-blue-50/50 hover:shadow-lg hover:border-blue-200 transition-all duration-200"
+          class="border-2 border-gray-200 rounded-2xl p-4 sm:p-5 bg-white shadow-md hover:shadow-lg hover:border-blue-200/80 transition-all duration-200"
         >
           <div class="flex items-start justify-between gap-3 sm:gap-4">
             <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 sm:gap-3 mb-3">
+              <!-- Question: number + text, stronger hierarchy -->
+              <div class="flex gap-3 sm:gap-4 mb-4">
                 <span
-                  class="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm sm:text-base font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md"
+                  class="flex-shrink-0 w-10 h-10 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-base font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md ring-2 ring-blue-200/50"
                 >
                   {{ index + 1 }}
                 </span>
-                <h3 class="text-base sm:text-lg font-semibold text-gray-900 leading-snug break-words">
+                <h3 class="text-lg sm:text-lg font-semibold text-gray-900 leading-relaxed break-words pt-1">
                   {{ q.question }}
                 </h3>
               </div>
-              <p class="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 font-medium">
-                {{ t('admin.questions.choices') }}:
-              </p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-                <span
-                  v-for="choice in q.choices"
-                  :key="choice"
-                  class="px-3 py-2.5 sm:py-2 bg-white/80 border border-gray-200 rounded-lg text-sm text-gray-700 shadow-sm"
-                  :class="{ 'ring-2 ring-green-400 border-green-400 bg-green-50': choice === q.answer }"
-                >
-                  {{ choice }}
-                  <span v-if="choice === q.answer" class="ml-1 text-green-600 font-semibold">✓</span>
-                </span>
+
+              <!-- Choices: section label more visible -->
+              <div class="mt-4 pt-3 border-t border-gray-100">
+                <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <span class="w-1 h-4 rounded-full bg-blue-500"></span>
+                  {{ t('admin.questions.choices') }}
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-3">
+                  <div
+                    v-for="choice in q.choices"
+                    :key="choice"
+                    class="min-h-[44px] flex items-center rounded-xl px-4 py-3 text-sm sm:text-sm font-medium transition-all duration-150"
+                    :class="choice === q.answer
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 shadow-sm ring-2 ring-green-200/60'
+                      : 'bg-gray-50 border border-gray-200 text-gray-700'"
+                  >
+                    <span class="flex-1 break-words">{{ choice }}</span>
+                    <span
+                      v-if="choice === q.answer"
+                      class="flex-shrink-0 ml-2 inline-flex items-center gap-1 rounded-full bg-green-500 text-white text-xs font-bold px-2 py-0.5"
+                    >
+                      ✓ {{ t('admin.questions.correctShort') || 'OK' }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Delete: 44px target, tap feedback -->
             <button
               @click="deleteQuestion(q.id)"
-              class="flex-shrink-0 p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+              type="button"
+              class="flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-red-600 bg-red-50/80 hover:bg-red-100 active:scale-95 active:bg-red-200/80 transition-all duration-150 touch-manipulation"
               :title="t('admin.questions.delete')"
+              :aria-label="t('admin.questions.delete')"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  stroke-width="2"
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
