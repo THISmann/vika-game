@@ -1,10 +1,9 @@
 <template>
-  <!-- Mobile: full width (left-0) so "User Panel" is never cut off; desktop: offset for sidebar -->
-  <nav class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 shadow-lg border-b border-purple-700 fixed top-0 z-[60] transition-all duration-300 left-0 md:left-64 right-0" :class="{ 'md:left-20': sidebarCollapsed }">
+  <!-- Mobile: navbar après la sidebar (left-20) ; desktop: left-64 ou left-20 si collapse -->
+  <nav class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 shadow-lg border-b border-purple-700 fixed top-0 z-[60] transition-all duration-300 left-20 md:left-64 right-0" :class="{ 'md:left-20': sidebarCollapsed }">
     <div class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
       <div class="flex justify-between items-center h-14 sm:h-16 min-h-14">
-        <!-- Left: reserve space for hamburger on mobile (pl-14 = 56px), then title -->
-        <div class="flex items-center min-w-0 flex-1 pl-14 md:pl-0">
+        <div class="flex items-center min-w-0 flex-1">
           <router-link
             to="/user/dashboard"
             class="text-lg sm:text-xl md:text-2xl font-bold text-white hover:text-purple-200 transition-colors truncate"

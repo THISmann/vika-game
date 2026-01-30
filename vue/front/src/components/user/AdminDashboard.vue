@@ -1,13 +1,9 @@
 <template>
   <div class="flex min-h-screen">
-    <!-- Mobile Sidebar Toggle -->
-    <MobileSidebarToggle />
-    
-    <!-- Sidebar -->
+    <!-- Sidebar toujours visible (mobile = bande w-20, desktop = w-64 ou w-20) -->
     <UserSidebar />
-    
-    <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-4 sm:px-3 md:px-6 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <!-- Main Content : ml-20 sur mobile pour ne pas chevaucher la sidebar -->
+    <div class="flex-1 ml-20 md:ml-64 min-h-screen max-w-6xl mx-auto space-y-3 sm:space-y-4 md:space-y-6 px-4 sm:px-3 md:px-6 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
     <!-- Header -->
     <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl border-0 sm:border-2 border-blue-200 p-3 sm:p-5 md:p-6">
       <div class="text-center mb-4 sm:mb-5 md:mb-6">
@@ -289,12 +285,10 @@ import { useI18n } from '@/composables/useI18n'
 import { useGameStore } from '@/stores/game'
 import { useQuestionsStore } from '@/stores/questions'
 import UserSidebar from './UserSidebar.vue'
-import MobileSidebarToggle from './MobileSidebarToggle.vue'
 
 export default {
   components: {
-    UserSidebar,
-    MobileSidebarToggle
+    UserSidebar
   },
   setup() {
     const { t } = useI18n()

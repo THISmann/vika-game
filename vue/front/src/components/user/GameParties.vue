@@ -1,13 +1,7 @@
 <template>
   <div class="flex min-h-screen">
-    <!-- Mobile Sidebar Toggle -->
-    <MobileSidebarToggle />
-    
-    <!-- Sidebar -->
     <UserSidebar />
-    
-    <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-7xl mx-auto px-4 sm:px-3 md:px-6 lg:px-8 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-20 md:ml-64 min-h-screen max-w-7xl mx-auto px-4 sm:px-3 md:px-6 lg:px-8 py-4 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6 pb-6 md:pb-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
       <!-- Header -->
       <div class="mb-6 sm:mb-8">
         <div class="flex items-center justify-between mb-4">
@@ -636,7 +630,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import UserSidebar from './UserSidebar.vue'
-import MobileSidebarToggle from './MobileSidebarToggle.vue'
 import apiClient, { quizService } from '@/services/api'
 import { API_URLS, API_CONFIG } from '@/config/api'
 import socketService from '@/services/socketService'
@@ -644,8 +637,7 @@ import socketService from '@/services/socketService'
 export default {
   name: 'GameParties',
   components: {
-    UserSidebar,
-    MobileSidebarToggle
+    UserSidebar
   },
   setup() {
     const { t } = useI18n()
