@@ -323,6 +323,14 @@ const translations = {
     'sidebar.settings': 'Paramètres',
     'sidebar.logout': 'Déconnexion',
     
+    // User Settings page
+    'settings.title': 'Paramètres',
+    'settings.profile': 'Profil',
+    'settings.name': 'Nom',
+    'settings.email': 'Email',
+    'settings.preferences': 'Préférences',
+    'settings.language': 'Langue',
+    
     // Admin Login
     'admin.login.title': 'Connexion Admin',
     'admin.login.subtitle': 'Accédez au panneau d\'administration',
@@ -974,7 +982,13 @@ const translations = {
     'sidebar.questions': 'Questions',
     'sidebar.leaderboard': 'Leaderboard',
     'sidebar.settings': 'Settings',
-    'sidebar.logout': 'Logout'
+    'sidebar.logout': 'Logout',
+    'settings.title': 'Settings',
+    'settings.profile': 'Profile',
+    'settings.name': 'Name',
+    'settings.email': 'Email',
+    'settings.preferences': 'Preferences',
+    'settings.language': 'Language'
   },
   ru: {
     // Navbar
@@ -1451,7 +1465,13 @@ const translations = {
     'sidebar.questions': 'Вопросы',
     'sidebar.leaderboard': 'Таблица лидеров',
     'sidebar.settings': 'Настройки',
-    'sidebar.logout': 'Выход'
+    'sidebar.logout': 'Выход',
+    'settings.title': 'Настройки',
+    'settings.profile': 'Профиль',
+    'settings.name': 'Имя',
+    'settings.email': 'Email',
+    'settings.preferences': 'Предпочтения',
+    'settings.language': 'Язык'
   },
   no: {
     // Navbar
@@ -1912,7 +1932,13 @@ const translations = {
     'sidebar.questions': 'Spørsmål',
     'sidebar.leaderboard': 'Rangering',
     'sidebar.settings': 'Innstillinger',
-    'sidebar.logout': 'Logg Ut'
+    'sidebar.logout': 'Logg Ut',
+    'settings.title': 'Innstillinger',
+    'settings.profile': 'Profil',
+    'settings.name': 'Navn',
+    'settings.email': 'E-post',
+    'settings.preferences': 'Preferanser',
+    'settings.language': 'Språk'
   }
 }
 

@@ -1,7 +1,8 @@
 <template>
   <button
     @click="toggleMobileSidebar"
-    class="md:hidden fixed top-4 left-4 z-50 p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-all"
+    class="md:hidden fixed top-0 left-0 z-[61] h-14 w-14 flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:opacity-90 transition-all"
+    aria-label="Menu"
   >
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path v-if="!isOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
