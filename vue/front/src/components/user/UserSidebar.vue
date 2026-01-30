@@ -1,7 +1,7 @@
 <template>
   <aside 
-    class="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white min-h-screen fixed left-0 top-0 z-50 shadow-2xl transition-all duration-300"
-    :class="isCollapsed ? 'w-20' : 'w-16 md:w-64'"
+    class="hidden md:block bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 text-white min-h-screen fixed left-0 top-0 z-50 shadow-2xl transition-all duration-300"
+    :class="isCollapsed ? 'w-20' : 'w-64'"
   >
     <div class="flex flex-col h-full">
       <!-- Logo/Header -->

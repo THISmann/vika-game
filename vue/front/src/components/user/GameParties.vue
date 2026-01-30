@@ -7,7 +7,7 @@
     <UserSidebar />
     
     <!-- Main Content -->
-    <div class="flex-1 ml-16 md:ml-64 min-h-screen max-w-7xl mx-auto px-2 sm:px-3 md:px-6 lg:px-8 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
+    <div class="flex-1 ml-0 md:ml-64 min-h-screen max-w-7xl mx-auto px-2 sm:px-3 md:px-6 lg:px-8 py-2 sm:py-3 md:py-6 transition-all duration-300 mt-16 pt-4 sm:pt-6" :class="sidebarCollapsed ? 'md:ml-20' : ''">
       <!-- Header -->
       <div class="mb-6 sm:mb-8">
         <div class="flex items-center justify-between mb-4">

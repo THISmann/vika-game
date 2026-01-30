@@ -1,3 +1,18 @@
+// Force viewport mobile dès le chargement (contourne cache / HTML obsolète)
+(function () {
+  if (typeof document === 'undefined' || !document.head) return
+  var meta = document.querySelector('meta[name="viewport"]')
+  var content = 'width=device-width, initial-scale=1.0, viewport-fit=cover'
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = 'viewport'
+    document.head.appendChild(meta)
+  }
+  if (meta.getAttribute('content') !== content) {
+    meta.setAttribute('content', content)
+  }
+})()
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'

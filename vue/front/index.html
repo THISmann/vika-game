@@ -1,7 +1,17 @@
 <!doctype html>
-<html>
+<html lang="fr">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4f46e5">
+    <script>
+      (function(){
+        var v = document.querySelector('meta[name="viewport"]');
+        var c = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
+        if (!v) { v = document.createElement('meta'); v.name = 'viewport'; document.head.appendChild(v); }
+        if (v.getAttribute('content') !== c) { v.setAttribute('content', c); }
+      })();
+    </script>
     <title>Vika-Game</title>
     <style>
       *,
@@ -9,14 +19,22 @@
       *::after {
         box-sizing: border-box;
       }
-      html, body {
+      html {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+      body {
         margin: 0;
         padding: 0;
         width: 100%;
-        height: 100%;
+        max-width: 100vw;
+        min-height: 100%;
+        overflow-x: hidden;
       }
       #app {
         width: 100%;
+        max-width: 100%;
         min-height: 100%;
       }
     </style>
