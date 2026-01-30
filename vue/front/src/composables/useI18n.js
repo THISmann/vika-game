@@ -448,6 +448,9 @@ const translations = {
     'auth.signup.hasAccount': 'Vous avez déjà un compte?',
     'auth.signup.login': 'Se connecter',
     'auth.signup.error': 'Erreur lors de la création du compte',
+    'auth.signup.approvedTitle': 'Compte approuvé',
+    'auth.signup.approvedMessage': 'Votre compte a été créé et activé. Vous pouvez vous connecter.',
+    'auth.signup.goToLogin': 'Se connecter',
     
     // Auth - Forgot Password
     'auth.forgotPassword.title': 'Mot de passe oublié',
@@ -851,6 +854,9 @@ const translations = {
     'auth.signup.hasAccount': 'Already have an account?',
     'auth.signup.login': 'Sign in',
     'auth.signup.error': 'Error creating account',
+    'auth.signup.approvedTitle': 'Account approved',
+    'auth.signup.approvedMessage': 'Your account has been created and activated. You can sign in now.',
+    'auth.signup.goToLogin': 'Sign in',
     
     // Auth - Forgot Password
     'auth.forgotPassword.title': 'Forgot Password',
@@ -1349,6 +1355,9 @@ const translations = {
     'auth.signup.hasAccount': 'Уже есть аккаунт?',
     'auth.signup.login': 'Войти',
     'auth.signup.error': 'Ошибка при создании аккаунта',
+    'auth.signup.approvedTitle': 'Аккаунт одобрен',
+    'auth.signup.approvedMessage': 'Ваш аккаунт создан и активирован. Можете войти.',
+    'auth.signup.goToLogin': 'Войти',
     
     // Auth - Forgot Password
     'auth.forgotPassword.title': 'Забыли пароль',
@@ -1822,6 +1831,9 @@ const translations = {
     'auth.signup.hasAccount': 'Har du allerede en konto?',
     'auth.signup.login': 'Logg Inn',
     'auth.signup.error': 'Feil ved opprettelse av konto',
+    'auth.signup.approvedTitle': 'Konto godkjent',
+    'auth.signup.approvedMessage': 'Kontoen din er opprettet og aktivert. Du kan logge inn nå.',
+    'auth.signup.goToLogin': 'Logg inn',
     
     // Auth - Forgot Password
     'auth.forgotPassword.title': 'Glemt Passord',

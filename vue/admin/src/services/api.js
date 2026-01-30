@@ -143,6 +143,20 @@ export const authService = {
 }
 
 /**
+ * Settings (admin) - auto-approve users
+ */
+export const settingsService = {
+  async getAutoApproveUsers() {
+    const response = await apiClient.get(API_URLS.auth.autoApproveSettings)
+    return response.data.autoApproveUsers
+  },
+  async setAutoApproveUsers(enabled) {
+    const response = await apiClient.put(API_URLS.auth.autoApproveSettings, { enabled })
+    return response.data.autoApproveUsers
+  }
+}
+
+/**
  * Service pour les questions (admin)
  */
 export const quizService = {

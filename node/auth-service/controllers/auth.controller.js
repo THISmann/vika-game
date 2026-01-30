@@ -8,8 +8,25 @@ const crypto = require("crypto");
 // Clés de cache
 const CACHE_KEYS = {
   PLAYER: (id) => cache.PREFIXES.AUTH + `player:${id}`,
-  ALL_PLAYERS: cache.PREFIXES.AUTH + 'all-players'
+  ALL_PLAYERS: cache.PREFIXES.AUTH + 'all-players',
+  AUTH_SETTINGS_AUTO_APPROVE: cache.PREFIXES.AUTH + 'settings:autoApproveUsers'
 };
+
+/**
+ * Get auto-approve users setting (default: false = manual approval by admin)
+ */
+async function getAutoApproveUsersSetting() {
+  const value = await cache.get(CACHE_KEYS.AUTH_SETTINGS_AUTO_APPROVE);
+  return value === true;
+}
+
+/**
+ * Set auto-approve users setting
+ */
+async function setAutoApproveUsersSetting(enabled) {
+  await cache.set(CACHE_KEYS.AUTH_SETTINGS_AUTO_APPROVE, !!enabled);
+  return !!enabled;
+}
 
 /**
  * Update lastLoginAt for a user
@@ -320,6 +337,9 @@ exports.registerUser = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+        const autoApprove = await getAutoApproveUsersSetting();
+        const initialStatus = autoApprove ? 'approved' : 'pending';
+
         const newUser = new User({
             id: "u" + Date.now(),
             name: name.trim(),
@@ -330,7 +350,7 @@ exports.registerUser = async (req, res) => {
             country: country || undefined,
             role: 'user', // Users have role 'user'
             score: 0,
-            status: 'pending', // Users need admin approval
+            status: initialStatus, // Depends on auto-approve setting
             createdAt: new Date(),
             lastLoginAt: null // Will be set on first login
         });
@@ -340,7 +360,7 @@ exports.registerUser = async (req, res) => {
         // Invalidate cache
         await cache.del(CACHE_KEYS.ALL_PLAYERS);
         
-        console.log('✅ User registered with pending status');
+        console.log(`✅ User registered with ${initialStatus} status (autoApprove: ${autoApprove})`);
         res.status(201).json(newUser.toObject());
     } catch (error) {
         console.error('Error registering user:', error);
@@ -912,6 +932,36 @@ exports.approveUser = async (req, res) => {
         res.json(user.toObject());
     } catch (error) {
         console.error('Error approving user:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Get auto-approve users setting (Admin only)
+ * When ON: new users are automatically approved after signup.
+ * When OFF: new users need manual approval by admin.
+ */
+exports.getSettingsAutoApprove = async (req, res) => {
+    try {
+        const enabled = await getAutoApproveUsersSetting();
+        res.json({ autoApproveUsers: enabled });
+    } catch (error) {
+        console.error('Error getting auto-approve setting:', error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+/**
+ * Set auto-approve users setting (Admin only)
+ */
+exports.putSettingsAutoApprove = async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        const value = await setAutoApproveUsersSetting(enabled);
+        console.log(`✅ Auto-approve users setting set to: ${value}`);
+        res.json({ autoApproveUsers: value });
+    } catch (error) {
+        console.error('Error setting auto-approve:', error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

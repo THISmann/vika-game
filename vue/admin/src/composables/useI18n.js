@@ -131,6 +131,12 @@ const translations = {
     'admin.settings.title': '⚙️ Paramètres',
     'admin.settings.subtitle': 'Configurer les paramètres de l\'application',
     'admin.settings.comingSoon': 'Page des paramètres - À venir',
+    'admin.settings.autoApproveUsers': 'Activation automatique des comptes',
+    'admin.settings.autoApproveUsersDesc': 'Quand activé, les nouveaux utilisateurs sont approuvés automatiquement après inscription. Quand désactivé, l\'admin doit approuver manuellement chaque compte.',
+    'admin.settings.autoApproveOn': 'Activé (auto)',
+    'admin.settings.autoApproveOff': 'Désactivé (manuel)',
+    'admin.settings.loadError': 'Erreur lors du chargement des paramètres',
+    'admin.settings.saveError': 'Erreur lors de l\'enregistrement',
     
     // Admin Analytics
     'admin.analytics.title': '📊 Analytique',
@@ -278,6 +284,12 @@ const translations = {
     'admin.settings.title': '⚙️ Settings',
     'admin.settings.subtitle': 'Configure application settings',
     'admin.settings.comingSoon': 'Settings page - Coming soon',
+    'admin.settings.autoApproveUsers': 'Automatic account activation',
+    'admin.settings.autoApproveUsersDesc': 'When ON, new users are approved automatically after signup. When OFF, admin must approve each account manually.',
+    'admin.settings.autoApproveOn': 'ON (auto)',
+    'admin.settings.autoApproveOff': 'OFF (manual)',
+    'admin.settings.loadError': 'Error loading settings',
+    'admin.settings.saveError': 'Error saving settings',
     
     // Admin Analytics
     'admin.analytics.title': '📊 Analytics',
@@ -425,6 +437,12 @@ const translations = {
     'admin.settings.title': '⚙️ Настройки',
     'admin.settings.subtitle': 'Настройка приложения',
     'admin.settings.comingSoon': 'Страница настроек - Скоро',
+    'admin.settings.autoApproveUsers': 'Автоматическая активация аккаунтов',
+    'admin.settings.autoApproveUsersDesc': 'Когда включено, новые пользователи одобряются автоматически. Когда выключено — админ одобряет вручную.',
+    'admin.settings.autoApproveOn': 'Вкл (авто)',
+    'admin.settings.autoApproveOff': 'Выкл (вручную)',
+    'admin.settings.loadError': 'Ошибка загрузки настроек',
+    'admin.settings.saveError': 'Ошибка сохранения',
     
     // Admin Analytics
     'admin.analytics.title': '📊 Аналитика',

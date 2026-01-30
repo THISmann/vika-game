@@ -19,7 +19,7 @@ export const useQuestionsStore = defineStore('questions', () => {
     error.value = null
     
     try {
-      const res = await apiClient.get(API_URLS.quiz.all)
+      const res = await apiClient.get(API_URLS.quiz.userQuestions)
       questions.value = res.data || []
       // console.log('✅ Questions loaded:', questions.value.length, 'questions')
     } catch (err) {

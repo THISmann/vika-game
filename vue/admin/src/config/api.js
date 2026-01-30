@@ -192,6 +192,12 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.AUTH_SERVICE}/admin/users/${userId}/role`
         : `${API_CONFIG.AUTH_SERVICE}/auth/admin/users/${userId}/role`,
+    /** GET/PUT auto-approve users setting (admin only). When ON, new users are auto-approved; when OFF, admin approves manually. */
+    autoApproveSettings: useApiGateway
+      ? `${API_CONFIG.AUTH_SERVICE}/auth/settings/auto-approve-users`
+      : isProduction
+        ? `${API_CONFIG.AUTH_SERVICE}/settings/auto-approve-users`
+        : `${API_CONFIG.AUTH_SERVICE}/auth/settings/auto-approve-users`,
   },
   quiz: {
     all: useApiGateway

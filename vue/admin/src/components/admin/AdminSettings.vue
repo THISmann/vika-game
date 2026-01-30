@@ -37,8 +37,35 @@
         </div>
       </div>
       <div class="flex-1 px-6 py-8">
+        <div v-if="loadError" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {{ t('admin.settings.loadError') }}
+        </div>
+        <div v-if="saveError" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {{ t('admin.settings.saveError') }}
+        </div>
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p class="text-gray-600">{{ t('admin.settings.comingSoon') }}</p>
+          <h2 class="text-lg font-medium text-gray-900 mb-2">{{ t('admin.settings.autoApproveUsers') }}</h2>
+          <p class="text-sm text-gray-600 mb-4">{{ t('admin.settings.autoApproveUsersDesc') }}</p>
+          <div class="flex items-center gap-4">
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="autoApproveUsers"
+              :disabled="loading"
+              @click="toggleAutoApprove"
+              class="relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="autoApproveUsers ? 'bg-blue-600' : 'bg-gray-200'"
+            >
+              <span
+                class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="autoApproveUsers ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
+            <span class="text-sm font-medium text-gray-700">
+              {{ autoApproveUsers ? t('admin.settings.autoApproveOn') : t('admin.settings.autoApproveOff') }}
+            </span>
+            <span v-if="loading" class="text-sm text-gray-500">...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -46,13 +73,57 @@
 </template>
 
 <script>
+import { ref, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { settingsService } from '@/services/api'
 
 export default {
   name: 'AdminSettings',
   setup() {
     const { t } = useI18n()
-    return { t }
+    const autoApproveUsers = ref(false)
+    const loading = ref(false)
+    const loadError = ref('')
+    const saveError = ref('')
+
+    async function loadSettings() {
+      loadError.value = ''
+      loading.value = true
+      try {
+        autoApproveUsers.value = await settingsService.getAutoApproveUsers()
+      } catch (err) {
+        loadError.value = t('admin.settings.loadError')
+        console.error('Settings load error:', err)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    async function toggleAutoApprove() {
+      saveError.value = ''
+      loading.value = true
+      const next = !autoApproveUsers.value
+      try {
+        const value = await settingsService.setAutoApproveUsers(next)
+        autoApproveUsers.value = value
+      } catch (err) {
+        saveError.value = t('admin.settings.saveError')
+        console.error('Settings save error:', err)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(loadSettings)
+
+    return {
+      t,
+      autoApproveUsers,
+      loading,
+      loadError,
+      saveError,
+      toggleAutoApprove
+    }
   }
 }
 </script>

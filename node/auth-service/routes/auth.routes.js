@@ -585,4 +585,60 @@ router.put("/admin/users/:userId/unblock", authenticateAdmin, authController.unb
  */
 router.put("/admin/users/:userId/role", authenticateAdmin, authController.updateUserRole);
 
+/**
+ * @swagger
+ * /auth/settings/auto-approve-users:
+ *   get:
+ *     summary: Get auto-approve users setting (Admin only)
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current setting (when ON, new users are auto-approved; when OFF, admin approves manually)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 autoApproveUsers:
+ *                   type: boolean
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/settings/auto-approve-users", authenticateAdmin, authController.getSettingsAutoApprove);
+
+/**
+ * @swagger
+ * /auth/settings/auto-approve-users:
+ *   put:
+ *     summary: Set auto-approve users setting (Admin only)
+ *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               enabled:
+ *                 type: boolean
+ *                 description: true = auto-approve new users, false = manual approval by admin
+ *     responses:
+ *       200:
+ *         description: Setting updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 autoApproveUsers:
+ *                   type: boolean
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/settings/auto-approve-users", authenticateAdmin, authController.putSettingsAutoApprove);
+
 module.exports = router;

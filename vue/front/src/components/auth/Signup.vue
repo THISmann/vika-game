@@ -57,7 +57,24 @@
           </p>
         </div>
 
-        <form class="space-y-5" @submit.prevent="handleSignup">
+        <!-- Message compte approuvé (activation automatique) -->
+        <div v-if="signupSuccessApproved" class="space-y-6 text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-500/20">
+            <svg class="h-10 w-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white">{{ t('auth.signup.approvedTitle') || 'Compte approuvé' }}</h3>
+          <p class="text-gray-200">{{ t('auth.signup.approvedMessage') || 'Votre compte a été créé et activé. Vous pouvez vous connecter.' }}</p>
+          <router-link
+            to="/auth/login"
+            class="inline-flex items-center justify-center w-full px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-yellow-400 via-orange-500 to-orange-600 hover:from-yellow-500 hover:via-orange-600 hover:to-orange-700 transition-all shadow-xl"
+          >
+            {{ t('auth.signup.goToLogin') || 'Se connecter' }}
+          </router-link>
+        </div>
+
+        <form v-else class="space-y-5" @submit.prevent="handleSignup">
           <!-- Name Field -->
           <div>
             <label for="name" class="block text-sm font-medium text-gray-200 mb-2">
@@ -332,6 +349,7 @@ export default {
     const showConfirmPassword = ref(false)
     const loading = ref(false)
     const error = ref('')
+    const signupSuccessApproved = ref(false)
 
     const passwordError = computed(() => {
       if (!form.value.password) return ''
@@ -376,8 +394,12 @@ export default {
         })
 
         if (response.data) {
-          // Redirect to waiting validation page
-          router.push('/auth/waiting-validation')
+          const status = response.data.status
+          if (status === 'approved') {
+            signupSuccessApproved.value = true
+          } else {
+            router.push('/auth/waiting-validation')
+          }
         }
       } catch (err) {
         // console.error('Signup error:', err)
@@ -395,6 +417,7 @@ export default {
       showConfirmPassword,
       loading,
       error,
+      signupSuccessApproved,
       passwordError,
       confirmPasswordError,
       handleSignup

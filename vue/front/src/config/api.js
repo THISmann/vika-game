@@ -222,6 +222,11 @@ export const API_URLS = {
       : isProduction
         ? `${API_CONFIG.QUIZ_SERVICE}/full`
         : `${API_CONFIG.QUIZ_SERVICE}/quiz/full`,
+    userQuestions: useApiGateway
+      ? `${API_CONFIG.QUIZ_SERVICE}/quiz/user/questions`
+      : isProduction
+        ? `${API_CONFIG.QUIZ_SERVICE}/user/questions`
+        : `${API_CONFIG.QUIZ_SERVICE}/quiz/user/questions`,
     create: useApiGateway
       ? `${API_CONFIG.QUIZ_SERVICE}/quiz/create`
       : isProduction

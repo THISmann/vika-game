@@ -86,28 +86,12 @@ export default {
     const checkStatus = async () => {
       checking.value = true
       error.value = ''
-
       try {
-        const token = localStorage.getItem('authToken')
-        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
-
-        if (!token || !userInfo.id) {
-          router.push('/auth/login')
-          return
-        }
-
-        // In a real app, you would call an endpoint to check user status
-        // For now, we'll just check the stored user info
-        if (userInfo.status === 'approved') {
-          router.push('/user/dashboard')
-        } else if (userInfo.status === 'rejected') {
-          error.value = t('auth.waitingValidation.rejected')
-        } else if (userInfo.status === 'blocked') {
-          error.value = t('auth.waitingValidation.blocked')
-        }
-      } catch (err) {
-        // console.error('Check status error:', err)
-        error.value = t('auth.waitingValidation.error')
+        // Rediriger vers la page de connexion pour que l'utilisateur se reconnecte
+        // et obtienne un éventuel nouveau statut (approuvé ou non)
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('userInfo')
+        router.push('/auth/login')
       } finally {
         checking.value = false
       }
