@@ -48,7 +48,8 @@ export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
-    vueDevTools(),
+    // DevTools uniquement en développement (pas en production)
+    ...(process.env.NODE_ENV !== 'production' ? [vueDevTools()] : []),
     tailwindcss(),
     spaFallback(),
   ],
