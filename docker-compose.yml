@@ -344,7 +344,7 @@ services:
       # - "traefik.http.routers.api-gateway-secure.middlewares=api-stripprefix"
       # - "traefik.http.routers.api-gateway-secure.priority=20"
 
-  # Frontend (Mode Dev pour contourner le problème de build UTF-8)
+  # Frontend (production: build + preview)
   frontend:
     image: node:20-alpine
     container_name: intelectgame-frontend
@@ -354,18 +354,11 @@ services:
     ports:
       - "5173:5173"
     environment:
-      # Use relative URLs for production (via Traefik/API Gateway)
-      # In production, the browser accesses services through the same domain
+      - NODE_ENV=production
       - VITE_AUTH_SERVICE_URL=/api
       - VITE_QUIZ_SERVICE_URL=/api
       - VITE_GAME_SERVICE_URL=/api
-      # Variables for Vite proxy configuration (Docker service names)
-      - AUTH_SERVICE_URL=http://auth:3001
-      - QUIZ_SERVICE_URL=http://quiz:3002
-      - GAME_SERVICE_URL=http://game:3003
-      # HMR WebSocket host - ne pas définir en local pour utiliser automatiquement window.location.hostname
-      # En production, définir VITE_HMR_HOST=vika-game.ru dans les variables d'environnement
-    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base / --force"
+    command: sh -c "npm install --legacy-peer-deps && npm run build && npx vite preview --host 0.0.0.0 --port 5173"
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -390,7 +383,7 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.docker.network=user1_app-network"
 
-  # Admin Frontend (Mode Dev pour contourner le problème de build UTF-8)
+  # Admin Frontend (production: build + serve at /vika-admin)
   admin-frontend:
     image: node:20-alpine
     container_name: intelectgame-admin-frontend
@@ -400,16 +393,12 @@ services:
     ports:
       - "5174:5174"
     environment:
-      # Use relative URLs for production (via Traefik/API Gateway)
-      # In production, the browser accesses services through the same domain
+      - NODE_ENV=production
+      - PORT=5174
       - VITE_AUTH_SERVICE_URL=/api
       - VITE_QUIZ_SERVICE_URL=/api
       - VITE_GAME_SERVICE_URL=/api
-      # Variables for Vite proxy configuration (Docker service names)
-      - AUTH_SERVICE_URL=http://auth:3001
-      - QUIZ_SERVICE_URL=http://quiz:3002
-      - GAME_SERVICE_URL=http://game:3003
-    command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --base /vika-admin/ --force"
+    command: sh -c "npm install --legacy-peer-deps && npm run build && node server.cjs"
     depends_on:
       api-gateway:
         condition: service_healthy
