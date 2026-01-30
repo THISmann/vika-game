@@ -17,26 +17,20 @@ const getApiUrl = (service) => {
                       (authUrl.startsWith('http://') || authUrl.startsWith('https://'))
   
   if (isProduction) {
-    // En production/Kubernetes, utiliser les variables d'environnement ou des URLs relatives
-    // Si les URLs sont relatives (commencent par /), les utiliser telles quelles
+    // En production : Traefik route /api/* vers l'API Gateway ; bases = /api/auth, /api/quiz, /api/game (jamais /api seul).
+    const normalizeProd = (url, defaultPath) => {
+      if (!url) return defaultPath
+      const u = url.replace(/\/$/, '')
+      if (u === '/api') return defaultPath
+      return u
+    }
     switch (service) {
       case 'auth':
-        // Si authUrl est défini, l'utiliser (peut être relatif /api/auth ou absolu)
-        if (authUrl) {
-          return authUrl.replace(/\/$/, '')
-        }
-        // Fallback par défaut pour production
-        return '/api/auth'
+        return normalizeProd(authUrl, '/api/auth')
       case 'quiz':
-        if (quizUrl) {
-          return quizUrl.replace(/\/$/, '')
-        }
-        return '/api/quiz'
+        return normalizeProd(quizUrl, '/api/quiz')
       case 'game':
-        if (gameUrl) {
-          return gameUrl.replace(/\/$/, '')
-        }
-        return '/api/game'
+        return normalizeProd(gameUrl, '/api/game')
       default:
         return ''
     }

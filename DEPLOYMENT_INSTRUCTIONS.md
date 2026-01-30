@@ -25,10 +25,10 @@ git push origin main
 
 ```bash
 # Se connecter au serveur
-ssh user@82.202.141.248
+ssh user1@82.202.141.248
 
 # Aller dans le répertoire du projet
-cd /path/to/gameV2
+cd /path/to/vika-game   # ou le chemin réel du clone
 
 # Pull les dernières modifications
 git pull origin main
@@ -37,15 +37,17 @@ git pull origin main
 mkdir -p letsencrypt
 chmod 700 letsencrypt
 
-# Arrêter les services
-docker-compose down
+# Redémarrer uniquement les frontends après un fix d'API (évite KeyError ContainerConfig)
+docker-compose up -d --no-deps frontend admin-frontend
 
-# Redémarrer avec les nouvelles configurations
-docker-compose up -d
+# OU tout redémarrer
+# docker-compose down && docker-compose up -d
 
 # Vérifier les logs Traefik pour Let's Encrypt
 docker-compose logs -f traefik
 ```
+
+**Fix 404 sur `/api/users/login`** : Les frontends doivent être buildés avec `VITE_AUTH_SERVICE_URL=/api/auth` (et `/api/quiz`, `/api/game`). Après `git pull`, utiliser le script qui évite le bug `ContainerConfig` : `./scripts/update-frontends-on-server.sh`. Si le service auth est en Exit 137 : `docker rm -f intelectgame-auth 2>/dev/null; docker-compose up -d auth`.
 
 ### 3. Vérification DNS
 
