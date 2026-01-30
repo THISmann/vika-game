@@ -2,10 +2,10 @@
   <nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 shadow-lg border-b border-purple-700">
     <div class="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 w-full">
       <div class="flex justify-between items-center h-14 sm:h-16">
-        <!-- Logo -->
+        <!-- Logo (lien vers la page d'accueil) -->
         <div class="flex items-center space-x-1 sm:space-x-2">
           <router-link
-            to="/player/register"
+            to="/"
             class="text-xl sm:text-2xl font-bold text-white hover:text-yellow-300 transition-colors"
           >
             🎮 <span class="hidden xs:inline">Vika-Game</span>

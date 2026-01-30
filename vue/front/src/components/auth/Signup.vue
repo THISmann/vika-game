@@ -1,5 +1,27 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
+    <!-- Navigation - Top Left -->
+    <div class="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 flex items-center gap-2">
+      <router-link
+        to="/"
+        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-700 bg-white/90 hover:bg-white border-2 border-gray-200 hover:border-blue-300 shadow-sm transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        {{ t('common.home') || 'Accueil' }}
+      </router-link>
+      <button
+        type="button"
+        @click="router.back()"
+        class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-gray-700 bg-white/90 hover:bg-white border-2 border-gray-200 hover:border-blue-300 shadow-sm transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        {{ t('common.back') || 'Retour' }}
+      </button>
+    </div>
     <!-- Language Selector - Top Right -->
     <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
       <LanguageSelector />
@@ -362,6 +384,7 @@ export default {
     }
 
     return {
+      router,
       t,
       form,
       showPassword,

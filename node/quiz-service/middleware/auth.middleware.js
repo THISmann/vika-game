@@ -61,10 +61,11 @@ const authenticateAdmin = async (req, res, next) => {
       }
 
       // Si vérification locale réussie
-      if (decoded && decoded.role === 'admin') {
+      if (decoded && (decoded.role === 'admin' || decoded.role === 'user')) {
         console.log(`✅ Local verification successful, role: ${decoded.role}`)
         req.user = {
           role: decoded.role,
+          userId: decoded.userId || decoded.id,
           timestamp: decoded.timestamp
         }
         return next()
@@ -85,11 +86,12 @@ const authenticateAdmin = async (req, res, next) => {
       console.log(`🔐 Auth service response status: ${response.status}`)
       console.log(`🔐 Auth service response data:`, JSON.stringify(response.data))
 
-      if (response.data.valid && response.data.role === 'admin') {
+      if (response.data.valid && (response.data.role === 'admin' || response.data.role === 'user')) {
         console.log(`✅ Token verified successfully, role: ${response.data.role}`)
         // Ajouter les infos de l'utilisateur à la requête
         req.user = {
           role: response.data.role,
+          userId: response.data.userId || response.data.id,
           timestamp: response.data.timestamp
         }
         next()
@@ -97,7 +99,7 @@ const authenticateAdmin = async (req, res, next) => {
         console.error(`❌ Token verification failed: valid=${response.data.valid}, role=${response.data.role}`)
         return res.status(403).json({ 
           error: 'Forbidden',
-          message: 'Admin access required'
+          message: 'User or Admin access required'
         })
       }
     } catch (authError) {

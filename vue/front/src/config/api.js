@@ -76,13 +76,29 @@ const getApiUrl = (service) => {
 const getBaseApiUrl = (service) => {
   const baseUrl = getApiUrl(service)
   
+  // En développement local avec Vite, utiliser les URLs relatives telles quelles
+  // pour que le proxy Vite les prenne en charge
+  const isDevelopment = !import.meta.env.PROD && import.meta.env.MODE !== 'production'
+  
+  if (isDevelopment) {
+    // En développement, si l'URL est relative (/api/*), la laisser telle quelle
+    // pour que le proxy Vite la prenne en charge
+    if (baseUrl.startsWith('/api/')) {
+      return baseUrl
+    }
+    // Si l'URL est déjà absolue (http://localhost:3001), l'utiliser telle quelle
+    if (baseUrl.startsWith('http://')) {
+      return baseUrl
+    }
+  }
+  
   // Détecter si on est accédé via localhost/127.0.0.1 (port-forward depuis Kubernetes)
   // Dans ce cas, on doit utiliser des URLs absolues vers l'API Gateway
   const isLocalhostAccess = typeof window !== 'undefined' && 
                             (window.location.hostname === 'localhost' || 
                              window.location.hostname === '127.0.0.1')
   
-  if (isLocalhostAccess) {
+  if (isLocalhostAccess && !isDevelopment) {
     // Si on est sur localhost avec des chemins relatifs (/api/auth), utiliser l'API Gateway via port-forward
     if (baseUrl.startsWith('/api/')) {
       // console.log('🌐 Frontend: Détection localhost: Utilisation de l\'API Gateway via port-forward (http://127.0.0.1:3000)')

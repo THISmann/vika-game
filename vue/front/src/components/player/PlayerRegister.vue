@@ -66,12 +66,12 @@
       </div>
     </div>
 
-    <!-- Étape 2: Entrer le nom -->
-    <div v-else-if="step === 2" class="w-full sm:max-w-md h-[calc(100vh-3.5rem)] sm:h-auto flex flex-col">
-      <div class="bg-white rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl md:shadow-2xl border-0 sm:border-2 border-gray-200 p-6 sm:p-8 md:p-10 flex-1 flex flex-col justify-center">
+    <!-- Étape 2: Entrer le nom (même structure que étape 1 pour mobile) -->
+    <div v-else-if="step === 2" class="w-full sm:max-w-md h-[calc(100vh-3.5rem)] sm:h-auto flex flex-col min-h-0 overflow-y-auto sm:overflow-visible">
+      <div class="bg-gradient-to-br from-white to-blue-50 rounded-none sm:rounded-2xl md:rounded-3xl shadow-none sm:shadow-xl md:shadow-2xl border-0 sm:border-2 border-blue-200 p-6 sm:p-8 md:p-10 flex-1 flex flex-col justify-start sm:justify-center min-h-0">
         <div class="text-center mb-6 sm:mb-8">
-          <div class="mx-auto flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-4 sm:mb-6 shadow-lg">
-            <svg class="h-10 w-10 sm:h-12 sm:w-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="mx-auto flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-5 sm:mb-6 shadow-xl ring-4 ring-green-200/50">
+            <svg class="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -80,21 +80,16 @@
               />
             </svg>
           </div>
-          <div class="mb-4 sm:mb-5">
-            <div class="inline-flex items-center px-4 py-2.5 bg-green-200/80 sm:bg-green-100 text-white sm:text-green-800 rounded-full text-sm font-semibold mb-4 shadow-md">
-              <svg class="w-4 h-4 mr-2 flex-shrink-0 text-white sm:text-green-800" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-              <span class="font-mono text-xs sm:text-sm font-bold">{{ gameCode }}</span>
-            </div>
+          <div class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
+            <span class="font-mono font-bold">{{ gameCode }}</span>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 leading-tight">{{ t('register.enterName') }}</h2>
-          <p class="text-sm text-gray-600 leading-relaxed">{{ t('register.nameHint') }}</p>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 sm:mb-3 leading-tight">{{ t('register.enterName') }}</h2>
+          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">{{ t('register.nameHint') }}</p>
         </div>
 
-        <form @submit.prevent="registerPlayer" class="space-y-5 sm:space-y-6">
+        <form @submit.prevent="registerPlayer" class="space-y-6 sm:space-y-7">
           <div>
-            <label for="player-name" class="block text-sm sm:text-base font-semibold text-gray-800 mb-3">
+            <label for="player-name" class="block text-sm sm:text-base font-semibold text-gray-800 mb-3 sm:mb-4">
               {{ t('register.name') }}
             </label>
             <input
@@ -106,14 +101,17 @@
               maxlength="20"
               inputmode="text"
               autocomplete="name"
-              class="appearance-none relative block w-full px-4 sm:px-5 py-4 sm:py-5 border-2 border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-4 focus:ring-green-500/50 focus:border-green-500 transition-all text-base sm:text-lg bg-white shadow-sm focus:shadow-md touch-manipulation"
+              class="appearance-none relative block w-full px-4 sm:px-6 py-4 sm:py-5 border-2 sm:border-[3px] border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-4 focus:ring-green-500/50 focus:border-green-500 transition-all text-base sm:text-lg bg-white shadow-md focus:shadow-lg touch-manipulation"
               :placeholder="t('register.namePlaceholder') || 'Ex: Alice, Bob, SuperJoueur...'"
             />
-            <p class="mt-2 text-xs sm:text-sm text-gray-500 flex items-center">
-              <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Maximum 20 caractères</span>
+            <p class="mt-2 text-xs sm:text-sm text-gray-500 flex items-center justify-between flex-wrap gap-1">
+              <span class="flex items-center">
+                <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ t('register.maxChars') }}
+              </span>
+              <span class="tabular-nums text-gray-600" :class="{ 'text-amber-600 font-medium': name.length >= 18 }" aria-live="polite">{{ name.length }} / 20</span>
             </p>
           </div>
 
@@ -131,11 +129,11 @@
             <span>{{ error }}</span>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               type="button"
               @click="step = 1"
-              class="w-full sm:flex-1 py-4 sm:py-5 px-6 border-2 border-gray-300 text-gray-700 rounded-xl sm:rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all font-semibold text-base sm:text-lg touch-manipulation"
+              class="w-full sm:flex-1 py-4 sm:py-5 px-6 border-2 border-gray-300 text-gray-700 rounded-xl sm:rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-all font-semibold text-base sm:text-lg touch-manipulation min-h-[56px] sm:min-h-[64px]"
               style="-webkit-tap-highlight-color: transparent;"
             >
               <span class="flex items-center justify-center">
@@ -149,7 +147,7 @@
               type="submit"
               :disabled="!name || name.trim().length < 2 || loading || gameStarted"
               @click.prevent="registerPlayer"
-              class="w-full sm:flex-1 group relative flex justify-center items-center py-4 sm:py-5 px-6 border border-transparent text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-green-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[64px] touch-manipulation"
+              class="w-full sm:flex-1 group relative flex justify-center items-center py-4 sm:py-5 px-6 border border-transparent text-base sm:text-lg md:text-xl font-bold rounded-xl sm:rounded-2xl text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-green-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl min-h-[56px] sm:min-h-[64px] touch-manipulation"
               style="-webkit-tap-highlight-color: transparent;"
             >
               <span v-if="loading" class="absolute left-4 inset-y-0 flex items-center">

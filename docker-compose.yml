@@ -16,11 +16,11 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.runCommand({ ping: 1 }).ok\" 2>&1 | grep -q \"^1$$\" || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-      start_period: 300s
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep -q '^1$' || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
     networks:
       - app-network
 
@@ -359,6 +359,12 @@ services:
       - VITE_AUTH_SERVICE_URL=/api
       - VITE_QUIZ_SERVICE_URL=/api
       - VITE_GAME_SERVICE_URL=/api
+      # Variables for Vite proxy configuration (Docker service names)
+      - AUTH_SERVICE_URL=http://auth:3001
+      - QUIZ_SERVICE_URL=http://quiz:3002
+      - GAME_SERVICE_URL=http://game:3003
+      # HMR WebSocket host - ne pas définir en local pour utiliser automatiquement window.location.hostname
+      # En production, définir VITE_HMR_HOST=vika-game.ru dans les variables d'environnement
     command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5173 --base / --force"
     depends_on:
       api-gateway:
@@ -399,6 +405,10 @@ services:
       - VITE_AUTH_SERVICE_URL=/api
       - VITE_QUIZ_SERVICE_URL=/api
       - VITE_GAME_SERVICE_URL=/api
+      # Variables for Vite proxy configuration (Docker service names)
+      - AUTH_SERVICE_URL=http://auth:3001
+      - QUIZ_SERVICE_URL=http://quiz:3002
+      - GAME_SERVICE_URL=http://game:3003
     command: sh -c "npm install --legacy-peer-deps && npx vite --host 0.0.0.0 --port 5174 --base /vika-admin/ --force"
     depends_on:
       api-gateway:

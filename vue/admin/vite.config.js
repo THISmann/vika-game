@@ -61,8 +61,13 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5174, // Different port from front (5173)
     strictPort: false,
-    hmr: {
-      host: 'vika-game.ru',
+    hmr: process.env.VITE_HMR_HOST ? {
+      // Si VITE_HMR_HOST est défini (production), l'utiliser
+      host: process.env.VITE_HMR_HOST,
+      port: 5174
+    } : {
+      // En local, ne pas définir le host pour que Vite utilise automatiquement window.location.hostname
+      // Cela évite les erreurs de connexion WebSocket en local
       port: 5174
     },
     allowedHosts: [
@@ -70,28 +75,36 @@ export default defineConfig({
       'www.vika-game.ru',
       'localhost',
       '.localhost',
+      '127.0.0.1',
       '172.19.0.15'
     ],
     proxy: {
       '/api/auth': {
-        target: 'http://localhost:3001',
+        target: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/auth/, ''),
+        rewrite: (path) => path.replace(/^\/api\/auth/, '/auth'),
       },
       '/api/quiz': {
-        target: 'http://localhost:3002',
+        target: process.env.QUIZ_SERVICE_URL || 'http://localhost:3002',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/quiz/, ''),
+        rewrite: (path) => path.replace(/^\/api\/quiz/, '/quiz'),
+      },
+      // Proxy pour Socket.IO via /api/game/socket.io (doit être avant /api/game)
+      '/api/game/socket.io': {
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/game\/socket\.io/, '/socket.io'),
+        ws: true, // WebSocket support
       },
       '/api/game': {
-        target: 'http://localhost:3003',
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/game/, ''),
+        rewrite: (path) => path.replace(/^\/api\/game/, '/game'),
         ws: true, // WebSocket support
       },
       // Proxy pour WebSocket direct (socket.io)
       '/socket.io': {
-        target: 'http://localhost:3003',
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
         changeOrigin: true,
         ws: true, // WebSocket support
       },

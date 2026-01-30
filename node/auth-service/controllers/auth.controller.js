@@ -26,6 +26,50 @@ async function updateLastLogin(userId) {
     }
 }
 
+/**
+ * Initialize default client user if it doesn't exist
+ */
+exports.initializeDefaultClient = async () => {
+    try {
+        const clientUserId = "00000000-0000-0000-0000-000000000002"; // Default client user ID
+        const clientEmail = "client@vika-game.com";
+        const clientPassword = "client123";
+        
+        // Check if default client user exists
+        let clientUser = await User.findOne({ id: clientUserId });
+        
+        if (!clientUser) {
+            // Check if any user with this email exists
+            const existingUser = await User.findOne({ email: clientEmail });
+            if (existingUser) {
+                console.log('⚠️  User with email client@vika-game.com already exists, skipping default client creation');
+                return;
+            }
+            
+            // Hash client password
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(clientPassword, saltRounds);
+            
+            clientUser = new User({
+                id: clientUserId,
+                name: "Client",
+                email: clientEmail,
+                password: hashedPassword,
+                role: 'user',
+                status: 'approved',
+                createdAt: new Date(),
+                lastLoginAt: null
+            });
+            await clientUser.save();
+            console.log('✅ Default client user created (email: client@vika-game.com, password: client123)');
+        } else {
+            console.log('✅ Default client user already exists');
+        }
+    } catch (error) {
+        console.error('❌ Error initializing default client user:', error);
+    }
+};
+
 exports.adminLogin = async (req, res) => {
     const { username, password } = req.body;
 

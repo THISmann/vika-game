@@ -7,6 +7,7 @@ const redisClient = require("./shared/redis-client");
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const { createLogger, requestLogger, errorLogger } = require("./shared/logger");
+const authController = require("./controllers/auth.controller");
 
 // Create logger instance
 const logger = createLogger('auth-service');
@@ -28,7 +29,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // Connect to MongoDB
-connectDB();
+connectDB().then(async () => {
+  // Initialize default client user after DB connection
+  await authController.initializeDefaultClient();
+}).catch(err => {
+  console.error('❌ Error connecting to database:', err);
+});
 
 // Connect to Redis (non-blocking)
 redisClient.connect().catch(err => {

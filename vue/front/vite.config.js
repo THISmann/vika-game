@@ -31,24 +31,31 @@ export default defineConfig({
     ],
     proxy: {
       '/api/auth': {
-        target: 'http://localhost:3001',
+        target: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/auth/, ''),
+        rewrite: (path) => path.replace(/^\/api\/auth/, '/auth'),
       },
       '/api/quiz': {
-        target: 'http://localhost:3002',
+        target: process.env.QUIZ_SERVICE_URL || 'http://localhost:3002',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/quiz/, ''),
+        rewrite: (path) => path.replace(/^\/api\/quiz/, '/quiz'),
+      },
+      // Proxy pour Socket.IO via /api/game/socket.io (doit être avant /api/game)
+      '/api/game/socket.io': {
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/game\/socket\.io/, '/socket.io'),
+        ws: true, // WebSocket support
       },
       '/api/game': {
-        target: 'http://localhost:3003',
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/game/, ''),
+        rewrite: (path) => path.replace(/^\/api\/game/, '/game'),
         ws: true, // WebSocket support
       },
       // Proxy pour WebSocket direct (socket.io)
       '/socket.io': {
-        target: 'http://localhost:3003',
+        target: process.env.GAME_SERVICE_URL || 'http://localhost:3003',
         changeOrigin: true,
         ws: true, // WebSocket support
       },

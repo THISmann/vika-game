@@ -47,8 +47,8 @@ export default {
       if (this.isUserRoute) {
         return '' // User routes handle their own layout
       }
-      // Player routes: no padding/margin on mobile, normal spacing on larger screens
-      return 'px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-8'
+      // Player routes: small top gap under navbar on mobile/tablet, normal spacing on larger screens
+      return 'px-0 sm:px-4 md:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8 pb-0 sm:pb-8'
     }
   }
 }
