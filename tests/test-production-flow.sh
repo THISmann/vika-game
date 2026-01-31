@@ -20,7 +20,7 @@ info() { echo -e "${YELLOW}→ $1${NC}"; }
 TS=$(date +%s)
 EMAIL="testflow-${TS}@test.local"
 PASS="testpass123"
-NAME="Test Flow User"
+NAME="Test Flow ${TS}"
 
 info "Testing production flow on $BASE ($HOST)"
 echo ""
