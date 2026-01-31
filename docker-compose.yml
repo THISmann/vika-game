@@ -266,7 +266,7 @@ services:
       - "traefik.http.middlewares.traefik-dashboard-replace.replacepathregex.replacement=/dashboard$${1}"
       # Middleware pour rediriger /treafik-dashboard (faute de frappe) vers /dashboard/
       - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.regex=^https?://[^/]+/treafik-dashboard(.*)"
-      - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.replacement=https://vika-game.ru/dashboard$${1}"
+      - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.replacement=http://vika-game.ru/dashboard$${1}"
       - "traefik.http.middlewares.treafik-dashboard-redirect.redirectregex.permanent=true"
       # Route alternative pour le dashboard Traefik sur /traefik-dashboard
       - "traefik.http.routers.traefik-dashboard-alt.rule=Host(`vika-game.ru`) && PathPrefix(`/traefik-dashboard`)"
