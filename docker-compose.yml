@@ -161,7 +161,13 @@ services:
       # Utiliser le nom du service pour éviter la détection multiple d'IPs
       - "traefik.http.routers.socket-io.rule=PathPrefix(`/socket.io`)"
       - "traefik.http.routers.socket-io.entrypoints=web"
+      - "traefik.http.routers.socket-io.middlewares=redirect-to-https"
       - "traefik.http.routers.socket-io.service=socket-io"
+      - "traefik.http.routers.socket-io-secure.rule=PathPrefix(`/socket.io`)"
+      - "traefik.http.routers.socket-io-secure.entrypoints=websecure"
+      - "traefik.http.routers.socket-io-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.socket-io-secure.service=socket-io"
+      - "traefik.http.routers.socket-io-secure.priority=20"
       - "traefik.http.services.socket-io.loadbalancer.server.port=3003"
       - "traefik.http.services.socket-io.loadbalancer.server.scheme=http"
       - "traefik.http.routers.socket-io.priority=20"
@@ -235,9 +241,9 @@ services:
       - app-network
     labels:
       - "traefik.enable=true"
-      # Middleware global pour rediriger HTTP vers HTTPS (désactivé temporairement)
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      # Middleware global pour rediriger HTTP vers HTTPS (preserves ACME .well-known)
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
       # Route pour exposer le dashboard Traefik sur /dashboard
       # Utiliser seulement /dashboard pour éviter de capturer /api-gateway-monitoring
       - "traefik.http.routers.traefik-dashboard.rule=Host(`vika-game.ru`) && PathPrefix(`/dashboard`)"
@@ -334,15 +340,15 @@ services:
       - "traefik.http.routers.api-gateway.service=api-gateway"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
-      - "traefik.http.routers.api-gateway.middlewares=api-stripprefix"
+      - "traefik.http.routers.api-gateway.middlewares=redirect-to-https,api-stripprefix"
       - "traefik.http.routers.api-gateway.priority=50"
-      # Route HTTPS API (désactivée temporairement)
-      # - "traefik.http.routers.api-gateway-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/api`)"
-      # - "traefik.http.routers.api-gateway-secure.entrypoints=websecure"
-      # - "traefik.http.routers.api-gateway-secure.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.api-gateway-secure.service=api-gateway"
-      # - "traefik.http.routers.api-gateway-secure.middlewares=api-stripprefix"
-      # - "traefik.http.routers.api-gateway-secure.priority=20"
+      # Route HTTPS API (required for HTTP→HTTPS redirect)
+      - "traefik.http.routers.api-gateway-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/api`) && !PathPrefix(`/api/ds`) && !PathPrefix(`/api/annotations`) && !PathPrefix(`/api/dashboards`) && !PathPrefix(`/api/user`) && !PathPrefix(`/api/org`) && !PathPrefix(`/api/folders`) && !PathPrefix(`/api/datasources`) && !PathPrefix(`/api/search`) && !PathPrefix(`/api/public`) && !PathPrefix(`/api/http`) && !PathPrefix(`/api/rawdata`) && !PathPrefix(`/api/overview`) && !PathPrefix(`/api/version`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`)"
+      - "traefik.http.routers.api-gateway-secure.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api-gateway-secure.service=api-gateway"
+      - "traefik.http.routers.api-gateway-secure.middlewares=api-stripprefix"
+      - "traefik.http.routers.api-gateway-secure.priority=20"
 
   # Frontend (production: build + preview)
   frontend:
@@ -369,16 +375,17 @@ services:
     labels:
       - "traefik.enable=true"
       # Route principale pour le frontend à la racine (catch-all sauf routes spécifiques) - HTTP uniquement pour le moment
-      - "traefik.http.routers.frontend.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.frontend.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`) && !PathPrefix(`/.well-known`)"
       - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.middlewares=redirect-to-https"
       - "traefik.http.routers.frontend.service=frontend"
       - "traefik.http.routers.frontend.priority=1"
-      # Route HTTPS (désactivée temporairement, sera réactivée après vérification du certificat SSL)
-      # - "traefik.http.routers.frontend-secure.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`)"
-      # - "traefik.http.routers.frontend-secure.entrypoints=websecure"
-      # - "traefik.http.routers.frontend-secure.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.frontend-secure.service=frontend"
-      # - "traefik.http.routers.frontend-secure.priority=1"
+      # Route HTTPS (required for HTTP→HTTPS redirect)
+      - "traefik.http.routers.frontend-secure.rule=(Host(`vika-game.ru`) || Host(`www.vika-game.ru`)) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`) && !PathPrefix(`/login`) && !PathPrefix(`/api-gateway-monitoring`) && !PathPrefix(`/container-monitoring`) && !PathPrefix(`/vika-admin`) && !PathPrefix(`/.well-known`)"
+      - "traefik.http.routers.frontend-secure.entrypoints=websecure"
+      - "traefik.http.routers.frontend-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend-secure.service=frontend"
+      - "traefik.http.routers.frontend-secure.priority=1"
       # Service configuration
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.docker.network=user1_app-network"
@@ -410,6 +417,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.admin-frontend.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
       - "traefik.http.routers.admin-frontend.entrypoints=web"
+      - "traefik.http.routers.admin-frontend.middlewares=redirect-to-https"
       - "traefik.http.routers.admin-frontend.service=admin-frontend"
       - "traefik.http.services.admin-frontend.loadbalancer.server.port=5174"
       # Middleware pour servir index.html pour les routes SPA (intercepte les 404)
@@ -420,12 +428,13 @@ services:
       - "traefik.http.routers.admin-frontend.priority=10"
       # Service pour servir index.html
       - "traefik.http.services.admin-frontend-index.loadbalancer.server.port=5174"
-      # Route HTTPS Admin (désactivée temporairement)
-      # - "traefik.http.routers.admin-frontend-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
-      # - "traefik.http.routers.admin-frontend-secure.entrypoints=websecure"
-      # - "traefik.http.routers.admin-frontend-secure.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.admin-frontend-secure.service=admin-frontend"
-      # - "traefik.http.routers.admin-frontend-secure.priority=10"
+      # Route HTTPS Admin (required for HTTP→HTTPS redirect)
+      - "traefik.http.routers.admin-frontend-secure.rule=Host(`vika-game.ru`) && PathPrefix(`/vika-admin`)"
+      - "traefik.http.routers.admin-frontend-secure.entrypoints=websecure"
+      - "traefik.http.routers.admin-frontend-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.admin-frontend-secure.service=admin-frontend"
+      - "traefik.http.routers.admin-frontend-secure.middlewares=admin-frontend-spa"
+      - "traefik.http.routers.admin-frontend-secure.priority=10"
       - "traefik.docker.network=user1_app-network"
 
   # Prometheus
