@@ -95,7 +95,7 @@ R=$(curl -s -w "\n%{http_code}" -X POST "$GAME/parties" \
   -d "{\"name\":\"Partie Test $TS\",\"questionIds\":[\"$QID\"]}" 2>/dev/null)
 HTTP=$(echo "$R" | tail -1)
 BODY=$(echo "$R" | head -n -1)
-CODE=$(echo "$BODY" | grep -o '"code":"[^"]*"' | cut -d'"' -f4)
+CODE=$(echo "$BODY" | grep -oE '"(code|gameCode)":"[^"]*"' | head -1 | cut -d'"' -f4)
 if [[ -n "$CODE" && ("$HTTP" == "200" || "$HTTP" == "201") ]]; then
   pass "Partie créée OK (code=$CODE)"
 else
