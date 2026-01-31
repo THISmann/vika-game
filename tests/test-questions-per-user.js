@@ -37,7 +37,8 @@ async function request(method, url, body = null, token = null) {
 }
 
 async function register(email, name, password) {
-  const { status, data } = await request('POST', `${AUTH_URL}/auth/users/register`, {
+  const registerPath = AUTH_URL.includes('/api/') ? `${AUTH_URL}/users/register` : `${AUTH_URL}/auth/users/register`;
+  const { status, data } = await request('POST', registerPath, {
     email,
     name,
     password
@@ -49,7 +50,8 @@ async function register(email, name, password) {
 }
 
 async function login(email, password) {
-  const { status, data } = await request('POST', `${AUTH_URL}/auth/users/login`, {
+  const loginPath = AUTH_URL.includes('/api/') ? `${AUTH_URL}/users/login` : `${AUTH_URL}/auth/users/login`;
+  const { status, data } = await request('POST', loginPath, {
     email,
     password
   });
@@ -60,7 +62,8 @@ async function login(email, password) {
 }
 
 async function getUserQuestions(token) {
-  const { status, data } = await request('GET', `${QUIZ_URL}/quiz/user/questions`, null, token);
+  const path = QUIZ_URL.includes('/api/') ? `${QUIZ_URL}/user/questions` : `${QUIZ_URL}/quiz/user/questions`;
+  const { status, data } = await request('GET', path, null, token);
   if (status !== 200) {
     throw new Error(`getUserQuestions failed: ${status} ${JSON.stringify(data)}`);
   }
@@ -68,9 +71,10 @@ async function getUserQuestions(token) {
 }
 
 async function createQuestion(token, question, choices, answer) {
+  const createPath = QUIZ_URL.includes('/api/') ? `${QUIZ_URL}/create` : `${QUIZ_URL}/quiz/create`;
   const { status, data } = await request(
     'POST',
-    `${QUIZ_URL}/quiz/create`,
+    createPath,
     { question, choices, answer },
     token
   );

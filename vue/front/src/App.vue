@@ -28,6 +28,9 @@ export default {
     isLandingPage() {
       return this.$route.path === '/'
     },
+    isAuthRoute() {
+      return this.$route.path.startsWith('/auth/')
+    },
     isPlayerRoute() {
       return this.$route.path.startsWith('/player') && this.$route.path !== '/'
     },
@@ -38,11 +41,17 @@ export default {
       if (this.isLandingPage) {
         return 'w-full h-screen overflow-hidden' // Full screen for landing page only
       }
+      if (this.isAuthRoute) {
+        return 'min-h-screen w-full overflow-x-hidden bg-indigo-950' // Dark background for auth pages (login, signup) - no white margins
+      }
       return 'min-h-screen bg-gradient-to-br from-gray-50 to-gray-100'
     },
     mainClass() {
       if (this.isLandingPage) {
         return 'w-full h-full' // Full screen for landing page only
+      }
+      if (this.isAuthRoute) {
+        return 'w-full min-h-screen' // Auth pages handle their own full-bleed layout
       }
       if (this.isUserRoute) {
         return '' // User routes handle their own layout

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 relative overflow-y-auto py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen w-full flex flex-col bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 relative overflow-x-hidden overflow-y-auto py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
     <!-- Animated background (same as Landing) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
       <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -9,41 +9,20 @@
 
     <!-- Header (same style as Landing) -->
     <header class="relative z-10 w-full flex-shrink-0 mb-6 sm:mb-8">
-      <div class="max-w-7xl mx-auto px-2 sm:px-4 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2 sm:gap-3">
-          <router-link
-            to="/"
-            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 border border-white/30 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            {{ t('common.home') || 'Accueil' }}
-          </router-link>
-          <button
-            type="button"
-            @click="router.back()"
-            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 border border-white/30 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            {{ t('common.back') || 'Retour' }}
-          </button>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center transform rotate-12 shadow-lg flex-shrink-0">
+      <div class="max-w-7xl mx-auto px-1 sm:px-4 flex items-center justify-between gap-2">
+        <router-link to="/" class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center transform rotate-12 shadow-lg">
             <span class="text-2xl sm:text-3xl">🎮</span>
           </div>
           <h1 class="text-lg sm:text-xl font-bold text-white whitespace-nowrap drop-shadow-lg">Vika-Game</h1>
-        </div>
+        </router-link>
         <div class="flex-shrink-0">
           <LanguageSelector />
         </div>
       </div>
     </header>
 
-    <div class="relative z-10 max-w-md w-full mx-auto flex-1 flex items-center justify-center">
+    <div class="relative z-10 max-w-md w-full mx-auto flex-1 flex items-center justify-center px-2 sm:px-0">
       <div class="w-full bg-gradient-to-br from-white/15 to-purple-900/40 backdrop-blur-md rounded-3xl shadow-2xl border-2 border-white/30 p-8 sm:p-10">
         <!-- Card header -->
         <div class="text-center mb-8">
